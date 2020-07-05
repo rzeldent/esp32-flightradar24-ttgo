@@ -9,10 +9,15 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+
 #include <NTPClient.h>
+#include <Timelib.h>
+#include <Timezone.h> // https://github.com/JChristensen/Timezone
 
 #include <map>
-#include <base64.h>
+
+// Database of airplanes
+#include <airplanes.h>
 
 #include ".settings.h"
 
@@ -30,11 +35,14 @@ Button2 button2(BUTTON_2);
 WiFiUDP ntpUDP;
 // Synchronize time every hour
 NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
+TimeChangeRule dstBegin = DST_BEGIN;
+TimeChangeRule dstEnd = DST_END;
+Timezone timeZone(dstBegin, dstEnd);
 
-#define LATTITUDE_MIN (LATTITUDE - RANGE_LATTITUDE)
-#define LONGITUDE_MIN (LONGITUDE - RANGE_LONGITUDE)
-#define LATTITUDE_MAX (LATTITUDE + RANGE_LATTITUDE)
-#define LONGITUDE_MAX (LONGITUDE + RANGE_LONGITUDE)
+#define LATTITUDE_MIN String(LATTITUDE - RANGE_LATTITUDE)
+#define LONGITUDE_MIN String(LONGITUDE - RANGE_LONGITUDE)
+#define LATTITUDE_MAX String(LATTITUDE + RANGE_LATTITUDE)
+#define LONGITUDE_MAX String(LONGITUDE + RANGE_LONGITUDE)
 
 void setup()
 {
@@ -45,6 +53,9 @@ void setup()
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
   tft.setTextColor(TEXT_COLOR);
+
+  // Clear the screen
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
 
   // Wait 30 seconds for a connection, otherwise reset
   WiFi.mode(WIFI_STA);
@@ -61,8 +72,6 @@ void setup()
   // Start the timeclient
   timeClient.begin();
 
-  // Clear the screen
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
   Serial.println("Connected");
 }
 
@@ -72,7 +81,8 @@ std::map<String, JsonArray>::const_iterator current_flight;
 
 void update_flights()
 {
-  const static String flight_data_url = "http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + String(LATTITUDE_MAX) + "," + String(LATTITUDE_MIN) + "," + String(LONGITUDE_MIN) + "," + String(LONGITUDE_MAX) + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=1&air=1&vehicles=1&estimated=1&maxage=14400&gliders=1&stats=0";
+  // gnd=0 means no items on the ground
+  const static String flight_data_url("http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + LATTITUDE_MAX + "," + LATTITUDE_MIN + "," + LONGITUDE_MIN + "," + LONGITUDE_MAX + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0");
 
   flights.clear();
 
@@ -145,10 +155,30 @@ void loop()
 
       if (current_flight != flights.end())
       {
-        tft.println(current_flight->first.c_str());
+        //  0 => ICAO 24-BIT ADDRESS - 4CA853
+        //  1 => LAT - 52.3247
+        //  2 => LON - 4.9812
+        //  3 => TRACK - 263 (Degrees)
+        //  4 => ALTITUDE - 2100  (Feet)
+        //  5 => SPEED - 144 (Knots)
+        //  6 => SQUAWK - 
+        //  7 => RADAR - 
+        //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
+        //  9 => REGISTRATION - N709CK
+        // 10 => TIMSTAMP - 1593976456
+        // 11 => FROM - AMS
+        // 12 => TO - JFK
+        // 13 => FLIGHT NUMBER - LH8160
+        // 14 => 
+        // 15 => OPERATOR - RYR
+
+
+        //tft.println(current_flight->first.c_str());
+        auto airplane = (airplanes.find(current_flight->second[8].as<char *>()));
+        tft.println(airplane != airplanes.end() ? airplane->second : current_flight->second[8].as<char *>()); 
         tft.println(current_flight->second[9].as<char *>());
-        tft.println(("From: " + String(current_flight->second[11].as<char *>()) + " To: " + String(current_flight->second[12].as<char *>())).c_str());
-        tft.println(current_flight->second[13].as<char *>());
+        tft.println((String(current_flight->second[11].as<char *>()) + " => " + String(current_flight->second[12].as<char *>())).c_str());
+        tft.println(current_flight->second[13].as<char *>()); // Flight number
 
         if (++current_flight == flights.end())
           current_flight = flights.begin();

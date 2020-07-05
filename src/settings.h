@@ -8,6 +8,9 @@
 #define NTP_POOL "europe.pool.ntp.org"
 // The offset in seconds from UTC (+1)
 #define NTP_TIMEOFFSET 3600
+// DST start and end (Central European Standard Time)
+#define DST_BEGIN       {"CEST", Last, Sun, Mar, 2, 120}
+#define DST_END         {"CET ", Last, Sun, Oct, 3, 60}
 // Synchronize interval in milliseconds (every 30 minutes)
 #define NTP_UPDATE_MILLISECONDS (30 * 60 * 1000)
 
