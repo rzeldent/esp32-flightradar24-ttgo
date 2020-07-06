@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 // Setting for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
+
 #include <Button2.h>
 
 #include <WiFi.h>
@@ -18,6 +19,8 @@
 
 // Database of airplanes
 #include <airplanes.h>
+#include <countries.h>
+#include <airports.h>
 
 #include ".settings.h"
 
@@ -147,12 +150,13 @@ void loop()
   {
     Serial.println(" Updating flight");
 
+    tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+    tft.setCursor(0, 0);
+    // Font(2) = 16px
+    tft.setTextFont(2);
+
     if (flights.size())
     {
-      tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
-      tft.setCursor(0, 0);
-      tft.setTextFont(4);
-
       if (current_flight != flights.end())
       {
         //  0 => ICAO 24-BIT ADDRESS - 4CA853
@@ -161,33 +165,61 @@ void loop()
         //  3 => TRACK - 263 (Degrees)
         //  4 => ALTITUDE - 2100  (Feet)
         //  5 => SPEED - 144 (Knots)
-        //  6 => SQUAWK - 
-        //  7 => RADAR - 
+        //  6 => SQUAWK -
+        //  7 => RADAR -
         //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
         //  9 => REGISTRATION - N709CK
         // 10 => TIMSTAMP - 1593976456
         // 11 => FROM - AMS
         // 12 => TO - JFK
         // 13 => FLIGHT NUMBER - LH8160
-        // 14 => 
+        // 14 =>
         // 15 => OPERATOR - RYR
 
-
-        //tft.println(current_flight->first.c_str());
-        auto airplane = (airplanes.find(current_flight->second[8].as<char *>()));
-        tft.println(airplane != airplanes.end() ? airplane->second : current_flight->second[8].as<char *>()); 
+        auto airplaneCode = current_flight->second[8].as<char *>();
+        auto airplane = lookupAirplane(airplaneCode);
+        tft.print(airplane ? airplane : airplaneCode);
+        tft.print(" - ");
+        // Registration
         tft.println(current_flight->second[9].as<char *>());
-        tft.println((String(current_flight->second[11].as<char *>()) + " => " + String(current_flight->second[12].as<char *>())).c_str());
-        tft.println(current_flight->second[13].as<char *>()); // Flight number
+
+        // Flight number
+        tft.print("Flight: ");
+        tft.println(current_flight->second[13].as<char *>());
+
+        tft.print("From: ");
+        auto fromCode = current_flight->second[11].as<char *>();
+        tft.println(fromCode);
+        auto from = lookupAirport(fromCode);
+        if (from != nullptr)
+        {
+          tft.println(from->name);
+          tft.print(from->city);
+          tft.print(" ");
+          tft.println(lookupCountry(from->country));
+        }
+
+        tft.print("To: ");
+        auto toCode = current_flight->second[12].as<char *>();
+        tft.println(toCode);
+        auto to = lookupAirport(toCode);
+        if (to != nullptr)
+        {
+          tft.println(to->name);
+          tft.print(to->city);
+          tft.print(" ");
+          tft.println(lookupCountry(to->country));
+        }
 
         if (++current_flight == flights.end())
           current_flight = flights.begin();
       }
-      else
-      {
-        tft.println("No flights");
-      }
     }
+    else
+    {
+      tft.println("No flights in range.");
+    }
+
     last_update_flight = now;
   }
 
