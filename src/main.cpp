@@ -17,7 +17,7 @@
 
 #include <map>
 
-// Database of airplanes
+// Database of airplanes from https://openflights.org/data.html
 #include <airplanes.h>
 #include <countries.h>
 #include <airports.h>
@@ -195,7 +195,7 @@ void loop()
         {
           tft.println(from->name);
           tft.print(from->city);
-          tft.print(" ");
+          tft.print(", ");
           tft.println(lookupCountry(from->country));
         }
 
@@ -207,7 +207,7 @@ void loop()
         {
           tft.println(to->name);
           tft.print(to->city);
-          tft.print(" ");
+          tft.print(", ");
           tft.println(lookupCountry(to->country));
         }
 
