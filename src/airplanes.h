@@ -171,7 +171,7 @@ static const airplane airplanes[] = {
     {"E50P", "Embraer Phenom 100"},
     {"E55P", "Embraer Phenom 300"},
     {"E135", "Embraer RJ135"},
-    {"E135", "Embraer RJ140"},
+    {"E140", "Embraer RJ140"},
     {"E145", "Embraer RJ145"},
     {"J328", "Fairchild Dornier 328JET"},
     {"D228", "Fairchild Dornier Do.228"},
@@ -236,16 +236,15 @@ static const airplane airplanes[] = {
     {"T154", "Tupolev Tu-154"},
     {"T204", "Tupolev Tu-204"},
     {"YK40", "Yakovlev Yak-40"},
-    {"YK42", "Yakovlev Yak-42"}
-};
+    {"YK42", "Yakovlev Yak-42"}};
 
 const char *lookupAirplane(const char *id)
 {
-	for (auto const& i : airplanes) {
+    for (auto const &i : airplanes)
+    {
         if (strcmp(id, i.id) == 0)
             return i.name;
     }
-	
+
     return nullptr;
 }
-

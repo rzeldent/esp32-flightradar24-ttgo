@@ -253,10 +253,11 @@ static const country countries[] = {
 
 const char *lookupCountry(const char *id)
 {
-	for (auto const& i : countries) {
+    for (auto const &i : countries)
+    {
         if (strcmp(id, i.id) == 0)
             return i.name;
     }
-	
+
     return nullptr;
 }
