@@ -42,9 +42,9 @@ TimeChangeRule dstBegin = DST_BEGIN;
 TimeChangeRule dstEnd = DST_END;
 Timezone timeZone(dstBegin, dstEnd);
 
-#define LATTITUDE_MIN String(LATTITUDE - RANGE_LATTITUDE)
+#define LATITUDE_MIN String(LATITUDE - RANGE_LATITUDE)
 #define LONGITUDE_MIN String(LONGITUDE - RANGE_LONGITUDE)
-#define LATTITUDE_MAX String(LATTITUDE + RANGE_LATTITUDE)
+#define LATITUDE_MAX String(LATITUDE + RANGE_LATITUDE)
 #define LONGITUDE_MAX String(LONGITUDE + RANGE_LONGITUDE)
 
 void setup()
@@ -85,7 +85,7 @@ std::map<String, JsonArray>::const_iterator current_flight;
 void update_flights()
 {
   // gnd=0 means no items on the ground
-  const static String flight_data_url("http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + LATTITUDE_MAX + "," + LATTITUDE_MIN + "," + LONGITUDE_MIN + "," + LONGITUDE_MAX + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0");
+  const static String flight_data_url("http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + LATITUDE_MAX + "," + LATITUDE_MIN + "," + LONGITUDE_MIN + "," + LONGITUDE_MAX + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0");
 
   flights.clear();
 
@@ -176,19 +176,19 @@ void loop()
         // 14 =>
         // 15 => OPERATOR - RYR
 
-        auto airplaneCode = current_flight->second[8].as<char *>();
+        auto airplaneCode = current_flight->second[8].as<const char *>();
         auto airplane = lookupAirplane(airplaneCode);
         tft.print(airplane ? airplane : airplaneCode);
         tft.print(" - ");
         // Registration
-        tft.println(current_flight->second[9].as<char *>());
+        tft.println(current_flight->second[9].as<const char *>());
 
         // Flight number
         tft.print("Flight: ");
-        tft.println(current_flight->second[13].as<char *>());
+        tft.println(current_flight->second[13].as<const char *>());
 
         tft.print("From: ");
-        auto fromCode = current_flight->second[11].as<char *>();
+        auto fromCode = current_flight->second[11].as<const char *>();
         tft.println(fromCode);
         auto from = lookupAirport(fromCode);
         if (from != nullptr)
@@ -200,7 +200,7 @@ void loop()
         }
 
         tft.print("To: ");
-        auto toCode = current_flight->second[12].as<char *>();
+        auto toCode = current_flight->second[12].as<const char *>();
         tft.println(toCode);
         auto to = lookupAirport(toCode);
         if (to != nullptr)
