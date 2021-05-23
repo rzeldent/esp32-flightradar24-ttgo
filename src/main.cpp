@@ -11,15 +11,10 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-#include <NTPClient.h>
-#include <Timelib.h>
-#include <Timezone.h> // https://github.com/JChristensen/Timezone
-
 #include <map>
 
 // Database of airplanes from https://openflights.org/data.html
 #include <airplanes.h>
-#include <countries.h>
 #include <airports.h>
 
 #include ".settings.h"
@@ -36,11 +31,6 @@ auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 WiFiUDP ntpUDP;
-// Synchronize time every hour
-NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
-TimeChangeRule dstBegin = DST_BEGIN;
-TimeChangeRule dstEnd = DST_END;
-Timezone timeZone(dstBegin, dstEnd);
 
 #define LATITUDE_MIN String(LATITUDE - RANGE_LATITUDE)
 #define LONGITUDE_MIN String(LONGITUDE - RANGE_LONGITUDE)
@@ -71,9 +61,6 @@ void setup()
 
     sleep(1);
   } while (!WiFi.isConnected());
-
-  // Start the timeclient
-  timeClient.begin();
 
   Serial.println("Connected");
 }
@@ -131,9 +118,6 @@ unsigned long last_update_flight;
 void loop()
 {
   auto now = millis();
-
-  if (!timeClient.update())
-    timeClient.forceUpdate();
 
   if (WiFi.isConnected())
   {
@@ -196,7 +180,7 @@ void loop()
           tft.println(from->name);
           tft.print(from->city);
           tft.print(", ");
-          tft.println(lookupCountry(from->country));
+          tft.println(from->country);
         }
 
         tft.print("To: ");
@@ -208,7 +192,7 @@ void loop()
           tft.println(to->name);
           tft.print(to->city);
           tft.print(", ");
-          tft.println(lookupCountry(to->country));
+          tft.println(to->country);
         }
 
         if (++current_flight == flights.end())
