@@ -15,9 +15,9 @@
 #define NTP_UPDATE_MILLISECONDS (30 * 60 * 1000)
 
 // Center (Amsterdam Airport Schiphol: 52.45,52.15,4.44,5.05
-#define LATTITUDE 52.3f
+#define LATITUDE 52.3f
 #define LONGITUDE 4.75f
 
 // Range: .1 degree is approx 10km (0.008998 degrees)
-#define RANGE_LATTITUDE 0.15
+#define RANGE_LATITUDE 0.15
 #define RANGE_LONGITUDE 0.6
