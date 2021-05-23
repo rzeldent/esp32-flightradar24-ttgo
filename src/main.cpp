@@ -40,6 +40,11 @@ WiFiUDP ntpUDP;
 void setup()
 {
   Serial.begin(115200);
+	Serial.setDebugOutput(true);
+	esp_log_level_set("*", ESP_LOG_VERBOSE);
+
+	log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
+	log_i("Starting Flightradar...");
 
   tft.init();
   tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
@@ -62,7 +67,7 @@ void setup()
     sleep(1);
   } while (!WiFi.isConnected());
 
-  Serial.println("Connected");
+  log_i("Connected");
 }
 
 DynamicJsonDocument doc_flight_data(8192);
@@ -77,17 +82,17 @@ void update_flights()
   flights.clear();
 
   HTTPClient client;
-  Serial.println(("Request states=" + flight_data_url).c_str());
+  log_i("Request states=%s", flight_data_url.c_str());
   client.begin(flight_data_url);
   const auto code = client.GET();
-  Serial.println(("Get states code=" + String(code)).c_str());
+  log_i("Get states code=%d", code);
   if (code == HTTP_CODE_OK)
   {
     String response = client.getString();
-    Serial.println(("Response states=" + response).c_str());
+    log_i("Response states=%s", response.c_str());
     // Parse JSON states object
     const auto error = deserializeJson(doc_flight_data, response);
-    Serial.println(error.c_str());
+    log_i("Deserialize. Error=%s", error.c_str());
     if (error == DeserializationError::Ok)
     {
       JsonObject flight_data_root = doc_flight_data.as<JsonObject>();
@@ -97,7 +102,7 @@ void update_flights()
         if (!kvp.value().is<JsonArray>())
           continue;
 
-        Serial.println(kvp.key().c_str());
+        log_i("KVP=%s", kvp.key().c_str());
         auto items = kvp.value().as<JsonArray>();
         flights.insert(std::pair<String, JsonArray>(kvp.key().c_str(), items));
       }
@@ -123,7 +128,7 @@ void loop()
   {
     if (last_update_flights == 0 || now - last_update_flights > UPDATE_FLIGHTS_MILLISECONDS)
     {
-      Serial.println(" Updating flights");
+      log_i("Updating flights");
       // update flights
       update_flights();
       last_update_flights = now;
@@ -132,7 +137,7 @@ void loop()
 
   if (last_update_flight == 0 || now - last_update_flight > UPDATE_FLIGHT_MILLISECONDS)
   {
-    Serial.println(" Updating flight");
+    log_i("Updating flight");
 
     tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
     tft.setCursor(0, 0);
@@ -201,12 +206,11 @@ void loop()
     }
     else
     {
-      tft.println("No flights in range.");
+      tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
     }
 
     last_update_flight = now;
   }
 
-  Serial.print(".");
   delayMicroseconds(1000 * LOOP_MILLISECONDS);
 }
