@@ -115,24 +115,26 @@ void loop()
 
         auto flight = it->flight;
         if (!flight.isEmpty())
+        {
           tft.println(String("Flight: ") + flight + " (" + it->from + "->" + it->to + ")");
-  
-        if (from != nullptr)
-        {
-          tft.println("From:");
-          tft.println(from->name);
-          tft.println(from->country);
-        }
 
-        if (to != nullptr)
-        {
-          tft.println("To: ");
-          tft.println(to->name);
-          tft.println(to->country);
-        }
+          if (from != nullptr)
+          {
+            tft.println("From:");
+            tft.println(from->name);
+            tft.println(from->country);
+          }
 
-        if (++it == flights->end())
-          it = flights->begin();
+          if (to != nullptr)
+          {
+            tft.println("To: ");
+            tft.println(to->name);
+            tft.println(to->country);
+          }
+
+          if (++it == flights->end())
+            it = flights->begin();
+        }
       }
       else
         tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
