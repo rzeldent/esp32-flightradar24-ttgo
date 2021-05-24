@@ -40,11 +40,11 @@ WiFiUDP ntpUDP;
 void setup()
 {
   Serial.begin(115200);
-	Serial.setDebugOutput(true);
-	esp_log_level_set("*", ESP_LOG_VERBOSE);
+  Serial.setDebugOutput(true);
+  esp_log_level_set("*", ESP_LOG_VERBOSE);
 
-	log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
-	log_i("Starting Flightradar...");
+  log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
+  log_i("Starting Flightradar...");
 
   tft.init();
   tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
@@ -165,38 +165,32 @@ void loop()
         // 14 =>
         // 15 => OPERATOR - RYR
 
-        auto airplaneCode = current_flight->second[8].as<const char *>();
-        auto airplane = lookupAirplane(airplaneCode);
-        tft.print(airplane ? airplane : airplaneCode);
-        tft.print(" - ");
         // Registration
-        tft.println(current_flight->second[9].as<const char *>());
+        String registration = current_flight->second[9].as<const char *>();
+        String airplaneCode = current_flight->second[8].as<const char *>();
+        auto airplane = lookupAirplane(airplaneCode);
+        tft.println(registration + "(" + (airplane ? airplane->name : airplaneCode) + ")");
 
         // Flight number
-        tft.print("Flight: ");
-        tft.println(current_flight->second[13].as<const char *>());
-
-        tft.print("From: ");
-        auto fromCode = current_flight->second[11].as<const char *>();
-        tft.println(fromCode);
+        String flight = current_flight->second[13].as<const char *>();
+        // From
+        String fromCode = current_flight->second[11].as<const char *>();
         auto from = lookupAirport(fromCode);
+        // To
+        String toCode = current_flight->second[12].as<const char *>();
+        auto to = lookupAirport(toCode);
+
+        tft.println(String("Flight: ") + flight + " (" + fromCode + "->" + toCode + ")");
+
         if (from != nullptr)
         {
-          tft.println(from->name);
-          tft.print(from->city);
-          tft.print(", ");
+          tft.println(String("From: ") + from->name);
           tft.println(from->country);
         }
 
-        tft.print("To: ");
-        auto toCode = current_flight->second[12].as<const char *>();
-        tft.println(toCode);
-        auto to = lookupAirport(toCode);
         if (to != nullptr)
         {
-          tft.println(to->name);
-          tft.print(to->city);
-          tft.print(", ");
+          tft.println(String("To: ") + to->name);
           tft.println(to->country);
         }
 
