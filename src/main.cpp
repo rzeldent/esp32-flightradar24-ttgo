@@ -17,6 +17,7 @@
 #include <airplanes.h>
 #include <airports.h>
 
+// This is a copy of the setting.h. Made hidden so does not ends up in repository.
 #include ".settings.h"
 
 #define BUTTON_1 35

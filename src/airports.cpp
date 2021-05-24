@@ -1,12 +1,5 @@
-#include <str.h>
+#include <airports.h>
 
-struct airport
-{
-    const String iata;
-    const String name;
-    const String city;
-    const String country;
-};
 static const struct airport airports[] = {
     {"GKA", "Goroka Airport", "Goroka", "Papua New Guinea"},
     {"MAG", "Madang Airport", "Madang", "Papua New Guinea"},

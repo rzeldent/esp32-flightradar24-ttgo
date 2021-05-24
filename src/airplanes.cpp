@@ -1,8 +1,4 @@
-struct airplane
-{
-    const String id;
-    const String name;
-};
+#include <airplanes.h>
 
 static const airplane airplanes[] = {
     {"N262", "Aerospatiale (Nord) 262"},
