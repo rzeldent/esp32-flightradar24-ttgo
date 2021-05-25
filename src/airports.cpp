@@ -1,12 +1,5 @@
-#include <str.h>
+#include <airports.h>
 
-struct airport
-{
-    const char *iata;
-    const char *name;
-    const char *city;
-    const char *country;
-};
 static const struct airport airports[] = {
     {"GKA", "Goroka Airport", "Goroka", "Papua New Guinea"},
     {"MAG", "Madang Airport", "Madang", "Papua New Guinea"},
@@ -6081,13 +6074,11 @@ static const struct airport airports[] = {
     {"CGY", "Laguindingan Airport", "Cagayan de Oro City", "Philippines"},
     {"CPO", "Desierto de Atacama Airport", "Copiapo", "Chile"}};
 
-const airport *lookupAirport(const char *id)
+const airport *lookupAirport(const String& id)
 {
     for (auto const &i : airports)
-    {
-        if (strcmp(id, i.iata) == 0)
+        if (id == i.iata)
             return &i;
-    }
 
     return nullptr;
 }

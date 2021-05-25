@@ -1,8 +1,4 @@
-struct airplane
-{
-    const char *id;
-    const char *name;
-};
+#include <airplanes.h>
 
 static const airplane airplanes[] = {
     {"N262", "Aerospatiale (Nord) 262"},
@@ -238,13 +234,11 @@ static const airplane airplanes[] = {
     {"YK40", "Yakovlev Yak-40"},
     {"YK42", "Yakovlev Yak-42"}};
 
-const char *lookupAirplane(const char *id)
+const airplane *lookupAirplane(const String &id)
 {
     for (auto const &i : airplanes)
-    {
-        if (strcmp(id, i.id) == 0)
-            return i.name;
-    }
+        if (id == i.id)
+            return &i;
 
     return nullptr;
 }
