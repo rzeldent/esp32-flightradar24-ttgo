@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <FS.h>
 #include <SPIFFS.h>
-// Setting for the display are defined in platformio.ini
+// Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 
 #include <Button2.h>
@@ -32,7 +32,6 @@
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
-WiFiUDP ntpUDP;
 
 void setup()
 {
