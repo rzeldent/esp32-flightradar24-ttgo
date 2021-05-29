@@ -44,31 +44,18 @@ void setup()
   log_i("Starting Flightradar...");
 
   tft.init();
-  tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
+  //tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
   tft.setTextColor(TEXT_COLOR);
+  tft.setTextWrap(false, false);
 
   // Clear the screen
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
 
-  // Wait 30 seconds for a connection, otherwise reset
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  auto i = 30;
-  do
-  {
-    if (!i--)
-      ESP.restart();
-
-    sleep(1);
-  } while (!WiFi.isConnected());
-
-  log_i("Connected");
 }
-
-std::shared_ptr<std::list<flight_info>> flights;
-std::list<flight_info>::const_iterator it;
 
 #define UPDATE_FLIGHTS_MILLISECONDS 90000
 unsigned long last_update_flights;
@@ -77,8 +64,44 @@ unsigned long last_update_flight;
 
 #define LOOP_MILLISECONDS 1000
 
+void display_flight(const flight_info &flight_info)
+{
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  tft.setCursor(0, 0);
+  // Font(2) = 16px
+  tft.setTextFont(2);
+
+  auto airplane = lookupAirplane(flight_info.type);
+  tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
+  auto from = lookupAirport(flight_info.from);
+  auto to = lookupAirport(flight_info.to);
+
+  auto flight = flight_info.flight;
+  if (!flight.isEmpty())
+  {
+    tft.println(String("Flight: ") + flight + " (" + flight_info.from + "->" + flight_info.to + ")");
+
+    if (from != nullptr)
+    {
+      tft.println("From:");
+      tft.println(from->name);
+      tft.println(from->country);
+    }
+
+    if (to != nullptr)
+    {
+      tft.println("To: ");
+      tft.println(to->name);
+      tft.println(to->country);
+    }
+  }
+}
+
 void loop()
 {
+  static std::shared_ptr<std::list<flight_info>> flights;
+  static std::list<flight_info>::const_iterator it;
+
   auto now = millis();
 
   if (WiFi.isConnected())
@@ -94,42 +117,11 @@ void loop()
 
     if (last_update_flight == 0 || now - last_update_flight > UPDATE_FLIGHT_MILLISECONDS)
     {
-      log_i("Updating flight");
-
-      tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
-      tft.setCursor(0, 0);
-      // Font(2) = 16px
-      tft.setTextFont(2);
-
       if (it != flights->end())
       {
-        auto airplane = lookupAirplane(it->type);
-        tft.println(it->registration + " - " + (airplane ? airplane->name : it->type));
-        auto from = lookupAirport(it->from);
-        auto to = lookupAirport(it->to);
-
-        auto flight = it->flight;
-        if (!flight.isEmpty())
-        {
-          tft.println(String("Flight: ") + flight + " (" + it->from + "->" + it->to + ")");
-
-          if (from != nullptr)
-          {
-            tft.println("From:");
-            tft.println(from->name);
-            tft.println(from->country);
-          }
-
-          if (to != nullptr)
-          {
-            tft.println("To: ");
-            tft.println(to->name);
-            tft.println(to->country);
-          }
-
-          if (++it == flights->end())
-            it = flights->begin();
-        }
+        display_flight(*it);
+        if (++it == flights->end())
+          it = flights->begin();
       }
       else
         tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
@@ -138,7 +130,11 @@ void loop()
     }
   }
   else
-    tft.println("Cannot connect to accesspoint: " WIFI_SSID);
+  {
+    tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+    tft.setCursor(0, 0);
+    tft.println("Connecting to: " WIFI_SSID);
+  }
 
   delay(LOOP_MILLISECONDS);
 }
