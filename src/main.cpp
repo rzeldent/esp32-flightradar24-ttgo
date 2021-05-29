@@ -34,11 +34,6 @@ Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 WiFiUDP ntpUDP;
 
-#define LATITUDE_MIN String(LATITUDE - RANGE_LATITUDE)
-#define LONGITUDE_MIN String(LONGITUDE - RANGE_LONGITUDE)
-#define LATITUDE_MAX String(LATITUDE + RANGE_LATITUDE)
-#define LONGITUDE_MAX String(LONGITUDE + RANGE_LONGITUDE)
-
 void setup()
 {
   Serial.begin(115200);

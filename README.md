@@ -7,7 +7,7 @@ This application loads the flights near you (defined in settings.h) and displays
 ![Example1](https://github.com/rzeldent/esp32-flightradar24-TTGO/blob/develop/20210529_153707.jpg)
 ![Example2](https://github.com/rzeldent/esp32-flightradar24-TTGO/blob/develop/20210529_153709.jpg)
 
-Features:
+### Features
 - Lookup of airplane
 - Lookup of the full name for the from and to airport
 - No account required
