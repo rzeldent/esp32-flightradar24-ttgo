@@ -1,5 +1,5 @@
 # Flightradar24-TTGO
-Display flights in an area using the ESP32 TTGO-Display module. It uses below the hood the API of flightradar24.com.
+Display flights in an area using the ESP32 TTGO-Display module. It uses below the hood the API of [FlightRadar24.com](https://www.flightradar24.com/).
 
 **Copy the file settings.h to .settings.h to keep your settings secret.**
 
