@@ -8,6 +8,7 @@ struct airport
     const char* name;
     const char* city;
     const char* country;
+    const char* flag;
 };
 
 extern const airport *lookupAirport(const String &id);

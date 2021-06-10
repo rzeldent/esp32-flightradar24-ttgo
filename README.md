@@ -4,8 +4,8 @@ Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.
 
 This application loads the flights near you (defined in settings.h) and displays them sequentially on the display.
 
-![Example1](https://github.com/rzeldent/esp32-flightradar24-TTGO/blob/develop/20210529_153707.jpg)
-![Example2](https://github.com/rzeldent/esp32-flightradar24-TTGO/blob/develop/20210529_153709.jpg)
+![Example1](./20210529_153707.jpg)
+![Example2](./20210529_153709.jpg)
 
 ### Features
 - Lookup of airplane

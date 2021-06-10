@@ -11,6 +11,11 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+// Run Task
+// PlatformIO/Build Filesystem Image
+// PlatformIO/Upload Filesystem Image
+#include <SPIFFS.h>
+
 #include <map>
 #include <flight_info.h>
 
