@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
+#include <TFT_eFEX.h>
 
 #include <Button2.h>
 
@@ -35,6 +36,8 @@
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
+auto fex = TFT_eFEX(&tft);
+
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 
@@ -46,6 +49,11 @@ void setup()
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Starting Flightradar...");
+
+  if (!SPIFFS.begin())
+  {
+    log_e("SPIFFS initialization failed");
+  }
 
   tft.init();
   //tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
@@ -68,10 +76,15 @@ unsigned long last_update_flight;
 
 #define LOOP_MILLISECONDS 1000
 
-void display_flight(const flight_info &flight_info)
+void clear()
 {
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
   tft.setCursor(0, 0);
+}
+
+void display_flight(const flight_info &flight_info)
+{
+  clear();
   // Font(2) = 16px
   tft.setTextFont(2);
 
@@ -89,6 +102,14 @@ void display_flight(const flight_info &flight_info)
     {
       tft.println("From:");
       tft.println(from->name);
+      if (from->flag)
+      {
+        auto flag = String("/flags/" + String(from->flag) + ".bmp");
+        auto cursor_x = tft.getCursorX();
+        auto cursor_y = tft.getCursorY();
+        fex.drawBmp(flag, 3 * 16, cursor_y);
+        tft.setCursor(cursor_x + 20, cursor_y);
+      }
       tft.println(from->country);
     }
 
@@ -128,7 +149,10 @@ void loop()
           it = flights->begin();
       }
       else
+      {
+        clear();
         tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
+      }
 
       last_update_flight = now;
     }
