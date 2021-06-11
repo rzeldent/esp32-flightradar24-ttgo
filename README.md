@@ -1,6 +1,6 @@
 # Flightradar24-TTGO
 
-![FlightRadar](./20210611_183208)
+![FlightRadar](./20210611_183208.jpg)
 
 Display flights in your area and display them on the screen of the ESP32 TTGO-Display module.
 Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.com/).
