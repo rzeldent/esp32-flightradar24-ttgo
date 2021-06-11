@@ -11,3 +11,8 @@
 // Range: .1 degree is approx 10km (0.008998 degrees)
 #define RANGE_LATITUDE 0.15f
 #define RANGE_LONGITUDE 0.6f
+
+// Refresh database every 2 minutes
+#define UPDATE_FLIGHTS_MILLISECONDS 120000
+// Show a flight for 10 seconds
+#define UPDATE_FLIGHT_MILLISECONDS 10000

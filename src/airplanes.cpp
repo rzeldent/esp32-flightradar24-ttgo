@@ -236,6 +236,7 @@ static const airplane airplanes[] = {
 
 const airplane *lookupAirplane(const String &id)
 {
+    log_d("Looking up airplane %s", id.c_str());
     for (auto const &i : airplanes)
         if (id == i.id)
             return &i;

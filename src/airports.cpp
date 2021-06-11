@@ -6078,6 +6078,7 @@ static const struct airport airports[] = {
 
 const airport *lookupAirport(const String &id)
 {
+    log_d("Looking up airport %s", id.c_str());
     for (auto const &i : airports)
         if (id == i.iata)
             return &i;

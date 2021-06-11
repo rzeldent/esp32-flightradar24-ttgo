@@ -1,9 +1,16 @@
 #include <Arduino.h>
+#include <soc/rtc_cntl_reg.h>
 #include <SPI.h>
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <TFT_eFEX.h>
+#include <ttgo_backlight.h>
+
+#define FONT_16PT 2
+#define FONT_26PT 4
+#define FONT_48PT 6
+#define FONT_48PT_LCD 7
 
 #include <Button2.h>
 
@@ -43,12 +50,16 @@
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto fex = TFT_eFEX(&tft);
+byte lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 
 void setup()
 {
+  // Disable brownout
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   esp_log_level_set("*", ESP_LOG_VERBOSE);
@@ -59,6 +70,9 @@ void setup()
   if (!SPIFFS.begin(true))
     log_e("SPIFFS initialization failed");
 
+  // Start Display
+  ttgo_backlight_init();
+  ttgo_backlight_intensity(lcd_backlight_intensity);
   tft.init();
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
@@ -67,8 +81,7 @@ void setup()
 
   // Show logo
   fex.drawBmp("/startup.bmp", 0, 0);
-  // Font(4) = 26px
-  tft.setTextFont(4);
+  tft.setTextFont(FONT_26PT);
   tft.println("Flight Radar");
 
   WiFi.mode(WIFI_STA);
@@ -78,15 +91,13 @@ void setup()
   delay(2500);
 }
 
-#define UPDATE_FLIGHTS_MILLISECONDS 90000
-unsigned long last_update_flights;
-#define UPDATE_FLIGHT_MILLISECONDS 10000
-unsigned long last_update_flight;
 
-#define LOOP_MILLISECONDS 1000
+unsigned long last_update_flights;
+unsigned long last_update_flight;
 
 void clear()
 {
+  log_d("Clear screen");
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
   tft.setCursor(0, 0);
 }
@@ -102,12 +113,10 @@ void display_flight(const flight_info &flight_info)
 
   auto flight = flight_info.flight;
 
-  // Font(4) = 26px
-  tft.setTextFont(4);
+  tft.setTextFont(FONT_26PT);
   tft.println(flight + "  " + flight_info.from + ">" + flight_info.to);
 
-  // Font(2) = 16px
-  tft.setTextFont(2);
+  tft.setTextFont(FONT_16PT);
   tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
 
   tft.setCursor(0, 26 + 16 + 8);
@@ -117,6 +126,7 @@ void display_flight(const flight_info &flight_info)
     if (from->flag)
     {
       auto flag = String("/flags/" + String(from->flag) + ".bmp");
+      log_d("Display bitmap %s", flag.c_str());
       auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
       fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
       tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
@@ -131,6 +141,7 @@ void display_flight(const flight_info &flight_info)
     if (from->flag)
     {
       auto flag = String("/flags/" + String(to->flag) + ".bmp");
+      log_d("Display bitmap %s", flag.c_str());
       auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
       fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
       tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
@@ -153,7 +164,7 @@ void loop()
       log_i("Updating flights");
       // update flights
       flights = get_flights(LATITUDE, LONGITUDE, RANGE_LATITUDE, RANGE_LONGITUDE);
-      // Remove all the flights without flight number
+      log_d("Remove flights without flight number");
       flights->remove_if([](const flight_info &f)
                          { return f.flight.isEmpty(); });
       it = flights->begin();
@@ -166,12 +177,16 @@ void loop()
       {
         display_flight(*it);
         if (++it == flights->end())
+        {
+          log_d("Restart with first flight in list");
           it = flights->begin();
+        }
       }
       else
       {
-        clear(); // Font(4) = 26px
-        tft.setTextFont(4);
+        log_d("No flights in range");
+        clear();
+        tft.setTextFont(FONT_26PT);
         tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
       }
 
@@ -183,5 +198,5 @@ void loop()
     log_i("Connecting to: " WIFI_SSID);
   }
 
-  delay(LOOP_MILLISECONDS);
+  delay(0);
 }
