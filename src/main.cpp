@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <FS.h>
-#include <SPIFFS.h>
+
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <TFT_eFEX.h>
@@ -15,6 +14,7 @@
 // Run Task
 // PlatformIO/Build Filesystem Image
 // PlatformIO/Upload Filesystem Image
+#include <FS.h>
 #include <SPIFFS.h>
 
 #include <map>
@@ -34,6 +34,12 @@
 #define BACKGROUND_COLOR TFT_BLACK
 #define TEXT_COLOR TFT_WHITE
 
+#define FLAG_WIDTH 20
+#define FLAG_HEIGHT 13
+
+#define FLAG_MARGIN_X 4
+#define FLAG_MARGIN_Y 1
+
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto fex = TFT_eFEX(&tft);
@@ -50,23 +56,26 @@ void setup()
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Starting Flightradar...");
 
-  if (!SPIFFS.begin())
-  {
+  if (!SPIFFS.begin(true))
     log_e("SPIFFS initialization failed");
-  }
 
   tft.init();
-  //tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
   tft.setTextColor(TEXT_COLOR);
   tft.setTextWrap(false, false);
 
-  // Clear the screen
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  // Show logo
+  fex.drawBmp("/startup.bmp", 0, 0);
+  // Font(4) = 26px
+  tft.setTextFont(4);
+  tft.println("Flight Radar");
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  // Show logo for one second
+  delay(2500);
 }
 
 #define UPDATE_FLIGHTS_MILLISECONDS 90000
@@ -84,41 +93,49 @@ void clear()
 
 void display_flight(const flight_info &flight_info)
 {
+  log_i("Showing flight info ICAO: %s", flight_info.icao);
   clear();
-  // Font(2) = 16px
-  tft.setTextFont(2);
 
   auto airplane = lookupAirplane(flight_info.type);
-  tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
   auto from = lookupAirport(flight_info.from);
   auto to = lookupAirport(flight_info.to);
 
   auto flight = flight_info.flight;
-  if (!flight.isEmpty())
+
+  // Font(4) = 26px
+  tft.setTextFont(4);
+  tft.println(flight + "  " + flight_info.from + ">" + flight_info.to);
+
+  // Font(2) = 16px
+  tft.setTextFont(2);
+  tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
+
+  tft.setCursor(0, 26 + 16 + 8);
+  if (from != nullptr)
   {
-    tft.println(String("Flight: ") + flight + " (" + flight_info.from + "->" + flight_info.to + ")");
-
-    if (from != nullptr)
+    tft.println(from->name);
+    if (from->flag)
     {
-      tft.println("From:");
-      tft.println(from->name);
-      if (from->flag)
-      {
-        auto flag = String("/flags/" + String(from->flag) + ".bmp");
-        auto cursor_x = tft.getCursorX();
-        auto cursor_y = tft.getCursorY();
-        fex.drawBmp(flag, 3 * 16, cursor_y);
-        tft.setCursor(cursor_x + 20, cursor_y);
-      }
-      tft.println(from->country);
+      auto flag = String("/flags/" + String(from->flag) + ".bmp");
+      auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
+      fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
+      tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
     }
+    tft.println(from->country);
+  }
 
-    if (to != nullptr)
+  tft.setCursor(0, 26 + 4 * 16);
+  if (to != nullptr)
+  {
+    tft.println(to->name);
+    if (from->flag)
     {
-      tft.println("To: ");
-      tft.println(to->name);
-      tft.println(to->country);
+      auto flag = String("/flags/" + String(to->flag) + ".bmp");
+      auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
+      fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
+      tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
     }
+    tft.println(to->country);
   }
 }
 
@@ -136,6 +153,9 @@ void loop()
       log_i("Updating flights");
       // update flights
       flights = get_flights(LATITUDE, LONGITUDE, RANGE_LATITUDE, RANGE_LONGITUDE);
+      // Remove all the flights without flight number
+      flights->remove_if([](const flight_info &f)
+                         { return f.flight.isEmpty(); });
       it = flights->begin();
       last_update_flights = now;
     }
@@ -150,7 +170,8 @@ void loop()
       }
       else
       {
-        clear();
+        clear(); // Font(4) = 26px
+        tft.setTextFont(4);
         tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
       }
 
@@ -159,9 +180,7 @@ void loop()
   }
   else
   {
-    tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
-    tft.setCursor(0, 0);
-    tft.println("Connecting to: " WIFI_SSID);
+    log_i("Connecting to: " WIFI_SSID);
   }
 
   delay(LOOP_MILLISECONDS);

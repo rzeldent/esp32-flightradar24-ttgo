@@ -2,27 +2,6 @@
 
 #include <HTTPClient.h>
 
-std::shared_ptr<struct flight_info> ParseFlightInfo(const JsonArray &json_array)
-{
-    std::shared_ptr<struct flight_info> info(new struct flight_info);
-    info->icao = json_array[0].as<const char *>();
-    info->latitude = json_array[1].as<const char *>();
-    info->longitude = json_array[2].as<const char *>();
-    info->track = json_array[3].as<const char *>();
-    info->altitude = json_array[4].as<const char *>();
-    info->speed = json_array[5].as<const char *>();
-    info->squawk = json_array[6].as<const char *>();
-    info->radar = json_array[7].as<const char *>();
-    info->type = json_array[8].as<const char *>();
-    info->registration = json_array[9].as<const char *>();
-    info->timestamp = json_array[10].as<const char *>();
-    info->from = json_array[11].as<const char *>();
-    info->to = json_array[12].as<const char *>();
-    info->flight = json_array[13].as<const char *>();
-    info->flight_operator = json_array[15].as<const char *>();
-    return info;
-}
-
 std::shared_ptr<std::list<flight_info>> get_flights(float latitude, float longitude, float range_latitude, float range_longitude)
 {
     const String bounds = String(latitude + range_latitude) + "," + String(latitude - range_latitude) + "," + String(longitude - range_longitude) + "," + String(longitude + range_longitude);
