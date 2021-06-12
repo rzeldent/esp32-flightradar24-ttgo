@@ -34,6 +34,7 @@
 // This is a copy of the setting.h. Made hidden so does not ends up in repository.
 #include ".settings.h"
 
+// GPIO of the buttons on the TTGO Display
 #define BUTTON_1 35
 #define BUTTON_2 0
 
@@ -45,7 +46,7 @@
 #define FLAG_HEIGHT 13
 
 #define FLAG_MARGIN_X 4
-#define FLAG_MARGIN_Y 1
+#define FLAG_MARGIN_Y 2
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
@@ -91,9 +92,7 @@ void setup()
   delay(2500);
 }
 
-
 unsigned long last_update_flights;
-unsigned long last_update_flight;
 
 void clear()
 {
@@ -150,6 +149,9 @@ void display_flight(const flight_info &flight_info)
   }
 }
 
+// Time per flight
+unsigned long update_flights_milliseconds;
+
 void loop()
 {
   static std::shared_ptr<std::list<flight_info>> flights;
@@ -167,36 +169,44 @@ void loop()
       log_d("Remove flights without flight number");
       flights->remove_if([](const flight_info &f)
                          { return f.flight.isEmpty(); });
+
+      log_i("Number of flights to display: %d", flights->size());
+      auto num_flights = flights->size();
+      if (num_flights == 0)
+      {
+        delay(UPDATE_FLIGHTS_MILLISECONDS / 2);
+        return;
+      }
+
+      update_flights_milliseconds = (UPDATE_FLIGHTS_MILLISECONDS / CYCLES_PER_FLIGHT) / num_flights;
+      log_i("Duration to show each flight: %d milliseconds", update_flights_milliseconds);
+
       it = flights->begin();
       last_update_flights = now;
     }
 
-    if (last_update_flight == 0 || now - last_update_flight > UPDATE_FLIGHT_MILLISECONDS)
+    if (it != flights->end())
     {
-      if (it != flights->end())
+      display_flight(*it);
+      if (++it == flights->end())
       {
-        display_flight(*it);
-        if (++it == flights->end())
-        {
-          log_d("Restart with first flight in list");
-          it = flights->begin();
-        }
+        log_d("Restart with first flight");
+        it = flights->begin();
       }
-      else
-      {
-        log_d("No flights in range");
-        clear();
-        tft.setTextFont(FONT_26PT);
-        tft.println("No flights in range: " + String(LATITUDE) + "/" + String(LONGITUDE));
-      }
-
-      last_update_flight = now;
     }
+    else
+    {
+      log_d("No flights in range");
+      clear();
+      tft.setTextFont(FONT_26PT);
+      tft.println("No flights in range");
+    }
+
+    delay(update_flights_milliseconds);
   }
   else
   {
     log_i("Connecting to: " WIFI_SSID);
+    delay(100);
   }
-
-  delay(0);
 }
