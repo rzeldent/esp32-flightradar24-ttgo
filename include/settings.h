@@ -14,5 +14,5 @@
 
 // Refresh database every 2 minutes
 #define UPDATE_FLIGHTS_MILLISECONDS 120000
-// Show a flight for 10 seconds
-#define UPDATE_FLIGHT_MILLISECONDS 10000
+// Allow 4 cycles of each flight
+#define CYCLES_PER_FLIGHT 4
