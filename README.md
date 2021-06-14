@@ -1,4 +1,4 @@
-# Flightradar24-TTGO
+# FlightRadar24-TTGO
 
 ![FlightRadar](./20210611_183208.jpg)
 
