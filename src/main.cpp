@@ -7,10 +7,10 @@
 #include <TFT_eFEX.h>
 #include <ttgo_backlight.h>
 
-#define FONT_16PT 2
-#define FONT_26PT 4
-#define FONT_48PT 6
-#define FONT_48PT_LCD 7
+constexpr auto font_16pt = 2;
+constexpr auto font_26pt = 4;
+constexpr auto font_48pt = 6;
+constexpr auto font_48pt_lcd = 7;
 
 #include <Button2.h>
 
@@ -35,26 +35,26 @@
 #include ".settings.h"
 
 // GPIO of the buttons on the TTGO Display
-#define BUTTON_1 35
-#define BUTTON_2 0
+constexpr auto button_top = 35;
+constexpr auto button_bottom = 0;
 
 // Screen is 240 * 135 pixels (rotated)
-#define BACKGROUND_COLOR TFT_BLACK
-#define TEXT_COLOR TFT_WHITE
+constexpr auto background_color = TFT_BLACK;
+constexpr auto text_color = TFT_WHITE;
 
-#define FLAG_WIDTH 20
-#define FLAG_HEIGHT 13
+constexpr auto flag_width_px = 20;
+constexpr auto flag_height_px = 13;
 
-#define FLAG_MARGIN_X 4
-#define FLAG_MARGIN_Y 2
+constexpr auto flag_margin_x_px = 4;
+constexpr auto flag_margin_y_px = 2;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto fex = TFT_eFEX(&tft);
-byte lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
+auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
-Button2 button1(BUTTON_1);
-Button2 button2(BUTTON_2);
+Button2 button1(button_top);
+Button2 button2(button_bottom);
 
 void setup()
 {
@@ -66,7 +66,7 @@ void setup()
   esp_log_level_set("*", ESP_LOG_VERBOSE);
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
-  log_i("Starting Flightradar...");
+  log_i("Starting Flight Radar...");
 
   if (!SPIFFS.begin(true))
     log_e("SPIFFS initialization failed");
@@ -75,20 +75,20 @@ void setup()
   ttgo_backlight_init();
   ttgo_backlight_intensity(lcd_backlight_intensity);
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(1);         // Landscape
   tft.setTextDatum(TL_DATUM); // Top Left
-  tft.setTextColor(TEXT_COLOR);
+  tft.setTextColor(text_color);
   tft.setTextWrap(false, false);
 
   // Show logo
   fex.drawBmp("/startup.bmp", 0, 0);
-  tft.setTextFont(FONT_26PT);
-  tft.println("Flight Radar");
+  tft.setTextFont(font_26pt);
+  tft.print("Flight Radar");
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(wifi_ssid, wifi_password);
 
-  // Show logo for one second
+  // Show logo for 2.5 seconds
   delay(2500);
 }
 
@@ -97,7 +97,7 @@ unsigned long last_update_flights;
 void clear()
 {
   log_d("Clear screen");
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
   tft.setCursor(0, 0);
 }
 
@@ -112,10 +112,10 @@ void display_flight(const flight_info &flight_info)
 
   auto flight = flight_info.flight;
 
-  tft.setTextFont(FONT_26PT);
+  tft.setTextFont(font_26pt);
   tft.println(flight + "  " + flight_info.from + ">" + flight_info.to);
 
-  tft.setTextFont(FONT_16PT);
+  tft.setTextFont(font_16pt);
   tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
 
   tft.setCursor(0, 26 + 16 + 8);
@@ -127,8 +127,8 @@ void display_flight(const flight_info &flight_info)
       auto flag = String("/flags/" + String(from->flag) + ".bmp");
       log_d("Display bitmap %s", flag.c_str());
       auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-      fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
-      tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
+      fex.drawBmp(flag, cursor_x, cursor_y + flag_margin_y_px);
+      tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
     }
     tft.println(from->country);
   }
@@ -142,15 +142,15 @@ void display_flight(const flight_info &flight_info)
       auto flag = String("/flags/" + String(to->flag) + ".bmp");
       log_d("Display bitmap %s", flag.c_str());
       auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-      fex.drawBmp(flag, cursor_x, cursor_y + FLAG_MARGIN_Y);
-      tft.setCursor(cursor_x + FLAG_WIDTH + FLAG_MARGIN_X, cursor_y);
+      fex.drawBmp(flag, cursor_x, cursor_y + flag_margin_y_px);
+      tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
     }
     tft.println(to->country);
   }
 }
 
 // Time per flight
-unsigned long update_flights_milliseconds;
+unsigned long update_flight_milliseconds;
 
 void loop()
 {
@@ -161,11 +161,11 @@ void loop()
 
   if (WiFi.isConnected())
   {
-    if (last_update_flights == 0 || now - last_update_flights > UPDATE_FLIGHTS_MILLISECONDS)
+    if (last_update_flights == 0 || now - last_update_flights > refresh_flights_milliseconds)
     {
       log_i("Updating flights");
       // update flights
-      flights = get_flights(LATITUDE, LONGITUDE, RANGE_LATITUDE, RANGE_LONGITUDE);
+      flights = get_flights(center_latitude, center_longitude, range_latitude, range_longitude);
       log_d("Remove flights without flight number");
       flights->remove_if([](const flight_info &f)
                          { return f.flight.isEmpty(); });
@@ -174,12 +174,12 @@ void loop()
       auto num_flights = flights->size();
       if (num_flights == 0)
       {
-        delay(UPDATE_FLIGHTS_MILLISECONDS / 2);
+        delay(refresh_flights_milliseconds);
         return;
       }
 
-      update_flights_milliseconds = (UPDATE_FLIGHTS_MILLISECONDS / CYCLES_PER_FLIGHT) / num_flights;
-      log_i("Duration to show each flight: %d milliseconds", update_flights_milliseconds);
+      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / num_flights;
+      log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
 
       it = flights->begin();
       last_update_flights = now;
@@ -198,15 +198,15 @@ void loop()
     {
       log_d("No flights in range");
       clear();
-      tft.setTextFont(FONT_26PT);
+      tft.setTextFont(font_26pt);
       tft.println("No flights in range");
     }
 
-    delay(update_flights_milliseconds);
+    delay(update_flight_milliseconds);
   }
   else
   {
-    log_i("Connecting to: " WIFI_SSID);
+    log_i("Connecting to: %s", wifi_ssid);
     delay(100);
   }
 }
