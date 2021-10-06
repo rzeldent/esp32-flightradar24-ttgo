@@ -4,7 +4,6 @@
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
-#include <TFT_eFEX.h>
 #include <ttgo_backlight.h>
 
 constexpr auto font_16pt = 2;
@@ -18,18 +17,13 @@ constexpr auto font_48pt_lcd = 7;
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-// Run Task
-// PlatformIO/Build Filesystem Image
-// PlatformIO/Upload Filesystem Image
-#include <FS.h>
-#include <SPIFFS.h>
-
 #include <map>
 #include <flight_info.h>
 
 // Database of airplanes from https://openflights.org/data.html
 #include <airplanes.h>
 #include <airports.h>
+#include <images.h>
 
 // This is a copy of the setting.h. Made hidden so does not ends up in repository.
 #include ".settings.h"
@@ -50,7 +44,6 @@ constexpr auto flag_margin_y_px = 2;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
-auto fex = TFT_eFEX(&tft);
 auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
 Button2 button1(button_top);
@@ -68,20 +61,19 @@ void setup()
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Starting Flight Radar...");
 
-  if (!SPIFFS.begin(true))
-    log_e("SPIFFS initialization failed");
-
   // Start Display
   ttgo_backlight_init();
   ttgo_backlight_intensity(lcd_backlight_intensity);
   tft.init();
+  // Swap the colour byte order when rendering
+  tft.setSwapBytes(true);
   tft.setRotation(1);         // Landscape
   tft.setTextDatum(TL_DATUM); // Top Left
   tft.setTextColor(text_color);
   tft.setTextWrap(false, false);
 
-  // Show logo
-  fex.drawBmp("/startup.bmp", 0, 0);
+  // Show splash screen
+  tft.pushImage(0, 0, image_splash.width, image_splash.height, image_splash.data);
   tft.setTextFont(font_26pt);
   tft.print("Flight Radar");
 
@@ -122,14 +114,9 @@ void display_flight(const flight_info &flight_info)
   if (from != nullptr)
   {
     tft.println(from->name);
-    if (from->flag)
-    {
-      auto flag = String("/flags/" + String(from->flag) + ".bmp");
-      log_d("Display bitmap %s", flag.c_str());
-      auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-      fex.drawBmp(flag, cursor_x, cursor_y + flag_margin_y_px);
-      tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
-    }
+    auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
+    tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
+    tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
     tft.println(from->country);
   }
 
@@ -137,14 +124,9 @@ void display_flight(const flight_info &flight_info)
   if (to != nullptr)
   {
     tft.println(to->name);
-    if (from->flag)
-    {
-      auto flag = String("/flags/" + String(to->flag) + ".bmp");
-      log_d("Display bitmap %s", flag.c_str());
-      auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-      fex.drawBmp(flag, cursor_x, cursor_y + flag_margin_y_px);
-      tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
-    }
+    auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
+    tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
+    tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
     tft.println(to->country);
   }
 }
