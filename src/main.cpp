@@ -79,7 +79,6 @@ void setup()
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid, wifi_password);
-
   // Show logo for 2.5 seconds
   delay(2500);
 }
@@ -180,8 +179,7 @@ void loop()
     {
       log_d("No flights in range");
       clear();
-      tft.setTextFont(font_26pt);
-      tft.println("No flights in range");
+      tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
     }
 
     delay(update_flight_milliseconds);
@@ -189,8 +187,9 @@ void loop()
   else
   {
     log_i("Connecting to: %s", wifi_ssid);
-    // Show Dinosour / cactus image, wait an reset
+    // Show Dinosour / cactus image and wait
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
-    delay(1000);
+    // Show for 5 seconds
+    delay(5000);
   }
 }
