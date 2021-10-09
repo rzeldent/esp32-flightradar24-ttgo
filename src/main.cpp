@@ -79,7 +79,6 @@ void setup()
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid, wifi_password);
-
   // Show logo for 2.5 seconds
   delay(2500);
 }
@@ -117,7 +116,7 @@ void display_flight(const flight_info &flight_info)
     auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
     tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
     tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
-    tft.println(from->country);
+    tft.println(from->city + String(", ") + from->country);
   }
 
   tft.setCursor(0, 26 + 4 * 16);
@@ -127,7 +126,7 @@ void display_flight(const flight_info &flight_info)
     auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
     tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
     tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
-    tft.println(to->country);
+    tft.println(to->city + String(", ") + to->country);
   }
 }
 
@@ -180,8 +179,7 @@ void loop()
     {
       log_d("No flights in range");
       clear();
-      tft.setTextFont(font_26pt);
-      tft.println("No flights in range");
+      tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
     }
 
     delay(update_flight_milliseconds);
@@ -189,6 +187,9 @@ void loop()
   else
   {
     log_i("Connecting to: %s", wifi_ssid);
-    delay(100);
+    // Show Dinosour / cactus image and wait
+    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
+    // Show for 5 seconds
+    delay(5000);
   }
 }

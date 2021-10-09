@@ -6,6 +6,7 @@
 // https://github.com/amitjakhu/dripicons-weather
 
 const extern tImage image_splash;
+const extern tImage image_no_internet;
 
 const extern tImage image_ad;
 const extern tImage image_ae;
