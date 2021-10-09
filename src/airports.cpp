@@ -4,6 +4,7 @@
 // https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
 
 static const struct airport airports[] = {
+    {"BER", "Berlin Brandenburg Airport", "Berlin", "Germany", &image_de},
     {"GKA", "Goroka Airport", "Goroka", "Papua New Guinea", &image_pg},
     {"MAG", "Madang Airport", "Madang", "Papua New Guinea", &image_pg},
     {"HGU", "Mount Hagen Kagamuga Airport", "Mount Hagen", "Papua New Guinea", &image_pg},
