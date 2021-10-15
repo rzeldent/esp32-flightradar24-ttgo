@@ -25,9 +25,8 @@ constexpr auto font_48pt_lcd = 7;
 #include <airports.h>
 #include <images.h>
 
-// Please change this to .settings.h (hidden so does not ends up in repository).
-// Real settings are trough the defines
-#include <settings.h>
+// Make a copy of the file settings.h and change the name to .settings.h (hidden so does not ends up in repository).
+#include <.settings.h>
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
