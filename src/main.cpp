@@ -80,7 +80,7 @@ void setup()
 
   WiFi.mode(WIFI_STA);
   // SSID_NAME and SSID_PASSWORD should come from build flags settings
-  WiFi.begin(SSID_NAME, SSID_PASSWORD);
+  WiFi.begin(WIFI_SSID_NAME, WIFI_SSID_PASSWORD);
   // Show logo for 2.5 seconds
   delay(2500);
 }
@@ -188,7 +188,7 @@ void loop()
   }
   else
   {
-    log_i("Connecting to: %s", wifi_ssid);
+    log_i("Connecting to: %s", WIFI_SSID_NAME);
     // Show Dinosour / cactus image and wait
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
     // Show for 5 seconds
