@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 
+constexpr auto wifi_ssid_name = "<wifi_ssid_name>";
+constexpr auto wifi_ssid_password = "<wifi_ssid_password>";
+
 // Center (Amsterdam Airport Schiphol: 52.45-52.15,4.44-5.05
 constexpr auto center_latitude = 52.3f;
 constexpr auto center_longitude = 4.75f;
