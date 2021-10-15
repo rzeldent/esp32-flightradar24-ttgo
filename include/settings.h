@@ -2,9 +2,8 @@
 
 #include <Arduino.h>
 
-// The SSID and password of the accesspoint to connect to
-constexpr auto wifi_ssid = "<your wifi ssid>";
-constexpr auto wifi_password = "<your wifi password>";
+constexpr auto wifi_ssid_name = "<wifi_ssid_name>";
+constexpr auto wifi_ssid_password = "<wifi_ssid_password>";
 
 // Center (Amsterdam Airport Schiphol: 52.45-52.15,4.44-5.05
 constexpr auto center_latitude = 52.3f;

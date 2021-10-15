@@ -25,8 +25,8 @@ constexpr auto font_48pt_lcd = 7;
 #include <airports.h>
 #include <images.h>
 
-// This is a copy of the setting.h. Made hidden so does not ends up in repository.
-#include ".settings.h"
+// Make a copy of the file settings.h and change the name to .settings.h (hidden so does not ends up in repository).
+#include <.settings.h>
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
@@ -78,7 +78,8 @@ void setup()
   tft.print("Flight Radar");
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_ssid, wifi_password);
+  // SSID_NAME and SSID_PASSWORD should come from build flags settings
+  WiFi.begin(wifi_ssid_name, wifi_ssid_password);
   // Show logo for 2.5 seconds
   delay(2500);
 }
@@ -186,7 +187,7 @@ void loop()
   }
   else
   {
-    log_i("Connecting to: %s", wifi_ssid);
+    log_i("Connecting to: %s", wifi_ssid_name);
     // Show Dinosour / cactus image and wait
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
     // Show for 5 seconds
