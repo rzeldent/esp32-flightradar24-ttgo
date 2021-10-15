@@ -25,8 +25,9 @@ constexpr auto font_48pt_lcd = 7;
 #include <airports.h>
 #include <images.h>
 
-// This is a copy of the setting.h. Made hidden so does not ends up in repository.
-#include ".settings.h"
+// Please change this to .settings.h. So Hidden so does not ends up in repository.
+// Real settings are trhough the defines
+#include <settings.h>
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
@@ -78,7 +79,8 @@ void setup()
   tft.print("Flight Radar");
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_ssid, wifi_password);
+  // SSID_NAME and SSID_PASSWORD should come from build flags settings
+  WiFi.begin(SSID_NAME, SSID_PASSWORD);
   // Show logo for 2.5 seconds
   delay(2500);
 }
