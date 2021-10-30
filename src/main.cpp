@@ -153,14 +153,16 @@ void loop()
                          { return f.flight.isEmpty(); });
 
       log_i("Number of flights to display: %d", flights->size());
-      auto num_flights = flights->size();
-      if (num_flights == 0)
+      if (flights->empty())
       {
+        log_d("No flights in range");
+        clear();
+        tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
         delay(refresh_flights_milliseconds);
         return;
       }
 
-      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / num_flights;
+      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights->size();
       log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
 
       it = flights->begin();
@@ -175,12 +177,6 @@ void loop()
         log_d("Restart with first flight");
         it = flights->begin();
       }
-    }
-    else
-    {
-      log_d("No flights in range");
-      clear();
-      tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
     }
 
     delay(update_flight_milliseconds);
