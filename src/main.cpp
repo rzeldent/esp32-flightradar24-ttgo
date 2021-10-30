@@ -84,13 +84,36 @@ void setup()
   delay(2500);
 }
 
-unsigned long last_update_flights;
-
 void clear()
 {
   log_d("Clear screen");
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
   tft.setCursor(0, 0);
+}
+
+String format_degrees(float latlon)
+{
+  auto degrees = (int)latlon;
+  latlon -= degrees;
+  latlon *= 60;
+  auto minutes = (int)latlon;
+  auto seconds = (int)((latlon - minutes) * 60);
+  return String(degrees) + "`" + String(minutes) + "'" + String(seconds) + "''";
+}
+
+String format_latitude(float lat)
+{
+  return lat >= 0 ? format_degrees(lat) + "N" : format_degrees(-lat) + "S";
+}
+
+String format_longitude(float lon)
+{
+  return lon >= 0 ? format_degrees(lon) + "E" : format_degrees(-lon) + "W";
+}
+
+String format_latitude_longitude(float lat, float lon)
+{
+  return format_latitude(lat) + " " + format_longitude(lon);
 }
 
 void display_flight(const flight_info &flight_info)
@@ -103,41 +126,46 @@ void display_flight(const flight_info &flight_info)
   auto to = lookupAirport(flight_info.to);
 
   tft.setTextFont(font_26pt);
-  tft.println( flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
+  tft.println(flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
+  tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
+  tft.setTextFont(font_16pt);
+  tft.println(format_latitude_longitude(flight_info.latitude, flight_info.longitude));
+
+  tft.setCursor(0, tft.getCursorY() + 4);
 
   tft.setTextFont(font_16pt);
   tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
-  tft.println(String(flight_info.altitude) + "ft.  " + String(flight_info.track) + "`  " + String(flight_info.speed) + "kts");
 
-  tft.setCursor(0, tft.getCursorY() + 4);
+  tft.setCursor(0, tft.getCursorY() + 8);
+
   if (from != nullptr)
   {
-    tft.println(from->name);
-    auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-    tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
-    tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
+    //tft.println(from->name);
+    auto cursor_y = tft.getCursorY();
+    tft.pushImage(0, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
+    tft.setCursor(flag_width_px + flag_margin_x_px, cursor_y);
     tft.println(from->city + String(", ") + from->country);
   }
 
   tft.setCursor(0, tft.getCursorY() + 2);
   if (to != nullptr)
   {
-    tft.println(to->name);
-    auto cursor_x = tft.getCursorX(), cursor_y = tft.getCursorY();
-    tft.pushImage(cursor_x, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
-    tft.setCursor(cursor_x + flag_width_px + flag_margin_x_px, cursor_y);
+    //tft.println(to->name);
+    auto cursor_y = tft.getCursorY();
+    tft.pushImage(0, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
+    tft.setCursor(flag_width_px + flag_margin_x_px, cursor_y);
     tft.println(to->city + String(", ") + to->country);
   }
 }
 
+unsigned long last_update_flights;
 // Time per flight
 unsigned long update_flight_milliseconds;
+std::list<flight_info> flights;
+std::list<flight_info>::const_iterator it;
 
 void loop()
 {
-  static std::list<flight_info> flights;
-  static std::list<flight_info>::const_iterator it;
-
   auto now = millis();
 
   if (WiFi.isConnected())
@@ -149,7 +177,7 @@ void loop()
       flights = get_flights(center_latitude, center_longitude, range_latitude, range_longitude);
       log_d("Remove flights without flight number");
       flights.remove_if([](const flight_info &f)
-                         { return f.flight.isEmpty(); });
+                        { return f.flight.isEmpty(); });
 
       log_i("Number of flights to display: %d", flights.size());
       if (flights.empty())
@@ -157,6 +185,7 @@ void loop()
         log_d("No flights in range");
         clear();
         tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
+        tft.drawCentreString(format_latitude_longitude(center_longitude, center_latitude), TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
         delay(refresh_flights_milliseconds);
         return;
       }
