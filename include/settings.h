@@ -13,7 +13,7 @@ constexpr auto center_longitude = 4.75f;
 constexpr auto range_latitude = 0.15f;
 constexpr auto range_longitude = 0.6f;
 
-// Refresh database every 2 minutes
-constexpr auto refresh_flights_milliseconds = 120000ul;
+// Refresh database every 3 minutes
+constexpr auto refresh_flights_milliseconds = 180000ul;
 // Allow 4 cycles of each flight
 constexpr auto display_cycles = 4;

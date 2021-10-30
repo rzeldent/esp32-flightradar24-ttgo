@@ -102,15 +102,14 @@ void display_flight(const flight_info &flight_info)
   auto from = lookupAirport(flight_info.from);
   auto to = lookupAirport(flight_info.to);
 
-  auto flight = flight_info.flight;
-
   tft.setTextFont(font_26pt);
-  tft.println(flight + "  " + flight_info.from + ">" + flight_info.to);
+  tft.println( flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
 
   tft.setTextFont(font_16pt);
   tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
+  tft.println(String(flight_info.altitude) + "ft.  " + String(flight_info.track) + "`  " + String(flight_info.speed) + "kts");
 
-  tft.setCursor(0, 26 + 16 + 8);
+  tft.setCursor(0, tft.getCursorY() + 4);
   if (from != nullptr)
   {
     tft.println(from->name);
@@ -120,7 +119,7 @@ void display_flight(const flight_info &flight_info)
     tft.println(from->city + String(", ") + from->country);
   }
 
-  tft.setCursor(0, 26 + 4 * 16);
+  tft.setCursor(0, tft.getCursorY() + 2);
   if (to != nullptr)
   {
     tft.println(to->name);
@@ -136,7 +135,7 @@ unsigned long update_flight_milliseconds;
 
 void loop()
 {
-  static std::shared_ptr<std::list<flight_info>> flights;
+  static std::list<flight_info> flights;
   static std::list<flight_info>::const_iterator it;
 
   auto now = millis();
@@ -149,11 +148,11 @@ void loop()
       // update flights
       flights = get_flights(center_latitude, center_longitude, range_latitude, range_longitude);
       log_d("Remove flights without flight number");
-      flights->remove_if([](const flight_info &f)
+      flights.remove_if([](const flight_info &f)
                          { return f.flight.isEmpty(); });
 
-      log_i("Number of flights to display: %d", flights->size());
-      if (flights->empty())
+      log_i("Number of flights to display: %d", flights.size());
+      if (flights.empty())
       {
         log_d("No flights in range");
         clear();
@@ -162,20 +161,20 @@ void loop()
         return;
       }
 
-      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights->size();
+      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
       log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
 
-      it = flights->begin();
+      it = flights.begin();
       last_update_flights = now;
     }
 
-    if (it != flights->end())
+    if (it != flights.end())
     {
       display_flight(*it);
-      if (++it == flights->end())
+      if (++it == flights.end())
       {
         log_d("Restart with first flight");
-        it = flights->begin();
+        it = flights.begin();
       }
     }
 
