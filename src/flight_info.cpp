@@ -51,7 +51,7 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
             .speed = items[5].as<int>(),
             .squawk = items[6].as<String>(),
             .radar = items[7].as<String>(),
-            .type = items[8].as<String>(),
+            .type_designator = items[8].as<String>(),
             .registration = items[9].as<String>(),
             .timestamp = items[10].as<ulong>(),
             .from = items[11].as<String>(),

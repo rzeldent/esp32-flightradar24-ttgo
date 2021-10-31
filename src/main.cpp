@@ -21,7 +21,7 @@ constexpr auto font_48pt_lcd = 7;
 #include <flight_info.h>
 
 // Database of airplanes from https://openflights.org/data.html
-#include <airplanes.h>
+#include <aircrafts.h>
 #include <airports.h>
 #include <images.h>
 
@@ -121,9 +121,9 @@ void display_flight(const flight_info &flight_info)
   log_i("Showing flight info ICAO: %s", flight_info.icao);
   clear();
 
-  auto airplane = lookupAirplane(flight_info.type);
-  auto from = lookupAirport(flight_info.from);
-  auto to = lookupAirport(flight_info.to);
+  auto aircraft = lookupAircraft(flight_info.type_designator.c_str());
+  auto from = lookupAirport(flight_info.from.c_str());
+  auto to = lookupAirport(flight_info.to.c_str());
 
   tft.setTextFont(font_26pt);
   tft.println(flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
@@ -134,7 +134,7 @@ void display_flight(const flight_info &flight_info)
   tft.setCursor(0, tft.getCursorY() + 4);
 
   tft.setTextFont(font_16pt);
-  tft.println(flight_info.registration + " - " + (airplane ? airplane->name : flight_info.type));
+  tft.println(flight_info.registration + " - " + (aircraft ? String(aircraft->manufacturer) + " " + aircraft->type + " " + aircraft->engine_type : flight_info.type_designator));
 
   tft.setCursor(0, tft.getCursorY() + 8);
 
