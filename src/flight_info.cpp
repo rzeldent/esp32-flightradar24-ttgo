@@ -50,7 +50,7 @@ std::shared_ptr<std::list<flight_info>> get_flights(float latitude, float longit
             .speed = items[5].as<const char *>(),
             .squawk = items[6].as<const char *>(),
             .radar = items[7].as<const char *>(),
-            .type = items[8].as<const char *>(),
+            .type_designator = items[8].as<const char *>(),
             .registration = items[9].as<const char *>(),
             .timestamp = items[10].as<const char *>(),
             .from = items[11].as<const char *>(),

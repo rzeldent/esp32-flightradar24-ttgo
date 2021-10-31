@@ -6575,7 +6575,6 @@ const airport *lookupAirport(const char *id)
     log_d("Looking up airport %s", id);
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
-    return binary_array_lookup<airport_t, const char*>((airport_t*)airports, airport_size, id, [](const airport_t& other, const char* value){
-        return strcmp(other.iata, value);
-    });
+    return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, id, [](const airport_t &other, const char *value)
+                                                        { return strcmp(other.iata, value); });
 }

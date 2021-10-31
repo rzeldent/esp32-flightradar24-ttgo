@@ -15,7 +15,7 @@ struct flight_info
     String speed;           //  5 => SPEED - 144 (Knots)
     String squawk;          //  6 => SQUAWK -
     String radar;           //  7 => RADAR -
-    String type;            //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
+    String type_designator; //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
     String registration;    //  9 => REGISTRATION - N709CK
     String timestamp;       // 10 => TIMSTAMP - 1593976456
     String from;            // 11 => FROM - AMS
