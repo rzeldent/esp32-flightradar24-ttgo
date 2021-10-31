@@ -1,5 +1,6 @@
 #include <airports.h>
 #include <images.h>
+#include <binary_search.h>
 
 // List must be sorted because binary search is used
 
@@ -6573,21 +6574,8 @@ const airport *lookupAirport(const char *id)
 {
     log_d("Looking up airport %s", id);
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
-    // Do a binary seacrh
-    auto first = (size_t)0;
-    auto last = airport_size - 1;
-    while (first <= last)
-    {
-        size_t middle = (first + last) / 2;
-        auto cmp = strcmp(airports[middle].iata, id);
-        if (cmp < 0)
-            first = middle + 1;
-        else if (cmp > 0)
-            last = middle - 1;
-        else if (cmp == 0)
-            return &airports[middle];
-    }
-
-    log_e("Airport %s was not found!");
-    return nullptr;
+    // Array must be sorted on item to lookup
+    return binary_array_lookup<airport_t, const char*>((airport_t*)airports, airport_size, id, [](const airport_t& other, const char* value){
+        return strcmp(other.iata, value);
+    });
 }
