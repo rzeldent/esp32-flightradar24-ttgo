@@ -10,6 +10,8 @@ struct airport
     const char* name;
     const char* city;
     const char* country;
+    double lon;
+    double lat;
     const tImage* flag;
 };
 
