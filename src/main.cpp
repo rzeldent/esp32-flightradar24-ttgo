@@ -99,8 +99,8 @@ void display_flight(const flight_info &flight_info)
   clear();
 
   auto airplane = lookupAirplane(flight_info.type);
-  auto from = lookupAirport(flight_info.from);
-  auto to = lookupAirport(flight_info.to);
+  auto from = lookupAirport(flight_info.from.c_str());
+  auto to = lookupAirport(flight_info.to.c_str());
 
   auto flight = flight_info.flight;
 
