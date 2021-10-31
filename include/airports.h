@@ -1,18 +1,17 @@
 #pragma once
 
 #include <Arduino.h>
-
 #include <timage.h>
 
-struct airport
+typedef struct airport
 {
-    const char* iata;
-    const char* name;
-    const char* city;
-    const char* country;
+    const char *iata;
+    const char *name;
+    const char *city;
+    const char *country;
     double lon;
     double lat;
-    const tImage* flag;
-};
+    const tImage *flag;
+} airport_t;
 
-extern const airport *lookupAirport(const String &id);
+extern const airport_t *lookupAirport(const char* id);
