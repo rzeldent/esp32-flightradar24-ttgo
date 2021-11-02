@@ -23,6 +23,3 @@ with open('import/aircrafts.csv', newline='') as csvfile:
         print(line)
         file.write(unicodedata.normalize('NFKD', line).encode('ascii', errors='ignore').decode('ascii'))
     file.close()
-
-            
-    
