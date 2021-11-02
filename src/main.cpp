@@ -133,15 +133,15 @@ void display_flight(const flight_info &flight_info)
   tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
   tft.setCursor(0, tft.getCursorY() + 4);
 
-  if (airline != nullptr)
+  if (airline != nullptr && airline->logo != nullptr)
     tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
-  
+
   tft.setTextFont(font_16pt);
-  tft.println(flight_info.registration +  " @ " + format_latitude_longitude(flight_info.latitude, flight_info.longitude));
+  tft.println(flight_info.registration + " " + format_latitude_longitude(flight_info.latitude, flight_info.longitude));
   tft.setCursor(0, tft.getCursorY() + 4);
   tft.println((aircraft ? String(aircraft->manufacturer) + " " + aircraft->type + " " + aircraft->engine_type : flight_info.type_designator));
   tft.setCursor(0, tft.getCursorY() + 8);
-  
+
   if (from != nullptr)
   {
     //tft.println(from->name);
