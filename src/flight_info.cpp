@@ -57,7 +57,7 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
             .from = items[11].as<String>(),
             .to = items[12].as<String>(),
             .flight = items[13].as<String>(),
-            .flight_operator = items[15].as<String>()
+            .flight_operator = items[18].as<String>()
         };
         flights.push_back(flight);
     }

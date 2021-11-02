@@ -23,6 +23,7 @@ constexpr auto font_48pt_lcd = 7;
 // Database of airplanes from https://openflights.org/data.html
 #include <aircrafts.h>
 #include <airports.h>
+#include <airlines.h>
 #include <images.h>
 
 // Make a copy of the file settings.h and change the name to .settings.h (hidden so does not ends up in repository).
@@ -36,11 +37,12 @@ constexpr auto button_bottom = 0;
 constexpr auto background_color = TFT_BLACK;
 constexpr auto text_color = TFT_WHITE;
 
-constexpr auto flag_width_px = 20;
-constexpr auto flag_height_px = 13;
-
+// Flag
 constexpr auto flag_margin_x_px = 4;
 constexpr auto flag_margin_y_px = 2;
+
+constexpr auto logo_width_px = 32;
+constexpr auto logo_height_px = 32;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
@@ -124,26 +126,28 @@ void display_flight(const flight_info &flight_info)
   auto aircraft = lookupAircraft(flight_info.type_designator.c_str());
   auto from = lookupAirport(flight_info.from.c_str());
   auto to = lookupAirport(flight_info.to.c_str());
+  auto airline = lookupAirline(flight_info.flight_operator.c_str());
 
   tft.setTextFont(font_26pt);
   tft.println(flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
   tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
-  tft.setTextFont(font_16pt);
-  tft.println(flight_info.registration +  " @ " + format_latitude_longitude(flight_info.latitude, flight_info.longitude));
-
   tft.setCursor(0, tft.getCursorY() + 4);
 
+  if (airline != nullptr)
+    tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
+  
   tft.setTextFont(font_16pt);
+  tft.println(flight_info.registration +  " @ " + format_latitude_longitude(flight_info.latitude, flight_info.longitude));
+  tft.setCursor(0, tft.getCursorY() + 4);
   tft.println((aircraft ? String(aircraft->manufacturer) + " " + aircraft->type + " " + aircraft->engine_type : flight_info.type_designator));
-
   tft.setCursor(0, tft.getCursorY() + 8);
-
+  
   if (from != nullptr)
   {
     //tft.println(from->name);
     auto cursor_y = tft.getCursorY();
     tft.pushImage(0, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
-    tft.setCursor(flag_width_px + flag_margin_x_px, cursor_y);
+    tft.setCursor(from->flag->width + flag_margin_x_px, cursor_y);
     tft.println(from->city + String(", ") + from->country);
   }
 
@@ -153,7 +157,7 @@ void display_flight(const flight_info &flight_info)
     //tft.println(to->name);
     auto cursor_y = tft.getCursorY();
     tft.pushImage(0, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
-    tft.setCursor(flag_width_px + flag_margin_x_px, cursor_y);
+    tft.setCursor(to->flag->width + flag_margin_x_px, cursor_y);
     tft.println(to->city + String(", ") + to->country);
   }
 }
