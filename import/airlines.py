@@ -15,7 +15,7 @@ logo_path = 'logos/'
 get_logo = False
 
 with open('import/airlines.csv', newline='') as csvfile:
-    airlines_csv = csv.reader(csvfile, delimiter=',')
+    airlines_csv = csv.reader(csvfile, delimiter=',', quotechar='|')
     airlines = {}
     
     # IATA	ICAO	Airline	Call sign	Country/Region	Comments
@@ -23,7 +23,7 @@ with open('import/airlines.csv', newline='') as csvfile:
         key = row[1]
         if not key: continue
         if key == 'n/a': continue
-        airlines[row[1]] = {'airline': row[2], 'country': row[4] }
+        airlines[row[1]] = {'airline': row[2], 'callsign':row[3], 'country': row[4] }
 
     file = open('airlines.txt', 'w')
      # Sort the list on Type Designator
@@ -43,7 +43,7 @@ with open('import/airlines.csv', newline='') as csvfile:
                 logo = '&airline_logo_' + key
 
 
-        values = ["\"" + key + "\", \"" + aircraft['airline']+"\"", "\"" + aircraft['country'] +"\"", logo]
+        values = ["\"" + key + "\"", "\"" + aircraft['callsign']+"\"", "\"" + aircraft['airline']+"\"", "\"" + aircraft['country'] +"\"", logo]
         line = "{ " + ", ".join(values) + "}, \n"
         print(line)
       
