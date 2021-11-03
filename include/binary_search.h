@@ -2,22 +2,23 @@
 
 #include <stddef.h>
 
-template<typename T, typename A>
-const T* binary_array_lookup(const T* array, const size_t array_size, const A item, int (*compare_function)(const T& other, const A value))
+template <typename T, typename A>
+const T *binary_array_lookup(const T *array, const size_t array_size, const A item, int (*compare_function)(const T &other, const A value))
 {
     // Do a binary search
-    auto first = (size_t)0;
-    auto last = array_size - 1;
+    int cmp;
+    auto first = 0;
+    auto last = (int)array_size - 1;
     while (first <= last)
     {
-        size_t middle = (first + last) / 2;
-        auto result = (*compare_function)(array[middle], item);
-        if (result < 0)
-            first = middle + 1;
-        else if (result > 0)
-            last = middle - 1;
-        else if (result == 0)
+        auto middle = (first + last) / 2;
+        // Compare function should return <0, 0 or >0
+        if ((cmp = (*compare_function)(array[middle], item)) == 0)
             return &array[middle];
+        if (cmp < 0)
+            first = middle + 1;
+        else
+            last = middle - 1;
     }
 
     return nullptr;

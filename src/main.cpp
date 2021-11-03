@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <soc/rtc_cntl_reg.h>
 #include <SPI.h>
+#include <TimeLib.h>
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
@@ -100,7 +101,7 @@ String format_degrees(float latlon)
   latlon *= 60;
   auto minutes = (int)latlon;
   auto seconds = (int)((latlon - minutes) * 60);
-  return String(degrees) + "`" + String(minutes) + "'" + String(seconds) + "''";
+  return String(degrees) + '`' + String(minutes) + '\'' + String(seconds) + '"';
 }
 
 String format_latitude(float lat)
@@ -120,30 +121,58 @@ String format_latitude_longitude(float lat, float lon)
 
 void display_flight(const flight_info &flight_info)
 {
-  log_i("Showing flight info ICAO: %s", flight_info.icao);
+  char time_buffer[20];
+  strftime(time_buffer, sizeof(time_buffer), "%F %T", localtime(&flight_info.timestamp));
+  log_i("Flight info. Seen: %s. ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", time_buffer, flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_latitude_longitude(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
 
   auto aircraft = lookupAircraft(flight_info.type_designator.c_str());
+  if (aircraft == nullptr)
+    log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
+
   auto from = lookupAirport(flight_info.from.c_str());
+  if (from == nullptr)
+    log_w("From airport (%s) not found", flight_info.from.c_str());
+
   auto to = lookupAirport(flight_info.to.c_str());
+  if (to == nullptr)
+    log_w("To airport (%s) not found", flight_info.to.c_str());
+
   auto airline = lookupAirline(flight_info.flight_operator.c_str());
+  if (airline == nullptr)
+    log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
 
   tft.setTextFont(font_26pt);
   tft.println(flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
   tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
   tft.setCursor(0, tft.getCursorY() + 4);
 
-  if (airline != nullptr && airline->logo != nullptr)
-    tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
+  if (airline != nullptr)
+  {
+    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country, airline->logo ? "present" : "not available");
+    if (airline->logo != nullptr)
+      tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
+    else
+      log_w("No logo present for airline: %s", airline->iata_airline);
+  }
 
   tft.setTextFont(font_16pt);
   tft.println(flight_info.registration + " " + format_latitude_longitude(flight_info.latitude, flight_info.longitude));
   tft.setCursor(0, tft.getCursorY() + 4);
-  tft.println((aircraft ? String(aircraft->manufacturer) + " " + aircraft->type + " " + aircraft->engine_type : flight_info.type_designator));
+  if (aircraft != nullptr)
+  {
+    log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
+    tft.println((String(aircraft->manufacturer) + " " + aircraft->type + " " + aircraft->engine_type));
+  }
+  else
+  {
+    tft.println(String(flight_info.type_designator));
+  }
   tft.setCursor(0, tft.getCursorY() + 8);
 
   if (from != nullptr)
   {
+    log_i("From %s: %s - %s (%s) %s", from->iata_airport, from->name, from->city, from->country, format_latitude_longitude(from->lat, from->lon).c_str());
     //tft.println(from->name);
     auto cursor_y = tft.getCursorY();
     tft.pushImage(0, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
@@ -154,6 +183,7 @@ void display_flight(const flight_info &flight_info)
   tft.setCursor(0, tft.getCursorY() + 2);
   if (to != nullptr)
   {
+    log_i("To %s: %s - %s (%s) %s", to->iata_airport, to->name, to->city, to->country, format_latitude_longitude(to->lat, to->lon).c_str());
     //tft.println(to->name);
     auto cursor_y = tft.getCursorY();
     tft.pushImage(0, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
@@ -189,7 +219,7 @@ void loop()
         log_d("No flights in range");
         clear();
         tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2, font_26pt);
-        tft.drawCentreString(format_latitude_longitude(center_longitude, center_latitude), TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+        tft.drawCentreString(format_latitude_longitude(center_latitude, center_longitude), TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
         delay(refresh_flights_milliseconds);
         return;
       }
