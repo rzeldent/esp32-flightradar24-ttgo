@@ -12,7 +12,7 @@ with open('import/aircrafts.csv', newline='') as csvfile:
     aircrafts = {}
     # ​​Manufacturer	​Model	​Type Designator	​Description	​Engine Type	​Engine Count	​​WTC
     for row in aircrafts_csv:
-        aircrafts[row[2]] = {'manufacturer': row[0], 'type designator': row[1], 'description': row[3], 'engine type': row[4], 'engine count': row[5], 'wtc': row[6], }
+        aircrafts[row[2]] = {'manufacturer': row[0].capitalize(), 'type designator': row[1], 'description': row[3], 'engine type': row[4], 'engine count': row[5], 'wtc': row[6] }
 
     file = open('aircrafts.txt', 'w')
      # Sort the list on Type Designator
@@ -23,6 +23,3 @@ with open('import/aircrafts.csv', newline='') as csvfile:
         print(line)
         file.write(unicodedata.normalize('NFKD', line).encode('ascii', errors='ignore').decode('ascii'))
     file.close()
-
-            
-    

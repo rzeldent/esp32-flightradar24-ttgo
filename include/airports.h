@@ -5,7 +5,7 @@
 
 typedef struct airport
 {
-    const char *iata;
+    const char *iata_airport;
     const char *name;
     const char *city;
     const char *country;
@@ -14,4 +14,4 @@ typedef struct airport
     const tImage *flag;
 } airport_t;
 
-extern const airport_t *lookupAirport(const char* id);
+extern const airport_t *lookupAirport(const char* iata_airport);

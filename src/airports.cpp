@@ -1,5 +1,5 @@
 #include <airports.h>
-#include <images.h>
+#include <country_flags.h>
 #include <binary_search.h>
 
 // List must be sorted because binary search is used
@@ -6570,11 +6570,11 @@ static const airport_t airports[] = {
     {"ZZU", "Mzuzu Airport", "Mzuzu", "Malawi", -11.4447002411, 34.0117988586, &image_mw},
     {"ZZV", "Zanesville Municipal Airport", "Zanesville", "United States of America", 39.9444007874, -81.8920974731, &image_us}};
 
-const airport *lookupAirport(const char *id)
+const airport_t *lookupAirport(const char *iata_airport)
 {
-    log_d("Looking up airport %s", id);
+    log_d("Looking up airport %s", iata_airport);
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
-    return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, id, [](const airport_t &other, const char *value)
-                                                        { return strcmp(other.iata, value); });
+    return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, iata_airport, [](const airport_t &other, const char *value)
+                                                        { return strcmp(other.iata_airport, value); });
 }
