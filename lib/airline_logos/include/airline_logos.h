@@ -207,6 +207,7 @@ const extern tImage airline_logo_SKV;
 const extern tImage airline_logo_SKW;
 const extern tImage airline_logo_SLI;
 const extern tImage airline_logo_SLM;
+const extern tImage airline_logo_SRR;
 const extern tImage airline_logo_SRY;
 const extern tImage airline_logo_SUS;
 const extern tImage airline_logo_SVA;

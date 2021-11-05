@@ -5725,6 +5725,7 @@ static const airport_t airports[] = {
     {"USU", "Francisco B. Reyes Airport", "Coron", "Philippines", 12.1215000153, 120.099998474, &image_ph},
     {"UTA", "Mutare Airport", "", "Zimbabwe", -18.9974994659, 32.6272010803, &image_zw},
     {"UTB", "Muttaburra Airport", "", "Australia", -22.5832996368, 144.5330047607, &image_au},
+    {"UTC", "Soesterberg Air Base", "Soesterberg", "Netherlands", 52.12730026, 5.276189804, &image_nl},
     {"UTE", "Bultfontein Airport", "Bultfontein", "South Africa", -28.273369, 26.135835, &image_za},
     {"UTG", "Quthing Airport", "Quthing", "Lesotho", -30.4074993134, 27.6933002472, &image_ls},
     {"UTH", "Udon Thani Airport", "Udon Thani", "Thailand", 17.3864002228, 102.788002014, &image_th},
@@ -6576,5 +6577,5 @@ const airport_t *lookupAirport(const char *iata_airport)
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
     return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, iata_airport, [](const airport_t &other, const char *value)
-                                                        { return strcmp(other.iata_airport, value);  });
+                                                        { return strcmp(other.iata_airport, value); });
 }

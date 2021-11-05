@@ -4786,7 +4786,7 @@ static const airline_t airlines[] = {
     {"SRO", "SAEREO", "Servicios Ai12reos Ejecutivos Saereo", "Ecuador", nullptr},
     {"SRP", "SPERBER", "Polizeihubschauberstaffel Rheinland-Pfalz", "Germany", nullptr},
     {"SRQ", "BLUE JAY", "Cebgo", "Philippines", nullptr},
-    {"SRR", "WHITESTAR", "Star Air", "Denmark", nullptr},
+    {"SRR", "WHITESTAR", "Star Air", "Denmark", &airline_logo_SRR},
     {"SRS", "PHOTO CHARLIE", "Selkirk Remote Sensing", "Canada", nullptr},
     {"SRT", "TRASER", "Trans Asian Airlines", "Kazakhstan", nullptr},
     {"SRU", "STAR-UP", "Star Up", "Peru", nullptr},
