@@ -153,14 +153,6 @@ void display_flight(const flight_info &flight_info)
   if (aircraft == nullptr)
     log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
 
-  auto from = lookupAirport(flight_info.from.c_str());
-  if (from == nullptr)
-    log_w("From airport (%s) not found", flight_info.from.c_str());
-
-  auto to = lookupAirport(flight_info.to.c_str());
-  if (to == nullptr)
-    log_w("To airport (%s) not found", flight_info.to.c_str());
-
   auto airline = lookupAirline(flight_info.flight_operator.c_str());
   if (airline == nullptr)
     log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
@@ -170,7 +162,8 @@ void display_flight(const flight_info &flight_info)
   if (flight_info.flight.length())
     tft.print((flight_info.flight + " ").c_str());
 
-  tft.println((flight_info.from + ">" + flight_info.to).c_str());
+  tft.print(flight_info.from.c_str());
+  tft.println((flight_info.to.empty() ? "" : ">" + flight_info.to).c_str());
 
   tft.println((to_string(flight_info.altitude) + "ft  " + to_string(flight_info.speed) + "kts " + to_string(flight_info.track) + "`").c_str());
   tft.setCursor(0, tft.getCursorY() + 4);
@@ -191,34 +184,45 @@ void display_flight(const flight_info &flight_info)
   if (aircraft != nullptr)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
-    tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type + " " + aircraft->engine_type + " " + aircraft->engine_count).c_str());
+    tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type + " " + aircraft->engine_type + "/" + aircraft->engine_count).c_str());
   }
   else
-  {
     tft.println(flight_info.type_designator.c_str());
-  }
 
   tft.setCursor(0, tft.getCursorY() + 8);
 
-  if (from != nullptr)
+  if (!flight_info.from.empty())
   {
-    log_i("From %s: %s - %s (%s) %s", from->iata_airport, from->name, from->city, from->country, format_gps_location(from->lat, from->lon).c_str());
-    //tft.println(from->name);
-    auto cursor_y = tft.getCursorY();
-    tft.pushImage(0, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
-    tft.setCursor(from->flag->width + flag_margin_x_px, cursor_y);
-    tft.println((from->city + std::string(", ") + from->country).c_str());
+    auto from = lookupAirport(flight_info.from.c_str());
+    if (from != nullptr)
+    {
+      log_i("From %s: %s - %s (%s) %s", from->iata_airport, from->name, from->city, from->country, format_gps_location(from->lat, from->lon).c_str());
+      //tft.println(from->name);
+      auto cursor_y = tft.getCursorY();
+      tft.pushImage(0, cursor_y + flag_margin_y_px, from->flag->width, from->flag->height, from->flag->data);
+      tft.setCursor(from->flag->width + flag_margin_x_px, cursor_y);
+      tft.println((from->city + std::string(", ") + from->country).c_str());
+    }
+    else
+      log_w("From airport (%s) not found", flight_info.from.c_str());
+
+    tft.setCursor(0, tft.getCursorY() + 2);
   }
 
-  tft.setCursor(0, tft.getCursorY() + 2);
-  if (to != nullptr)
+  if (!flight_info.to.empty())
   {
-    log_i("To %s: %s - %s (%s) %s", to->iata_airport, to->name, to->city, to->country, format_gps_location(to->lat, to->lon).c_str());
-    //tft.println(to->name);
-    auto cursor_y = tft.getCursorY();
-    tft.pushImage(0, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
-    tft.setCursor(to->flag->width + flag_margin_x_px, cursor_y);
-    tft.println((to->city + std::string(", ") + to->country).c_str());
+    auto to = lookupAirport(flight_info.to.c_str());
+    if (to != nullptr)
+    {
+      log_i("To %s: %s - %s (%s) %s", to->iata_airport, to->name, to->city, to->country, format_gps_location(to->lat, to->lon).c_str());
+      //tft.println(to->name);
+      auto cursor_y = tft.getCursorY();
+      tft.pushImage(0, cursor_y + flag_margin_y_px, to->flag->width, to->flag->height, to->flag->data);
+      tft.setCursor(to->flag->width + flag_margin_x_px, cursor_y);
+      tft.println((to->city + std::string(", ") + to->country).c_str());
+    }
+    else
+      log_w("To airport (%s) not found", flight_info.to.c_str());
   }
 }
 
