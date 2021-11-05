@@ -5966,6 +5966,7 @@ static const airport_t airports[] = {
     {"WMD", "Mandabe Airport", "Mandabe", "Madagascar", -21.0463049303, 44.9404120445, &image_mg},
     {"WME", "Mount Keith Airport", "", "Australia", -27.2863998413, 120.5550003052, &image_au},
     {"WMH", "Ozark Regional Airport", "Mountain Home", "United States", 36.3689002991, -92.4704971313, &image_us},
+    {"WMI", "Warsaw Modlin Airport", "Warsaw", "Poland", 52.450664864, 20.650997396, &image_pl},
     {"WML", "Malaimbandy Airport", "Malaimbandy", "Madagascar", -20.3553902921, 45.5433726311, &image_mg},
     {"WMN", "Maroantsetra Airport", "", "Madagascar", -15.4366998672, 49.6883010864, &image_mg},
     {"WMP", "Mampikony Airport", "Mampikony", "Madagascar", -16.0722693402, 47.6441645622, &image_mg},
