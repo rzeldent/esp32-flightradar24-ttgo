@@ -1,29 +1,2 @@
     Airline
-        AZG
-        RYS
-        DHK
-        CFG
-        CKK
-        XRO
-        SUS
-        NJE
-        RCH
-        NVR
-        NDA
-        PGT
-        RJA
-        CTN
-        DTR
-        LZB
-        AIS
-        ABX
-        HHE
-        HVN
-        ROT
-        JFA
-        EFD
-        ABR
-        EXS
-        QGA
-        AZG
         CAO

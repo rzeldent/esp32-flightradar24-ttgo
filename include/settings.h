@@ -1,6 +1,5 @@
 #pragma once
 
-// https://github.com/JChristensen/Timezone
 #include <Timezone.h>
 
 constexpr auto wifi_ssid_name = "<wifi_ssid_name>";
