@@ -1,9 +1,19 @@
 #pragma once
 
-#include <Arduino.h>
+// https://github.com/JChristensen/Timezone
+#include <Timezone.h>
 
 constexpr auto wifi_ssid_name = "<wifi_ssid_name>";
 constexpr auto wifi_ssid_password = "<wifi_ssid_password>";
+
+// There must always be 3 NTP servers. Remove or replace by null if not required
+constexpr auto ntp_server_1 = "europe.pool.ntp.org";
+constexpr auto ntp_server_2 = "0.pool.ntp.org";
+constexpr auto ntp_server_3 = "1.pool.ntp.org";
+
+// DST start and end (Central European Standard Time)
+constexpr TimeChangeRule dst_begin = {"CEST", Last, Sun, Mar, 2, 120};
+constexpr TimeChangeRule dst_end = {"CET ", Last, Sun, Oct, 3, 60};
 
 // Center (Amsterdam Airport Schiphol: 52.45-52.15,4.44-5.05
 constexpr auto center_latitude = 52.3f;

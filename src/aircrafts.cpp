@@ -1,5 +1,6 @@
 #include <aircrafts.h>
 #include <binary_search.h>
+#include <string.h>
 
 // List must be sorted because binary search is used
 
@@ -2711,7 +2712,6 @@ static const aircraft_t aircrafts[] = {
 
 const aircraft_t *lookupAircraft(const char *type_designator)
 {
-    log_d("Looking up aircraft %s", type_designator);
     constexpr size_t aircraft_size = sizeof(aircrafts) / sizeof(aircrafts[0]);
     // Array must be sorted on item to lookup
     return binary_array_lookup<aircraft_t, const char *>((aircraft_t *)aircrafts, aircraft_size, type_designator, [](const aircraft_t &other, const char *value)

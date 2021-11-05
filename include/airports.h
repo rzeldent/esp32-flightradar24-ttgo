@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
 #include <timage.h>
 
 typedef struct airport

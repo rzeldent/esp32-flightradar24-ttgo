@@ -1,6 +1,7 @@
 #include <airlines.h>
 #include <airline_logos.h>
 #include <binary_search.h>
+#include <string.h>
 
 // List must be sorted because binary search is used
 
@@ -5846,7 +5847,6 @@ static const airline_t airlines[] = {
 
 const airline_t *lookupAirline(const char *iata_airline)
 {
-    log_d("Looking up airline %s", iata_airline);
     constexpr size_t airline_size = sizeof(airlines) / sizeof(airlines[0]);
     // Array must be sorted on item to lookup
     return binary_array_lookup<airline_t, const char *>((airline_t *)airlines, airline_size, iata_airline, [](const airline_t &other, const char *value)

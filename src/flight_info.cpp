@@ -1,6 +1,8 @@
 #include <flight_info.h>
 
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
+#include <esp32-hal-log.h>
 
 std::list<flight_info> get_flights(float latitude, float longitude, float range_latitude, float range_longitude)
 {
@@ -18,7 +20,7 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
         return std::list<flight_info>();
     }
 
-    String response = client.getString();
+    auto response = client.getString();
     log_d("Body=%s", response.c_str());
     // Parse JSON states object
     DynamicJsonDocument doc_flight_data(8192);
@@ -33,8 +35,8 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
     client.end();
     
     std::list<flight_info> flights;
-    JsonObject flight_data_root = doc_flight_data.as<JsonObject>();
-    for (JsonPair kvp : flight_data_root)
+    auto flight_data_root = doc_flight_data.as<JsonObject>();
+    for (const auto kvp : flight_data_root)
     {
         if (!kvp.value().is<JsonArray>())
             continue;
@@ -50,14 +52,14 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
             .altitude = items[4].as<const int>(),
             .speed = items[5].as<const int>(),
             .squawk = (ushort)atoi(items[6].as<const char*>()),
-            .radar = items[7].as<String>(),
-            .type_designator = items[8].as<String>(),
-            .registration = items[9].as<String>(),
+            .radar = items[7].as<std::string>(),
+            .type_designator = items[8].as<std::string>(),
+            .registration = items[9].as<std::string>(),
             .timestamp = items[10].as<time_t>(),
-            .from = items[11].as<String>(),
-            .to = items[12].as<String>(),
-            .flight = items[13].as<String>(),
-            .flight_operator = items[18].as<String>()
+            .from = items[11].as<std::string>(),
+            .to = items[12].as<std::string>(),
+            .flight = items[13].as<std::string>(),
+            .flight_operator = items[18].as<std::string>()
         };
         flights.push_back(flight);
     }
