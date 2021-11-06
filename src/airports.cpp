@@ -1,6 +1,7 @@
 #include <airports.h>
 #include <country_flags.h>
 #include <binary_search.h>
+#include <string.h>
 
 // List must be sorted because binary search is used
 
@@ -6572,7 +6573,6 @@ static const airport_t airports[] = {
 
 const airport_t *lookupAirport(const char *iata_airport)
 {
-    log_d("Looking up airport %s", iata_airport);
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
     return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, iata_airport, [](const airport_t &other, const char *value)

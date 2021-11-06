@@ -1,6 +1,8 @@
 # pip install airportsdata
 # pip install iso3166
 
+# See: https://datahub.io/core/airport-codes
+
 import collections
 import airportsdata
 from iso3166 import countries
