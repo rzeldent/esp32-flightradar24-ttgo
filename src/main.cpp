@@ -70,9 +70,11 @@ void setup()
   // Disable brownout
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
+#ifdef CORE_DEBUG_LEVEL
   Serial.begin(115200);
   Serial.setDebugOutput(true);
-  esp_log_level_set("*", ESP_LOG_VERBOSE);
+  //esp_log_level_set("*", ESP_LOG_WARN);
+#endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Starting Flight Radar...");
