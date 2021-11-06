@@ -22,8 +22,8 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
 
     auto response = client.getString();
     log_d("Body=%s", response.c_str());
-    // Parse JSON states object
-    DynamicJsonDocument doc_flight_data(8192);
+    // Parse JSON states object 32k
+    DynamicJsonDocument doc_flight_data(32 * 1024);
     const auto error = deserializeJson(doc_flight_data, response);
     if (error != DeserializationError::Ok)
     {

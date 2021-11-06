@@ -38,6 +38,8 @@ std::string to_string(const T &t)
 #include <airlines.h>
 #include <images.h>
 
+#include <math.h>
+
 // Make a copy of the file settings.h and change the name to .settings.h (hidden so does not ends up in repository).
 #include <.settings.h>
 
@@ -124,6 +126,43 @@ void clear()
   tft.setCursor(0, 0);
 }
 
+void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ushort color_border, ushort color_arrow)
+{
+  // TFT is rotated 90 degrees; correct angle
+  heading -= 90;
+  // convert to radians: 0-360 => 0 - 2*PI
+  auto radians = heading / 360 * 2 * M_PI;
+  struct point
+  {
+    int x;
+    int y;
+  };
+  point center = {x + w / 2, y + h / 2};
+  // draw border
+  tft.drawCircle(center.x, center.y, w / 2, color_border);
+
+  auto arrow_length = w / 2 - 1;
+  auto tip_height = arrow_length / 4;
+  auto tip_width = arrow_length / 4;
+
+  double value_sin = sin(radians);
+  double value_cos = cos(radians);
+
+  auto transform = [center, value_sin, value_cos](point p)
+  {
+    return point{(int)(center.x + p.x * value_cos - p.y * value_sin), (int)(center.y + p.x * value_sin + p.y * value_cos)};
+  };
+
+  // End of arrow
+  auto arrow_end = transform(point{arrow_length, 0});
+  auto arrow_tip_left = transform(point{arrow_length - tip_height, -tip_width / 2});
+  auto arrow_tip_right = transform(point{arrow_length - tip_height, tip_width / 2});
+  // Draw from center to end
+  tft.drawLine(center.x, center.y, arrow_end.x, arrow_end.y, color_arrow);
+  // Draw tip
+  tft.fillTriangle(arrow_tip_left.x, arrow_tip_left.y, arrow_tip_right.x, arrow_tip_right.y, arrow_end.x, arrow_end.y, color_arrow);
+}
+
 std::string format_degrees(float value)
 {
   char buffer[10]; // "DDD°MM.MM"
@@ -168,15 +207,19 @@ void display_flight(const flight_info &flight_info)
   }
 
   tft.setTextFont(font_26pt);
-
   if (flight_info.flight.length())
     tft.print((flight_info.flight + " ").c_str());
 
   tft.print(flight_info.from.c_str());
   tft.println((flight_info.to.empty() ? "" : ">" + flight_info.to).c_str());
 
-  tft.println((to_string(flight_info.altitude) + "ft  " + to_string(flight_info.speed) + "kts " + to_string(flight_info.track) + "`").c_str());
-  tft.setCursor(0, tft.getCursorY() + 4);
+  auto y = tft.getCursorY();
+  tft.setCursor(0, tft.getCursorY() + 2);
+  tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
+  tft.setCursor(0, tft.getCursorY() + 2);
+
+  constexpr auto compass_width = 20;
+  draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_YELLOW);
 
   if (airline != nullptr)
   {
