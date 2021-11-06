@@ -1,6 +1,7 @@
 #include <airports.h>
 #include <country_flags.h>
 #include <binary_search.h>
+#include <string.h>
 
 // List must be sorted because binary search is used
 
@@ -5724,6 +5725,7 @@ static const airport_t airports[] = {
     {"USU", "Francisco B. Reyes Airport", "Coron", "Philippines", 12.1215000153, 120.099998474, &image_ph},
     {"UTA", "Mutare Airport", "", "Zimbabwe", -18.9974994659, 32.6272010803, &image_zw},
     {"UTB", "Muttaburra Airport", "", "Australia", -22.5832996368, 144.5330047607, &image_au},
+    {"UTC", "Soesterberg Air Base", "Soesterberg", "Netherlands", 52.12730026, 5.276189804, &image_nl},
     {"UTE", "Bultfontein Airport", "Bultfontein", "South Africa", -28.273369, 26.135835, &image_za},
     {"UTG", "Quthing Airport", "Quthing", "Lesotho", -30.4074993134, 27.6933002472, &image_ls},
     {"UTH", "Udon Thani Airport", "Udon Thani", "Thailand", 17.3864002228, 102.788002014, &image_th},
@@ -5964,6 +5966,7 @@ static const airport_t airports[] = {
     {"WMD", "Mandabe Airport", "Mandabe", "Madagascar", -21.0463049303, 44.9404120445, &image_mg},
     {"WME", "Mount Keith Airport", "", "Australia", -27.2863998413, 120.5550003052, &image_au},
     {"WMH", "Ozark Regional Airport", "Mountain Home", "United States", 36.3689002991, -92.4704971313, &image_us},
+    {"WMI", "Warsaw Modlin Airport", "Warsaw", "Poland", 52.450664864, 20.650997396, &image_pl},
     {"WML", "Malaimbandy Airport", "Malaimbandy", "Madagascar", -20.3553902921, 45.5433726311, &image_mg},
     {"WMN", "Maroantsetra Airport", "", "Madagascar", -15.4366998672, 49.6883010864, &image_mg},
     {"WMP", "Mampikony Airport", "Mampikony", "Madagascar", -16.0722693402, 47.6441645622, &image_mg},
@@ -6572,9 +6575,8 @@ static const airport_t airports[] = {
 
 const airport_t *lookupAirport(const char *iata_airport)
 {
-    log_d("Looking up airport %s", iata_airport);
     constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
     return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, iata_airport, [](const airport_t &other, const char *value)
-                                                        { return strcmp(other.iata_airport, value);  });
+                                                        { return strcmp(other.iata_airport, value); });
 }

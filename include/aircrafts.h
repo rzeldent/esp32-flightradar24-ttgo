@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
-
 typedef struct aircraft
 {
     const char* type_designator;
