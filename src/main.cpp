@@ -26,6 +26,8 @@ constexpr auto font_48pt_lcd = 7;
 #include <airlines.h>
 #include <images.h>
 
+#include <math.h>
+
 // Make a copy of the file settings.h and change the name to .settings.h (hidden so does not ends up in repository).
 #include <.settings.h>
 
@@ -93,6 +95,65 @@ void clear()
   tft.setCursor(0, 0);
 }
 
+void arrow(int x2, int y2, int x1, int y1, int alength, int awidth, int colour)
+{
+  float distance;
+  int dx, dy, x2o, y2o, x3, y3, x4, y4, k;
+  distance = sqrt(pow((x1 - x2), 2) + pow((y1 - y2), 2));
+  dx = x2 + (x1 - x2) * alength / distance;
+  dy = y2 + (y1 - y2) * alength / distance;
+  k = awidth / alength;
+  x2o = x2 - dx;
+  y2o = dy - y2;
+  x3 = y2o * k + dx;
+  y3 = x2o * k + dy;
+  //
+  x4 = dx - y2o * k;
+  y4 = dy - x2o * k;
+  tft.drawLine(x1, y1, x2, y2, colour);
+  tft.drawLine(x1, y1, dx, dy, colour);
+  tft.drawLine(x3, y3, x4, y4, colour);
+  tft.drawLine(x3, y3, x2, y2, colour);
+  tft.drawLine(x2, y2, x4, y4, colour);
+}
+
+void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ushort color_border, ushort color_arrow)
+{
+  // TFT is rotated 90 degrees; correct angle
+  heading -= 90;
+  // convert to radians: 0-360 => 0 - 2*PI
+  auto radians = heading / 360 * 2 * M_PI;
+  struct point
+  {
+    int x;
+    int y;
+  };
+  point center = {x + w / 2, y + h / 2};
+  // draw border
+  tft.drawCircle(center.x, center.y, w / 2, color_border);
+
+  auto arrow_length = w / 2 - 1;
+   auto tip_height = arrow_length/4;
+   auto tip_width = arrow_length/4;
+
+  double value_sin = sin(radians);
+  double value_cos = cos(radians);
+
+  auto transform = [center, value_sin, value_cos](point p)
+  {
+    return point{(int)(center.x + p.x * value_cos - p.y * value_sin), (int)(center.y + p.x * value_sin + p.y * value_cos)};
+  };
+
+  // End of arrow
+  auto arrow_end = transform(point{arrow_length, 0});
+  auto arrow_tip_left = transform(point{arrow_length - tip_height, -tip_width / 2});
+  auto arrow_tip_right = transform(point{arrow_length - tip_height, tip_width / 2});
+  // Draw from center to end
+  tft.drawLine(center.x, center.y, arrow_end.x, arrow_end.y, color_arrow);
+  // Draw tip
+  tft.fillTriangle(arrow_tip_left.x, arrow_tip_left.y, arrow_tip_right.x, arrow_tip_right.y, arrow_end.x, arrow_end.y, color_arrow);
+}
+
 String format_degrees(float latlon)
 {
   auto degrees = (int)latlon;
@@ -130,8 +191,19 @@ void display_flight(const flight_info &flight_info)
 
   tft.setTextFont(font_26pt);
   tft.println(flight_info.flight + "  " + flight_info.from + ">" + flight_info.to);
+
+  auto y = tft.getCursorY();
+  tft.setCursor(0, tft.getCursorY() + 2);
   tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
-  tft.setCursor(0, tft.getCursorY() + 4);
+  tft.setCursor(0, tft.getCursorY() + 2);
+
+  // clear();
+  // tft.println(String(flight_info.track) + "`");
+  // draw_compass((TFT_HEIGHT - TFT_WIDTH) / 2, 0, TFT_WIDTH, TFT_WIDTH, flight_info.track, TFT_LIGHTGREY, TFT_YELLOW);
+  // return;
+
+  constexpr auto compass_width = 20;
+  draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_YELLOW);
 
   if (airline != nullptr && airline->logo != nullptr)
     tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
