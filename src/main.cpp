@@ -149,11 +149,11 @@ void display_flight(const flight_info &flight_info)
   log_i("Flight info. Seen: %s. ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", time_buffer, flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
 
-  auto aircraft = lookupAircraft(flight_info.type_designator.c_str());
+  auto aircraft = flight_info.type_designator.empty() ? nullptr : lookupAircraft(flight_info.type_designator.c_str());
   if (aircraft == nullptr)
     log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
 
-  auto airline = lookupAirline(flight_info.flight_operator.c_str());
+  auto airline = flight_info.flight_operator.empty() ? nullptr : lookupAirline(flight_info.flight_operator.c_str());
   if (airline == nullptr)
     log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
 
