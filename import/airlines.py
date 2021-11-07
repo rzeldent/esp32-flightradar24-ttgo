@@ -14,7 +14,7 @@ import os.path
 logo_path = 'logos/'
 get_logo = False
 
-with open('import/airlines.csv', newline='') as csvfile:
+with open('import/airlines.csv', separator=',', newline='') as csvfile:
     airlines_csv = csv.reader(csvfile, delimiter=',', quotechar='|')
     airlines = {}
     
