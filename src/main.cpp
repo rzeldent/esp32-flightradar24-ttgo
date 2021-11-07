@@ -129,7 +129,8 @@ void clear()
 void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ushort color_border, ushort color_arrow)
 {
   // TFT is rotated 90 degrees; correct angle
-  heading -= 90;
+  heading += 90;
+
   // convert to radians: 0-360 => 0 - 2*PI
   auto radians = heading / 360 * 2 * M_PI;
   struct point
@@ -142,8 +143,7 @@ void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ush
   tft.drawCircle(center.x, center.y, w / 2, color_border);
 
   auto arrow_length = w / 2 - 1;
-  auto tip_height = arrow_length / 4;
-  auto tip_width = arrow_length / 4;
+  auto arrow_width = arrow_length / 1;
 
   double value_sin = sin(radians);
   double value_cos = cos(radians);
@@ -153,14 +153,11 @@ void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ush
     return point{(int)(center.x + p.x * value_cos - p.y * value_sin), (int)(center.y + p.x * value_sin + p.y * value_cos)};
   };
 
-  // End of arrow
-  auto arrow_end = transform(point{arrow_length, 0});
-  auto arrow_tip_left = transform(point{arrow_length - tip_height, -tip_width / 2});
-  auto arrow_tip_right = transform(point{arrow_length - tip_height, tip_width / 2});
-  // Draw from center to end
-  tft.drawLine(center.x, center.y, arrow_end.x, arrow_end.y, color_arrow);
-  // Draw tip
-  tft.fillTriangle(arrow_tip_left.x, arrow_tip_left.y, arrow_tip_right.x, arrow_tip_right.y, arrow_end.x, arrow_end.y, color_arrow);
+  // angles of the triangle for the arrow
+  auto arrow_border = transform(point{-arrow_length, 0});
+  auto arrow_tip_left = transform(point{arrow_length, -arrow_width / 2});
+  auto arrow_tip_right = transform(point{arrow_length, arrow_width / 2});
+  tft.fillTriangle(arrow_tip_left.x, arrow_tip_left.y, arrow_tip_right.x, arrow_tip_right.y, arrow_border.x, arrow_border.y, color_arrow);
 }
 
 std::string format_degrees(float value)
@@ -219,7 +216,7 @@ void display_flight(const flight_info &flight_info)
   tft.setCursor(0, tft.getCursorY() + 2);
 
   constexpr auto compass_width = 26;
-  draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_YELLOW);
+  draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_WHITE);
 
   if (airline != nullptr)
   {
@@ -236,7 +233,7 @@ void display_flight(const flight_info &flight_info)
     tft.print((flight_info.registration + " ").c_str());
   tft.println(format_gps_location(flight_info.latitude, flight_info.longitude).c_str());
   tft.setCursor(0, tft.getCursorY() + 4);
-  
+
   if (aircraft != nullptr)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
