@@ -7,7 +7,6 @@ Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.
 
 This application loads the flights near you (defined in the file .settings.h) and displays them sequentially on the display.
 
-![Example1](assets/20210611_183103.jpg)
 ![Example2](assets/20211107_162659.jpg)
 ![Example3](assets/20211107_162732.jpg)
 
