@@ -8,12 +8,14 @@ Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.
 This application loads the flights near you (defined in the file .settings.h) and displays them sequentially on the display.
 
 ![Example1](assets/20210611_183103.jpg)
-![Example2](assets/20210611_183112.jpg)
-![Example3](assets/20210611_183122.jpg)
+![Example2](assets/20211107_162659.jpg)
+![Example3](assets/20211107_162732.jpg)
 
 ### Features
-- Lookup of airplane type
-- Lookup of the full name for airports
+- Lookup of airplane type and specifics
+- Lookup of carrier and display the logo
+- Display GPS location, registration,  altitude and speed of the airplan
+- Lookup of the full name for the from- and to airports name and region, lat/lon
 - Lookup and display flag for the countries
 - No account required
 
