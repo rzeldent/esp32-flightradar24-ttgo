@@ -215,10 +215,10 @@ void display_flight(const flight_info &flight_info)
 
   auto y = tft.getCursorY();
   tft.setCursor(0, tft.getCursorY() + 2);
-  tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts " + String(flight_info.track) + "`");
+  tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts ");
   tft.setCursor(0, tft.getCursorY() + 2);
 
-  constexpr auto compass_width = 20;
+  constexpr auto compass_width = 26;
   draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_YELLOW);
 
   if (airline != nullptr)
@@ -232,8 +232,11 @@ void display_flight(const flight_info &flight_info)
 
   tft.setTextFont(font_16pt);
 
-  tft.println((flight_info.registration + " " + format_gps_location(flight_info.latitude, flight_info.longitude)).c_str());
+  if (!flight_info.registration.empty())
+    tft.print((flight_info.registration + " ").c_str());
+  tft.println(format_gps_location(flight_info.latitude, flight_info.longitude).c_str());
   tft.setCursor(0, tft.getCursorY() + 4);
+  
   if (aircraft != nullptr)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
