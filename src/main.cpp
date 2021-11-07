@@ -249,12 +249,12 @@ void display_flight(const flight_info &flight_info)
     auto from = lookupAirport(flight_info.from.c_str());
     if (from != nullptr)
     {
-      log_i("From %s: %s - %s (%s) %s", from->iata_airport, from->name, from->city, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
+      log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
       //tft.println(from->name);
       auto cursor_y = tft.getCursorY();
       tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, from->country->flag->data);
       tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
-      tft.println((from->city + std::string(", ") + from->country->name).c_str());
+      tft.println((from->city + std::string(" (") + from->region + std::string("), ") + from->country->name).c_str());
     }
     else
       log_w("From airport (%s) not found", flight_info.from.c_str());
@@ -267,12 +267,12 @@ void display_flight(const flight_info &flight_info)
     auto to = lookupAirport(flight_info.to.c_str());
     if (to != nullptr)
     {
-      log_i("To %s: %s - %s (%s) %s", to->iata_airport, to->name, to->city, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
+      log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
       //tft.println(to->name);
       auto cursor_y = tft.getCursorY();
       tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, to->country->flag->data);
       tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
-      tft.println((to->city + std::string(", ") + to->country->name).c_str());
+      tft.println((to->city + std::string(" (") + to->region + std::string("), ") + to->country->name).c_str());
     }
     else
       log_w("To airport (%s) not found", flight_info.to.c_str());
