@@ -1,23 +1,72 @@
-# pip install airportsdata
-# pip install iso3166
+# https://davidmegginson.github.io/ourairports-data/airports.csv
+# https://davidmegginson.github.io/ourairports-data/countries.csv
 
-# See: https://datahub.io/core/airport-codes
+# pip install csv
+# pip install collections
+# pip install unicodedata
+# pip install requests
 
+import csv
 import collections
-import airportsdata
-from iso3166 import countries
 import unicodedata
+import requests
 
-# Load the list of airports
-airports_iata = airportsdata.load('IATA')
+download_csv = False
 
-file = open('airports.txt', 'w')
-# Sort the list on IATA code
-sorted = collections.OrderedDict(sorted(airports_iata.items(), key=lambda v: v[0]));
-for key, airport in sorted.items():
-    country = countries.get(airport['country'])
-    values = ["\"" + key + "\", \"" + airport['name']+"\"", "\"" + airport['city']+"\"", "\"" + country.name+"\"",  str(airport['lat']), str(airport['lon']), "&image_" + country.alpha2.lower()]
-    line = "{ " + ", ".join(values) + "}, \n"
-    print(line)
-    file.write(unicodedata.normalize('NFKD', line).encode('ascii', errors='ignore').decode('ascii'))
-file.close()
+if download_csv:
+    # Download the airports.csv file
+    request = requests.get(
+        'https://davidmegginson.github.io/ourairports-data/airports.csv', allow_redirects=True)
+    if request.status_code == 200:
+        open('import/airports.csv', 'wb').write(request.content)
+
+    # Download the countries.csv file
+    request = requests.get(
+        'https://davidmegginson.github.io/ourairports-data/countries.csv', allow_redirects=True)
+    if request.status_code == 200:
+        open('import/countries.csv', 'wb').write(request.content)
+
+with open('import/countries.csv', encoding='utf-8') as csvfile:
+    countries_csv = csv.reader(csvfile, delimiter=',', quotechar='"')
+    next(countries_csv, None)  # skip the headers
+    countries = []
+  
+    # "id","code","name","continent","wikipedia_link","keywords"
+    for row in countries_csv:
+        if not row[1] or len(row[1]) != 2:   # Only with 2 letter country code
+            continue
+    
+        countries.append({'iso3166': row[1], 'name': row[2]})
+
+    sorted_countries= sorted(countries, key=lambda k: k['iso3166'])
+
+
+with open('import/airports.csv', encoding='utf-8') as csvfile:
+    airports_csv = csv.reader(csvfile, delimiter=',', quotechar='"')
+    next(airports_csv, None)  # skip the headers
+    airports = []
+  
+    # "id","ident","type","name","latitude_deg","longitude_deg","elevation_ft","continent","iso_country","iso_region","municipality","scheduled_service","gps_code","iata_code","local_code","home_link","wikipedia_link","keywords"
+    for row in airports_csv:
+        if not row[13] or len(row[13]) != 3:   # Only with 3 letter IATA code
+            continue
+
+        airports.append({'iata': row[13], 'name': row[3], 'municipality': row[10], 'iso3166': row[8], 'latitude': row[4], 'longitude': row[5], 'elevation': row[6]})
+
+    sorted_airports = sorted(airports, key=lambda k: k['iata'])
+
+    file = open('countries.txt', 'w')
+    for country in sorted_countries:
+        line = 'const country_t country_' + country['iso3166'] + ' = { "' + country['iso3166'] + '", "' + country['name']+ '", &country_flag_' + country['iso3166'] + ' };\n'
+        print(line)
+        file.write(unicodedata.normalize('NFKD', line).encode('ascii', errors='ignore').decode('ascii'))
+
+    file.close()
+
+    file = open('airports.txt', 'w')
+    for airport in sorted_airports:
+        line = '{ "' + airport['iata'] + '", "' + airport['name'].replace('"', '\'')+ '", "' + airport['municipality']+ '", &country_' + airport['iso3166'] + ' ,' +  str(airport['latitude']) + ', ' + str(airport['longitude']) + ', ' + str(airport['elevation'] + ' },\n')
+        print(line)
+        file.write(unicodedata.normalize('NFKD', line).encode('ascii', errors='ignore').decode('ascii'))
+
+    file.close()
