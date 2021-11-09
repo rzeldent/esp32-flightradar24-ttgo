@@ -1,13 +1,13 @@
 #pragma once
 
-#include <timage.h>
+#include <country.h>
 
 typedef struct airline
 {
     const char *iata_airline;
     const char *callsign;
     const char *name;
-    const char *country;
+    const country_t *country;
     const tImage *logo;
 } airline_t;
 

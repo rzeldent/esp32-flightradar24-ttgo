@@ -220,7 +220,7 @@ void display_flight(const flight_info &flight_info)
 
   if (airline != nullptr)
   {
-    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country, airline->logo ? "present" : "not available");
+    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo != nullptr)
       tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
     else
