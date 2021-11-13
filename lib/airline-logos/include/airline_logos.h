@@ -120,6 +120,7 @@ const extern tImage airline_logo_FIN;
 const extern tImage airline_logo_FJI;
 const extern tImage airline_logo_FLG;
 const extern tImage airline_logo_GEC;
+const extern tImage airline_logo_GER;
 const extern tImage airline_logo_GFA;
 const extern tImage airline_logo_GIA;
 const extern tImage airline_logo_GJS;

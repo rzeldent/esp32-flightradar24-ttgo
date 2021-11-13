@@ -1996,6 +1996,7 @@ static const airline_t airlines[] = {
     {"GED", "LANGUEDOC", "Europe Air Lines", &country_FR, nullptr},
     {"GEE", "GEESAIR", "Geesair", &country_CA, nullptr},
     {"GEN", "GENSA-BRASIL", "GENSA", &country_BR, nullptr},
+    {"GER", "GERMAN EAGLE", "German Airways", &country_DE, nullptr},
     {"GES", "GESTAIR", "Gestair", &country_ES, nullptr},
     {"GET", "GETRA", "GETRA", &country_GQ, nullptr},
     {"GFA", "GULF AIR", "Gulf Air", &country_BH, &airline_logo_GFA},
