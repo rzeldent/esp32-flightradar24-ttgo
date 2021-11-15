@@ -11,7 +11,7 @@ typedef struct airport
     const country_t *country;
     double latitude;
     double longitude;
-    int elevation;
+    int elevation_ft;
 } airport_t;
 
 extern const airport_t *lookupAirport(const char* iata_airport);
