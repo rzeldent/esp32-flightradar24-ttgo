@@ -4,13 +4,19 @@ import os
 import sys
 from PIL import Image
 
-if (len(sys.argv) < 4):
-    print('Usage: images_to_cpp.py <input_dir> <file.c> <file.h>')
+if (len(sys.argv) <= 3):
+    print('Usage: images_to_cpp.py <input_dir> <file.c> <file.h> <width> <height>')
     sys.exit(1)
 
 input_dir = sys.argv[1]
 file_c = sys.argv[2]
 file_h = sys.argv[3]
+
+resize_width = resize_height = 0
+
+if (len(sys.argv) >= 5):
+    resize_width = int(sys.argv[4])
+    resize_height = int(sys.argv[5])
 
 converted = []
 
@@ -21,6 +27,8 @@ output_file = open(file_c, 'w')
 output_file.write('//*******************************************************************************\n')
 output_file.write('// Type: R5G6B5\n')
 output_file.write('// Scan: top_to_bottom then forward\n')
+if (resize_width > 0 and resize_height > 0):
+    output_file.write('// Resize: ' + str(resize_width) + 'x' + str(resize_height) + '\n')
 output_file.write('// ******************************************************************************\n')
 output_file.write('\n')
 
@@ -35,6 +43,10 @@ for file_name in file_names:
 
     image_data_name = 'image_data_' + base_name
     image = Image.open(image_path)
+    if (resize_width != 0 and resize_height != 0):
+        print('Resizing to: ' + str(resize_width) + 'x' + str(resize_height))
+        image = image.resize((resize_width, resize_height))
+
     image = image.convert('RGBA')
 
     width, height = image.size
