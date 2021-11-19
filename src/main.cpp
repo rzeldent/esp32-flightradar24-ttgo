@@ -212,7 +212,7 @@ void display_flight(const flight_info &flight_info)
 
   auto y = tft.getCursorY();
   tft.setCursor(0, tft.getCursorY() + 2);
-  tft.println(String(flight_info.altitude) + "ft  " + String(flight_info.speed) + "kts ");
+  tft.println(String(flight_info.altitude) + " ft  " + String(flight_info.speed) + " kts ");
   tft.setCursor(0, tft.getCursorY() + 2);
 
   constexpr auto compass_width = 26;
