@@ -58,9 +58,7 @@ for file_name in file_names:
     for y in range(0, height):
         for x in range(width):
             value = pixels[y * width + x]
-            output_file.write('0x' + hex(convert_R8G8B8_to_R5G6B5(value))[2:].zfill(4))
-            if (y*width+x < width*height - 1):
-                output_file.write(',')
+            output_file.write('0x' + hex(convert_R8G8B8_to_R5G6B5(value))[2:].zfill(4) + ', ')
         output_file.write('\n')
 
     output_file.write('};\n')
