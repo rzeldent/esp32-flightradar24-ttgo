@@ -182,7 +182,6 @@ extern const image_t airline_logo_CAP;
 extern const image_t airline_logo_CLU;
 extern const image_t airline_logo_PAL;
 extern const image_t airline_logo_KAL;
-extern const image_t ITY;
 extern const image_t airline_logo_ITY;
 extern const image_t airline_logo_BEL;
 extern const image_t airline_logo_RVF;
