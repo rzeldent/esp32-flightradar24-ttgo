@@ -21,6 +21,7 @@ converted = []
 
 file_names = os.listdir(input_dir)
 file_names = filter(lambda x: os.path.isfile(os.path.join(input_dir, x)), file_names)
+file_names = sorted(file_names)
 
 output_file = open(file_c, 'w')
 output_file.write('//*******************************************************************************\n')
