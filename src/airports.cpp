@@ -6328,6 +6328,7 @@ static const airport_t airports[] = {
 { "QDJ", "Tsletsi Airport", "Djelfa", "17", &country_DZ ,34.6657, 3.351, 3753 },
 { "QDY", "Taean Airport", "Taean", "44", &country_KR ,36.59453, 126.295803, 16 },
 { "QEK", "Budel/Kempen Airport", "Budel", "NB", &country_NL, 51.2566454, 5.6016832, 114},
+{ "QEW", "Leicester Railway Station", "Leicester", "ENG", &country_GB, 52.63965, -1.14432, 276},
 { "QET", "Troll Airfield", "Troll Station", "U", &country_AQ ,-71.95714, 2.45257, 4167 },
 { "QFG", "Eqalugaarsuit Heliport", "Eqalugaarsuit", "U", &country_GL ,60.6197196536, -45.9140619636, 9 },
 { "QFI", "Iginniarfik", "Iginniarfik", "U", &country_GL ,68.1472255861, -53.1735277176, 50 },

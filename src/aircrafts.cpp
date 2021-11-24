@@ -2542,6 +2542,7 @@ static const aircraft_t aircrafts[] = {
     {"CH30", "Zenair", "Tri-ZAnith", "LandPlane", "Piston", '1'},
     {"CH40", "Champion", "402 Lancer", "LandPlane", "Piston", '2'},
     {"CH40", "Champion", "Lancer", "LandPlane", "Piston", '2'},
+    {"CH47", "Boeing", "Chinook", "Helicopter", "Piston", '2'},
     {"CH50", "Zenair", "CH-50 Mini ZAnith", "LandPlane", "Piston", '1'},
     {"CH50", "Zenair", "CH-50 Mini-Z", "LandPlane", "Piston", '1'},
     {"CH50", "Zenair", "Mini ZAnith", "LandPlane", "Piston", '1'},
