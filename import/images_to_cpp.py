@@ -2,6 +2,7 @@
 
 import os
 import sys
+import hashlib
 from PIL import Image
 
 if (len(sys.argv) <= 3):
@@ -35,6 +36,10 @@ output_file.write('\n')
 output_file.write('#include <image.h>\n')
 output_file.write('\n')
 
+hashes = {}
+
+mappings = {}
+
 for file_name in file_names:
     print('Processing: ' + file_name)
 
@@ -49,23 +54,32 @@ for file_name in file_names:
     image = image.convert('RGBA')
 
     width, height = image.size
-    pixels = list(image.getdata())
 
-    output_file.write('\n')
-    output_file.write('static const uint16_t ' + image_data_name + '[' + str(height * width) + '] = {\n')
+    hash = hashlib.md5(image.tobytes()).hexdigest()
 
-    convert_R8G8B8_to_R5G6B5 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
+    if (not hash in hashes):
+        hashes[hash]= base_name
 
-    for y in range(0, height):
-        for x in range(width):
-            value = pixels[y * width + x]
-            output_file.write('0x' + hex(convert_R8G8B8_to_R5G6B5(value))[2:].zfill(4) + ', ')
+        pixels = list(image.getdata())
+
         output_file.write('\n')
+        output_file.write('static const uint16_t ' + image_data_name + '[' + str(height * width) + '] = {\n')
 
-    output_file.write('};\n')
-    output_file.write('const image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
+        convert_R8G8B8_to_R5G6B5 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
 
-    image.close()
+        for y in range(0, height):
+            for x in range(width):
+                value = pixels[y * width + x]
+                output_file.write('0x' + hex(convert_R8G8B8_to_R5G6B5(value))[2:].zfill(4) + ', ')
+            output_file.write('\n')
+
+        output_file.write('};\n')
+        output_file.write('const image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
+
+    else:
+        mappings[base_name] = hashes[hash]
+
+        image.close()
 
     converted.append(base_name)
 
@@ -80,6 +94,10 @@ output_file.write('\n')
 
 for base_name in converted:
     output_file.write('extern const image_t ' + base_name + ';\n')
+
+output_file.write('\n')
+for mapping in mappings:
+    output_file.write('#define ' + mapping + ' ' + mappings[mapping] + '\n')
 
 output_file.close()
 
