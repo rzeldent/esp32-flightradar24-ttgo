@@ -257,3 +257,8 @@ extern const image_t country_flag_ZA;
 extern const image_t country_flag_ZM;
 extern const image_t country_flag_ZW;
 extern const image_t country_flag_ZZ;
+
+#define country_flag_MF country_flag_FR
+#define country_flag_NO country_flag_BV
+#define country_flag_SJ country_flag_BV
+#define country_flag_US country_flag_UM
