@@ -5,7 +5,6 @@
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <ttgo_backlight.h>
-#include <rle_decode.h>
 
 constexpr auto font_16pt = 2;
 constexpr auto font_26pt = 4;
@@ -94,9 +93,8 @@ void setup()
   tft.setTextWrap(false, false);
 
   // Show splash screen
-  auto image = decode_rle(&image_splash);
+  auto image = rle_decode(&image_splash);
   tft.pushImage(0, 0, image->width, image->height, image->data);
-  delete image;
 
   tft.setTextFont(font_26pt);
   tft.print("Flight Radar");
@@ -227,10 +225,8 @@ void display_flight(const flight_info &flight_info)
     log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo != nullptr)
     {
-      auto image = decode_rle(airline->logo);
+      auto image = rle_decode(airline->logo);
       tft.pushImage(TFT_HEIGHT - image->width, tft.getCursorY(), image->width, image->height, image->data);
-      delete image->data;
-      delete image;
     }
     else
       log_w("No logo present for airline: %s", airline->iata_airline);
@@ -262,10 +258,8 @@ void display_flight(const flight_info &flight_info)
       //tft.println(from->name);
 
       auto cursor_y = tft.getCursorY();
-      auto image = decode_rle(from->country->flag);
+      auto image = rle_decode(from->country->flag);
       tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
-      delete image->data;
-      delete image;
       tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
       tft.println((from->city + std::string(" (") + from->region + std::string("), ") + from->country->name).c_str());
     }
@@ -283,10 +277,8 @@ void display_flight(const flight_info &flight_info)
       log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
       //tft.println(to->name);
       auto cursor_y = tft.getCursorY();
-      auto image = decode_rle(to->country->flag);
+      auto image = rle_decode(to->country->flag);
       tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
-      delete image->data;
-      delete image;
       tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
       tft.println((to->city + std::string(" (") + to->region + std::string("), ") + to->country->name).c_str());
     }
@@ -361,10 +353,8 @@ void loop()
   {
     log_i("Connecting to: %s", wifi_ssid_name);
     // Show Dinosour / cactus image and wait
-    auto image = decode_rle(&image_no_internet);
+    auto image = rle_decode(&image_no_internet);
     tft.pushImage(0, 0, image->width, image->height, image->data);
-    delete image->data;
-    delete image;
     // Show for 5 seconds
     delay(5000);
   }

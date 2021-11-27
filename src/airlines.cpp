@@ -316,7 +316,7 @@ static const airline_t airlines[] = {
     {"APL", "AEREO PRINCIPAL", "Corporativo Aereo Principal", &country_MX, nullptr},
     {"APM", "ALASKA PACIFIC", "Airpac, Inc.", &country_US, nullptr},
     {"APP", "AEROPERLAS", "Aerolineas Pacifico Atlantico, S.A. (Apair)", &country_PA, nullptr},
-    {"APQ", "ASPEN BASE", "Aspen Aviation", &country_US, &airline_logo_APQ},
+    {"APQ", "ASPEN BASE", "Aspen Aviation", &country_US, nullptr},
     {"APR", "AEROPERLAS", "Aerolineas Primordiales", &country_MX, nullptr},
     {"APT", "LAP", "LAP Colombia - Lineas Aereas Petroleras, S.A.", &country_CO, nullptr},
     {"APU", "AEROPUMA", "Aeropuma, S.A.", &country_SV, nullptr},

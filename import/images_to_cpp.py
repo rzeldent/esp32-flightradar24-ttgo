@@ -27,18 +27,17 @@ def encode_RLE(data):
     return encoded
 
 
-if (len(sys.argv) <= 3):
-    print('Usage: images_to_cpp.py <input_dir> <file.c> <file.h> <width> <height>')
+if (len(sys.argv) <= 2):
+    print('Usage: images_to_cpp.py <input_dir> <file.h> <width> <height>')
     sys.exit(1)
 
 input_dir = sys.argv[1]
-file_c = sys.argv[2]
-file_h = sys.argv[3]
+file_h = sys.argv[2]
 
 resize = None
 
-if (len(sys.argv) >= 5):
-    resize = (int(sys.argv[4]), int(sys.argv[5]))
+if (len(sys.argv) >= 4):
+    resize = (int(sys.argv[3]), int(sys.argv[4]))
 
 converted = []
 
@@ -46,7 +45,7 @@ file_names = os.listdir(input_dir)
 file_names = filter(lambda x: x[0] != '.' and os.path.isfile(os.path.join(input_dir, x)), file_names)
 file_names = sorted(file_names)
 
-output_file = open(file_c, 'w')
+output_file = open(file_h, 'w')
 output_file.write('//*******************************************************************************\n')
 output_file.write('// Type: R5G6B5\n')
 output_file.write('// Scan: top_to_bottom then forward\n')
@@ -56,11 +55,10 @@ output_file.write('// **********************************************************
 output_file.write('\n')
 
 output_file.write('#include <image.h>\n')
-output_file.write('\n')
 
 hashes = {}
 
-mappings = {}
+duplicates = {}
 
 for file_name in file_names:
     print('Processing: ' + file_name)
@@ -83,6 +81,9 @@ for file_name in file_names:
         hashes[hash]= base_name
 
         pixels = list(image.getdata())
+        original_size = len(pixels)
+        compressed_size = 0
+
         convert_R8G8B8_to_R5G6B5 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
 
         image_data = []
@@ -93,38 +94,29 @@ for file_name in file_names:
         image_data = encode_RLE(image_data)
 
         output_file.write('\n')
-        output_file.write('static const uint16_t ' + image_data_name + '[] = {\n\t')
+        output_file.write('constexpr unsigned short ' + image_data_name + '[] = {\n\t')
         for i in range(0, len(image_data)):
             length = image_data[i][0]
             for l in range(0, len(length)):
                 output_file.write('0x' + hex(length[l])[2:].zfill(2) + ', ')
             output_file.write('0x' + hex(image_data[i][1])[2:].zfill(4) + ', ')
+            compressed_size += len(length) + 1
         output_file.write('\n')
         output_file.write('};\n')
-        output_file.write('const image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
+        output_file.write('constexpr image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
+
+        print('Original size ' + str(original_size) + '. Compressed size: ' + str(compressed_size) + ' (' + str(100.0 * compressed_size / original_size) + '%)')
 
     else:
-        mappings[base_name] = hashes[hash]
+        duplicates[base_name] = hashes[hash]
 
         image.close()
 
     converted.append(base_name)
 
-output_file.close()
-
-output_file = open(file_h, 'w')
-
-output_file.write('#pragma once\n')
-output_file.write('\n')
-output_file.write('#include <image.h>\n')
-output_file.write('\n')
-
-for base_name in converted:
-    output_file.write('extern const image_t ' + base_name + ';\n')
-
-output_file.write('\n')
-for mapping in mappings:
-    output_file.write('#define ' + mapping + ' ' + mappings[mapping] + '\n')
+output_file.write('\n\n')
+for mapping in duplicates:
+    output_file.write('#define ' + mapping + ' ' + duplicates[mapping] + '\n')
 
 output_file.close()
 
