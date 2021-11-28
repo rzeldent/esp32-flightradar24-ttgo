@@ -103,7 +103,7 @@ for file_name in file_names:
             compressed_size += len(length) + 1
         output_file.write('\n')
         output_file.write('};\n')
-        output_file.write('constexpr image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
+        output_file.write('constexpr image_data_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
 
         print('Original size ' + str(original_size) + '. Compressed size: ' + str(compressed_size) + ' (' + str(100.0 * compressed_size / original_size) + '%)')
 

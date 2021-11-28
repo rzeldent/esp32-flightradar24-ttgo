@@ -6,7 +6,7 @@ typedef struct country
 {
     const char *iso3166;
     const char *name;
-    const image_t *flag;
+    const image_data_t *flag;
 } country_t;
 
 extern const country_t country_AD;

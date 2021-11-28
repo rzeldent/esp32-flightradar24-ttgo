@@ -1,6 +1,6 @@
 #include <image.h>
 
-std::unique_ptr<image_t> rle_decode(const image_t *rle_image)
+std::unique_ptr<image_t> rle_decode(const image_data_t *rle_image)
 {
     auto image = std::unique_ptr<image_t>(new image_t);
     image->width = rle_image->width;
