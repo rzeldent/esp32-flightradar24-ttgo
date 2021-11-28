@@ -93,7 +93,9 @@ void setup()
   tft.setTextWrap(false, false);
 
   // Show splash screen
-  tft.pushImage(0, 0, image_splash.width, image_splash.height, image_splash.data);
+  auto image = rle_decode(&image_splash);
+  tft.pushImage(0, 0, image->width, image->height, image->data);
+
   tft.setTextFont(font_26pt);
   tft.print("Flight Radar");
 
@@ -222,7 +224,10 @@ void display_flight(const flight_info &flight_info)
   {
     log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo != nullptr)
-      tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, airline->logo->data);
+    {
+      auto image = rle_decode(airline->logo);
+      tft.pushImage(TFT_HEIGHT - image->width, tft.getCursorY(), image->width, image->height, image->data);
+    }
     else
       log_w("No logo present for airline: %s", airline->iata_airline);
   }
@@ -251,8 +256,10 @@ void display_flight(const flight_info &flight_info)
     {
       log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
       //tft.println(from->name);
+
       auto cursor_y = tft.getCursorY();
-      tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, from->country->flag->data);
+      auto image = rle_decode(from->country->flag);
+      tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
       tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
       tft.println((from->city + std::string(" (") + from->region + std::string("), ") + from->country->name).c_str());
     }
@@ -270,7 +277,8 @@ void display_flight(const flight_info &flight_info)
       log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
       //tft.println(to->name);
       auto cursor_y = tft.getCursorY();
-      tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, to->country->flag->data);
+      auto image = rle_decode(to->country->flag);
+      tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
       tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
       tft.println((to->city + std::string(" (") + to->region + std::string("), ") + to->country->name).c_str());
     }
@@ -345,7 +353,8 @@ void loop()
   {
     log_i("Connecting to: %s", wifi_ssid_name);
     // Show Dinosour / cactus image and wait
-    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
+    auto image = rle_decode(&image_no_internet);
+    tft.pushImage(0, 0, image->width, image->height, image->data);
     // Show for 5 seconds
     delay(5000);
   }
