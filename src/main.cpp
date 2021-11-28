@@ -107,7 +107,8 @@ void setup()
   {
     log_w("Connection Failed! Rebooting...");
     // Show Dinosour / cactus image, wait an reset
-    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
+    auto image = rle_decode(&image_no_internet);
+    tft.pushImage(0, 0, image->width, image->height, image->data);
     delay(10000);
     ESP.restart();
   }
@@ -304,9 +305,6 @@ void loop()
       log_i("Updating flights");
       // update flights
       flights = get_flights(center_latitude, center_longitude, range_latitude, range_longitude);
-      //log_d("Remove flights without flight number");
-      //  flights.remove_if([](const flight_info &f)
-      //                  { return f.flight.empty(); });
 
       log_i("Number of flights to display: %d", flights.size());
       if (flights.empty())
@@ -325,6 +323,8 @@ void loop()
         tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
         tft.setTextColor(text_color);
         tft.drawCentreString(format_gps_location(center_latitude, center_longitude).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+        tft.drawCentreString(center_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+
 
         delay(refresh_flights_milliseconds);
         return;

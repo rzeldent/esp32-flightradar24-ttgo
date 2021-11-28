@@ -3564,6 +3564,7 @@ static const aircraft_t aircrafts[] = {
     {"DRAG", "Df helicopters", "Dragon", "Helicopter", "Piston", '1'},
     {"DRAG", "Dragon fly", "Dragon Fly", "Helicopter", "Piston", '1'},
     {"DRIF", "Austflight", "Drifter", "LandPlane", "Piston", '1'},
+    {"DRON", "", "", "Drone", "", ' '},
     {"DRTG", "Applegate & weyant", "Dart GC", "LandPlane", "Piston", '1'},
     {"DRTG", "Culver", "Dart G", "LandPlane", "Piston", '1'},
     {"DRTG", "Culver", "Dart GK", "LandPlane", "Piston", '1'},
