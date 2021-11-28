@@ -325,6 +325,8 @@ void loop()
         tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
         tft.setTextColor(text_color);
         tft.drawCentreString(format_gps_location(center_latitude, center_longitude).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+        tft.drawCentreString(center_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+
 
         delay(refresh_flights_milliseconds);
         return;
