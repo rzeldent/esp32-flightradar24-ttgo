@@ -246,4 +246,4 @@ const country_t country_YT = { "YT", "Mayotte", &country_flag_YT };
 const country_t country_ZA = { "ZA", "South Africa", &country_flag_ZA };
 const country_t country_ZM = { "ZM", "Zambia", &country_flag_ZM };
 const country_t country_ZW = { "ZW", "Zimbabwe", &country_flag_ZW };
-const country_t country_ZZ = { "ZZ", "Unknown", &country_flag_ZZ };
+const country_t country_ZZ = { "ZZ", "Unknown", nullptr };
