@@ -223,14 +223,14 @@ void display_flight(const flight_info &flight_info)
 
   if (airline != nullptr)
   {
-    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->iata_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
+    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo != nullptr)
     {
       auto image = rle_decode(airline->logo);
       tft.pushImage(TFT_HEIGHT - image->width, tft.getCursorY(), image->width, image->height, image->data);
     }
     else
-      log_w("No logo present for airline: %s", airline->iata_airline);
+      log_w("No logo present for airline: %s", airline->icao_airline);
   }
 
   tft.setTextFont(font_16pt);

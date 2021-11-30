@@ -4,6 +4,7 @@
 
 typedef struct airline
 {
+    const char *icao_airline;
     const char *iata_airline;
     const char *callsign;
     const char *name;
