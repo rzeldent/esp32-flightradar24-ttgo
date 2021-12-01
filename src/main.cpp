@@ -55,8 +55,8 @@ constexpr auto text_color = TFT_WHITE;
 constexpr auto flag_margin_x_px = 4;
 constexpr auto flag_margin_y_px = 2;
 
-constexpr auto logo_width_px = 32;
-constexpr auto logo_height_px = 32;
+constexpr auto logo_width_px = 40;
+constexpr auto logo_height_px = 40;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);

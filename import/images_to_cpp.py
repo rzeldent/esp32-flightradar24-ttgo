@@ -3,6 +3,8 @@
 import os
 import sys
 import hashlib
+import struct
+import zlib
 from PIL import Image
 
 def encode_variable_lenght(i):
@@ -28,7 +30,7 @@ def encode_RLE(data):
 
 
 if (len(sys.argv) <= 2):
-    print('Usage: images_to_cpp.py <input_dir> <file.h> <width> <height>')
+    print('Usage: images_to_cpp.py <input_dir> <file.h> <maxwidth> <maxheight>')
     sys.exit(1)
 
 input_dir = sys.argv[1]
@@ -37,7 +39,9 @@ file_h = sys.argv[2]
 resize = None
 
 if (len(sys.argv) >= 4):
-    resize = (int(sys.argv[3]), int(sys.argv[4]))
+    resize= (int(sys.argv[3]), int(sys.argv[4]))
+else:
+    resize = None
 
 converted = []
 
@@ -68,12 +72,20 @@ for file_name in file_names:
 
     image_data_name = 'image_data_' + base_name
     image = Image.open(image_path)
+
     if (resize != None):
-        image = image.resize(resize)
+        aspectRatio = image.size[0] / image.size[1]
+        if (aspectRatio > 1):
+            size = (resize[0], int(resize[0] / aspectRatio))
+        else:
+            size = (int(resize[1] * aspectRatio), resize[1])
+        image = image.resize(size)
+    else:
+        size = image.size
 
     image = image.convert('RGBA')
 
-    width, height = image.size
+    width, height = size
 
     hash = hashlib.md5(image.tobytes()).hexdigest()
 
@@ -91,21 +103,19 @@ for file_name in file_names:
             for x in range(width):
                 image_data.append(convert_R8G8B8_to_R5G6B5(pixels[y * width + x]))
 
-        image_data = encode_RLE(image_data)
+        #image_data = encode_RLE(image_data)
+        compressed_image_data = zlib.compress(struct.pack('>{}H'.format(len(image_data)), *image_data))
 
         output_file.write('\n')
-        output_file.write('constexpr unsigned short ' + image_data_name + '[] = {\n\t')
-        for i in range(0, len(image_data)):
-            length = image_data[i][0]
-            for l in range(0, len(length)):
-                output_file.write('0x' + hex(length[l])[2:].zfill(2) + ', ')
-            output_file.write('0x' + hex(image_data[i][1])[2:].zfill(4) + ', ')
-            compressed_size += len(length) + 1
+        output_file.write('constexpr unsigned char ' + image_data_name + '[] = {\n\t')
+        for i in range(0, len(compressed_image_data)):
+            output_file.write('0x' + hex(compressed_image_data[i])[2:].zfill(2) + ', ')
+        compressed_size =len(compressed_image_data)
         output_file.write('\n')
         output_file.write('};\n')
         output_file.write('constexpr image_data_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
 
-        print('Original size ' + str(original_size) + '. Compressed size: ' + str(compressed_size) + ' (' + str(100.0 * compressed_size / original_size) + '%)')
+        print('Size: ' + str(size) + '. Original size ' + str(original_size) + '. Compressed size: ' + str(compressed_size) + ' (' + str(100.0 * compressed_size / original_size) + '%)')
 
     else:
         duplicates[base_name] = hashes[hash]

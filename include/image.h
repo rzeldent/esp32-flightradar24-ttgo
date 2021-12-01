@@ -5,7 +5,7 @@
 // Data is stored as RLE (Run Length Encoding)
 typedef struct
 {
-    const unsigned short *data;
+    const unsigned char *data;
     unsigned short width;
     unsigned short height;
 } image_data_t;
