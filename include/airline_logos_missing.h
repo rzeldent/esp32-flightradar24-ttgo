@@ -2,7 +2,7 @@
 
 #include <images.h>
 
-#define airline_logo_null   image_cant_be_reached
+#define airline_logo_null   airline_logo
 
 #define airline_logo_AAA    airline_logo_null
 #define airline_logo_AAE    airline_logo_null
@@ -837,7 +837,6 @@
 #define airline_logo_EXX    airline_logo_null
 #define airline_logo_EYS    airline_logo_null
 #define airline_logo_EZJ    airline_logo_null
-#define airline_logo_EZY    airline_logo_null
 #define airline_logo_FAF    airline_logo_null
 #define airline_logo_FAI    airline_logo_null
 #define airline_logo_FAK    airline_logo_null

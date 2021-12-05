@@ -9,7 +9,7 @@ typedef struct airline
     const char *name;
     const char *callsign;
     const country_t *country;
-    const image_data_t *logo;
+    const z_image_data_t *logo;
 } airline_t;
 
 extern const airline_t *lookupAirline(const char *iata_code);
