@@ -82,6 +82,8 @@ for file_name in file_names:
 
         original_size = len(image_data)
         compressed_image_data = zlib.compress(image_data, zlib.Z_BEST_COMPRESSION)
+        # Option? Remove header: 0x78, 0xda => Best compression
+        # compressed_image_data = compressed_image_data[2:]
         compressed_size = len(compressed_image_data)
 
         output_file.write('\n')
