@@ -65,7 +65,7 @@ auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 Button2 button1(button_top);
 Button2 button2(button_bottom);
 
-Timezone timeZone(dst_begin, dst_end);
+Timezone local_timezone(LOCAL_TZ);
 
 void setup()
 {
@@ -330,7 +330,7 @@ void loop()
 
         auto now = time(nullptr);
         TimeChangeRule *tcr;
-        auto local = timeZone.toLocal(now, &tcr);
+        auto local = local_timezone.toLocal(now, &tcr);
         char time_buffer[20];
         strftime(time_buffer, sizeof(time_buffer), "%F   %R", gmtime(&local));
         tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
