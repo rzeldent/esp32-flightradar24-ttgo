@@ -55,8 +55,8 @@ constexpr auto text_color = TFT_WHITE;
 constexpr auto flag_margin_x_px = 4;
 constexpr auto flag_margin_y_px = 2;
 
-constexpr auto logo_width_px = 32;
-constexpr auto logo_height_px = 32;
+constexpr auto airline_logo_width_px = 40;
+constexpr auto airline_logo_height_px = 40;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
@@ -65,7 +65,7 @@ auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 Button2 button1(button_top);
 Button2 button2(button_bottom);
 
-Timezone timeZone(dst_begin, dst_end);
+Timezone local_timezone(LOCAL_TZ);
 
 void setup()
 {
@@ -79,12 +79,14 @@ void setup()
 #endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
+  log_i("Free heap: %d bytes", ESP.getFreeHeap());
   log_i("Starting Flight Radar...");
 
   // Start Display
   ttgo_backlight_init();
   ttgo_backlight_intensity(lcd_backlight_intensity);
   tft.init();
+
   // Swap the colour byte order when rendering
   tft.setSwapBytes(true);
   tft.setRotation(1);         // Landscape
@@ -93,8 +95,9 @@ void setup()
   tft.setTextWrap(false, false);
 
   // Show splash screen
-  auto image = rle_decode(&image_splash);
-  tft.pushImage(0, 0, image->width, image->height, image->data);
+  auto image = z_image_decode(&image_splash);
+  tft.pushImage(0, 0, image_splash.width, image_splash.height, image);
+  delete []image;
 
   tft.setTextFont(font_26pt);
   tft.print("Flight Radar");
@@ -107,8 +110,9 @@ void setup()
   {
     log_w("Connection Failed! Rebooting...");
     // Show Dinosour / cactus image, wait an reset
-    auto image = rle_decode(&image_no_internet);
-    tft.pushImage(0, 0, image->width, image->height, image->data);
+    auto image = z_image_decode(&image_no_internet);
+    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image);
+    delete []image;
     delay(10000);
     ESP.restart();
   }
@@ -221,13 +225,14 @@ void display_flight(const flight_info &flight_info)
   constexpr auto compass_width = 26;
   draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_WHITE);
 
-  if (airline != nullptr)
+  if (airline)
   {
     log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
-    if (airline->logo != nullptr)
+    if (airline->logo)
     {
-      auto image = rle_decode(airline->logo);
-      tft.pushImage(TFT_HEIGHT - image->width, tft.getCursorY(), image->width, image->height, image->data);
+      auto image = z_image_decode(airline->logo);
+      tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, image);
+      delete []image;
     }
     else
       log_w("No logo present for airline: %s", airline->icao_airline);
@@ -240,7 +245,7 @@ void display_flight(const flight_info &flight_info)
   tft.println(format_gps_location(flight_info.latitude, flight_info.longitude).c_str());
   tft.setCursor(0, tft.getCursorY() + 4);
 
-  if (aircraft != nullptr)
+  if (aircraft)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
     tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type + " " + aircraft->engine_type + "/" + aircraft->engine_count).c_str());
@@ -248,20 +253,24 @@ void display_flight(const flight_info &flight_info)
   else
     tft.println(flight_info.type_designator.c_str());
 
-  tft.setCursor(0, tft.getCursorY() + 8);
+  tft.setCursor(0, tft.getCursorY() + 6);
 
   if (!flight_info.from.empty())
   {
     auto from = lookupAirport(flight_info.from.c_str());
-    if (from != nullptr)
+    if (from)
     {
       log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
       if (from->country->flag)
       {
-        auto cursor_y = tft.getCursorY();
-        auto image = rle_decode(from->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
-        tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
+        if (from->country->flag)
+        {
+          auto cursor_y = tft.getCursorY();
+          auto image = z_image_decode(from->country->flag);
+          tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, image);
+          delete []image;
+          tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
+        }
       }
       tft.println((from->city + std::string(" (") + from->region + std::string(") ") + from->country->name).c_str());
     }
@@ -274,15 +283,19 @@ void display_flight(const flight_info &flight_info)
   if (!flight_info.to.empty())
   {
     auto to = lookupAirport(flight_info.to.c_str());
-    if (to != nullptr)
+    if (to)
     {
       log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
       if (to->country)
       {
-        auto cursor_y = tft.getCursorY();
-        auto image = rle_decode(to->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, image->width, image->height, image->data);
-        tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
+        if (to->country->flag)
+        {
+          auto cursor_y = tft.getCursorY();
+          auto image = z_image_decode(to->country->flag);
+          tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, image);
+          delete []image;
+          tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
+        }
       }
       tft.println((to->city + std::string(" (") + to->region + std::string(") ") + to->country->name).c_str());
     }
@@ -317,7 +330,7 @@ void loop()
 
         auto now = time(nullptr);
         TimeChangeRule *tcr;
-        auto local = timeZone.toLocal(now, &tcr);
+        auto local = local_timezone.toLocal(now, &tcr);
         char time_buffer[20];
         strftime(time_buffer, sizeof(time_buffer), "%F   %R", gmtime(&local));
         tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
@@ -355,8 +368,9 @@ void loop()
   {
     log_i("Connecting to: %s", wifi_ssid_name);
     // Show Dinosour / cactus image and wait
-    auto image = rle_decode(&image_no_internet);
-    tft.pushImage(0, 0, image->width, image->height, image->data);
+    auto image = z_image_decode(&image_no_internet);
+    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image);
+    delete []image;
     // Show for 5 seconds
     delay(5000);
   }
