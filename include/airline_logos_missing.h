@@ -837,7 +837,6 @@
 #define airline_logo_EXX    airline_logo_null
 #define airline_logo_EYS    airline_logo_null
 #define airline_logo_EZJ    airline_logo_null
-#define airline_logo_FAF    airline_logo_null
 #define airline_logo_FAI    airline_logo_null
 #define airline_logo_FAK    airline_logo_null
 #define airline_logo_FAL    airline_logo_null
@@ -922,7 +921,6 @@
 #define airline_logo_FNE    airline_logo_null
 #define airline_logo_FNT    airline_logo_null
 #define airline_logo_FNV    airline_logo_null
-#define airline_logo_FNY    airline_logo_null
 #define airline_logo_FOE    airline_logo_null
 #define airline_logo_FOH    airline_logo_null
 #define airline_logo_FOI    airline_logo_null
@@ -1968,7 +1966,6 @@
 #define airline_logo_NPX    airline_logo_null
 #define airline_logo_NRD    airline_logo_null
 #define airline_logo_NRK    airline_logo_null
-#define airline_logo_NRN    airline_logo_null
 #define airline_logo_NRP    airline_logo_null
 #define airline_logo_NRT    airline_logo_null
 #define airline_logo_NRX    airline_logo_null
@@ -2342,7 +2339,6 @@
 #define airline_logo_RBW    airline_logo_null
 #define airline_logo_RCB    airline_logo_null
 #define airline_logo_RCG    airline_logo_null
-#define airline_logo_RCH    airline_logo_null
 #define airline_logo_RCI    airline_logo_null
 #define airline_logo_RCL    airline_logo_null
 #define airline_logo_RCM    airline_logo_null
