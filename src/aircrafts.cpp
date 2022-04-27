@@ -792,6 +792,7 @@ static const aircraft_t aircrafts[] = {
     {"AS32", "Singapore", "Super Puma", "Helicopter", "Turboprop/Turboshaft", '2'},
     {"AS32", "Tai", "AS-532 Cougar", "Helicopter", "Turboprop/Turboshaft", '2'},
     {"AS32", "Tai", "Cougar", "Helicopter", "Turboprop/Turboshaft", '2'},
+    {"AS35", "Airbus helicopters", "H-125 B3 Ecureuil", "Helicopter", "Turboprop/Turboshaft", '1'},
     {"AS3B", "Aerospatiale", "AS-332L2 Super Puma Mk2", "Helicopter", "Turboprop/Turboshaft", '2'},
     {"AS3B", "Aerospatiale", "AS-532A2 Cougar Mk2", "Helicopter", "Turboprop/Turboshaft", '2'},
     {"AS3B", "Aerospatiale", "AS-532U2 Cougar Mk2", "Helicopter", "Turboprop/Turboshaft", '2'},
