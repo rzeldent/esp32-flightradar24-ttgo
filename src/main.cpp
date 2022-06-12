@@ -31,31 +31,30 @@ constexpr auto font_48pt_lcd = 7;
 
 #include <math.h>
 
-#include <FS.h>
-#include <LittleFS.h>
-
 #include <IotWebConf.h>
+#include <IotWebConfUsing.h>
 #include <IotWebConfOptionalGroup.h>
 
 #include <flightradar.h>
-#include <flightradar_settings.h>
 
-#include <IotWebConf.h>
-#include <IotWebConfUsing.h>
-
-// Settings
-flight_radar_settings_t settings;
+static char chooserValues[][20] = {"red", "blue", "darkYellow"};
+static char chooserNames[][20] = {"Red", "Blue", "Dark yellow"};
 
 // Web server
 DNSServer dnsServer;
 WebServer server(80);
-IotWebConf iotWebConf(WIFI_MANAGER_APP_NAME, &dnsServer, &server, WIFI_MANAGER_APP_PASSWORD);
+IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD);
 
-auto param_group_location = IotWebConfParameterGroup("location", "");
-IotWebConfTextParameter *iotWebParamLocation;
-IotWebConfNumberParameter *iotWebParamLatitude;
-IotWebConfNumberParameter *iotWebParamLongitude;
-IotWebConfSelectParameter *iotWebParamTimeZone;
+char param_location[32];
+char param_latitude[12];
+char param_longitude[12];
+char param_time_zone[32];
+
+auto param_group_location = IotWebConfParameterGroup("flightradar", "");
+auto iotWebParamLocation = IotWebConfTextParameter("Location", "location", param_location, sizeof(param_location), DEFAULT_LOCATION);
+auto iotWebParamLatitude = IotWebConfNumberParameter("Latitude", "latitude", param_latitude, sizeof(param_latitude), DEFAULT_LATITUDE, nullptr, "step=\"0.000001\"");
+auto iotWebParamLongitude = IotWebConfNumberParameter("Longitude", "longitude", param_longitude, sizeof(param_longitude), DEFAULT_LONGITUDE, nullptr, "step=\"0.00001\"");
+auto iotWebParamTimeZone = IotWebConfSelectParameter("Time zone", "time_zone", param_time_zone, sizeof(param_time_zone), (char *)chooserValues, (char *)chooserNames, sizeof(chooserValues) / sizeof(chooserValues[0]), sizeof(chooserNames[0]));
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
@@ -81,69 +80,20 @@ Button2 button2(button_bottom);
 
 Timezone local_timezone(LOCAL_TZ);
 
-char param_location[sizeof(settings.location)];
-char param_latitude[12];
-char param_longitude[12];
-char param_time_zone[32];
-
-void load_settings()
-{
-  log_v("Loading settings");
-
-  EEPROM.begin(sizeof(settings));
-  EEPROM.get(0, settings);
-  EEPROM.end();
-
-  // Clear all settings if invalid
-  if (settings.salt == kSaltEEPROMSettings)
-  {
-    strncpy(param_location, settings.location, sizeof(settings.location));
-    snprintf(param_latitude, sizeof(param_latitude), "%f", settings.latitude);
-    snprintf(param_longitude, sizeof(param_longitude), "%f", settings.longitude);
-  }
-  else
-  {
-    log_w("Invalid Salt or parameters out of range. Resettings settings.");
-    strcpy(param_location, DEFAULT_LOCATION);
-    strcpy(param_latitude, DEFAULT_LATITUDE);
-    strcpy(param_longitude, DEFAULT_LONGITUDE);
-  }
-
-  iotWebParamLocation = new IotWebConfTextParameter("Location", "location", param_location, sizeof(param_location), param_location);
-  iotWebParamLatitude = new IotWebConfNumberParameter("Latitude", "latitude", param_latitude, sizeof(param_latitude), param_latitude);
-  iotWebParamLongitude = new IotWebConfNumberParameter("Longitude", "longitude", param_longitude, sizeof(param_longitude), param_longitude);
-  // iotWebParamTimeZone = new IotWebConfSelectParameter("Time zone", "time_zone", param_time_zone, sizeof(param_time_zone));
-  param_group_location.addItem(iotWebParamLocation);
-  param_group_location.addItem(iotWebParamLatitude);
-  param_group_location.addItem(iotWebParamLongitude);
-}
-
-void config_save_callback()
-{
-  log_v("Saving settings");
-
-  settings.salt = kSaltEEPROMSettings;
-  strncpy(settings.location, param_location, sizeof(settings.location));
-  settings.latitude = atof(param_latitude);
-  settings.longitude = atof(param_longitude);
-
-  EEPROM.begin(sizeof(settings));
-  EEPROM.put(0, settings);
-  EEPROM.commit();
-  EEPROM.end();
-
-  log_i("Settings saved");
-}
-
 void handleRoot()
 {
+  log_v("Handle root");
   // Let IotWebConf test and handle captive portal requests.
   if (iotWebConf.handleCaptivePortal())
     return;
 
   String html = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>"
-                "<title>" WIFI_MANAGER_APP_NAME "</title></head>"
+                "<title>" APP_TITLE " v" APP_VERSION "</title></head>"
                 "<body>"
+                "<h2>Status page for " +
+                String(iotWebConf.getThingName()) +
+                "</h2>"
+                "<hr />"
                 "<ul>"
                 "<li>Location: " +
                 String(param_location) +
@@ -163,17 +113,19 @@ void handleRoot()
 
 bool form_validator(iotwebconf::WebRequestWrapper *webRequestWrapper)
 {
-  log_i("Validating form");
+  log_v("Validating form");
 
-  String latitude = webRequestWrapper->arg(iotWebParamLatitude->getId());
-  if (atof(latitude.c_str()) < -90 || atof(latitude.c_str()) > 90)
+  auto latitude = atof(webRequestWrapper->arg(iotWebParamLatitude.getId()).c_str());
+  log_v("Latitude: %f", latitude);
+  if (latitude < -90.0 || latitude > 90.0)
   {
     log_e("Latitude out of range [-90, 90]");
     return false;
   }
 
-  String param_longitude = webRequestWrapper->arg(iotWebParamLongitude->getId());
-  if (atof(param_longitude.c_str()) < -180 || atof(param_longitude.c_str()) > 180)
+  auto longitude = atof(webRequestWrapper->arg(iotWebParamLongitude.getId()).c_str());
+  log_v("Longitude: %f", longitude);
+  if (longitude < -180.0 || longitude > 180.0)
   {
     log_e("Longitude out of range [-180, 180]");
     return false;
@@ -215,18 +167,22 @@ void setup()
   delete[] image;
 
   tft.setTextFont(font_26pt);
-  tft.print("Flight Radar");
+  tft.print(APP_TITLE " v" APP_VERSION);
 
   // Show logo for 2.5 seconds
   delay(2500);
 
   // Initializing the configuration.
-  load_settings();
+  param_group_location.addItem(&iotWebParamLocation);
+  param_group_location.addItem(&iotWebParamLatitude);
+  param_group_location.addItem(&iotWebParamLongitude);
+  param_group_location.addItem(&iotWebParamTimeZone);
 
-  iotWebConf.init();
   iotWebConf.addParameterGroup(&param_group_location);
   iotWebConf.setFormValidator(form_validator);
-  iotWebConf.setConfigSavedCallback(&config_save_callback);
+  // iotWebConf.loadConfig();
+
+  iotWebConf.init();
 
   // Set up required URL handlers on the web server.
   server.on("/", handleRoot);
@@ -417,8 +373,8 @@ void display_flight(const flight_info &flight_info)
   }
 }
 
-unsigned long next_update_flights;
-unsigned long next_update_aircraft;
+unsigned long next_refresh_flights;
+unsigned long next_update_flight;
 // Time per flight
 unsigned long update_flight_milliseconds;
 std::list<flight_info> flights;
@@ -449,12 +405,12 @@ void loop()
       break;
     }
 
-    if (now > next_update_flights)
+    if (now > next_refresh_flights)
     {
-      next_update_flights = now + next_update_flights;
+      next_refresh_flights = now + refresh_flights_milliseconds;
       log_i("Updating flights");
       // update flights
-      flights = get_flights(settings.latitude, settings.longitude, range_latitude, range_longitude);
+      flights = get_flights(atof(param_latitude), atof(param_longitude), range_latitude, range_longitude);
 
       log_i("Number of flights to display: %d", flights.size());
       if (flights.empty())
@@ -472,28 +428,31 @@ void loop()
         tft.setTextColor(TFT_ORANGE);
         tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
         tft.setTextColor(text_color);
-        tft.drawCentreString(format_gps_location(settings.latitude, settings.longitude).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
-        tft.drawCentreString(settings.location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+        tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+        tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
       }
       else
       {
+        it = flights.begin();
         update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
         log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
       }
+
+      next_update_flight = 0;
     }
 
-    if (flights.empty())
-      break;
-
-    update_flight_milliseconds = now + update_flight_milliseconds;
-
-    if (it != flights.end())
+    if (!flights.empty() && now > next_update_flight)
     {
-      display_flight(*it);
-      if (++it == flights.end())
+      next_update_flight = now + update_flight_milliseconds;
+
+      if (it != flights.end())
       {
-        log_d("Restart with first flight");
-        it = flights.begin();
+        display_flight(*it);
+        if (++it == flights.end())
+        {
+          log_d("Restart with first flight");
+          it = flights.begin();
+        }
       }
     }
 
@@ -506,12 +465,16 @@ void loop()
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image);
     delete[] image;
     state = connecting;
+    log_v("state changed to connecting");
   }
   break;
 
   case connecting:
     if (iotWebConf.getState() == iotwebconf::OnLine)
+    {
       state = wait_for_ntp;
+      log_v("state changed to wait_for_ntp");
+    }
 
     break;
 
@@ -519,11 +482,15 @@ void loop()
     if (iotWebConf.getState() != iotwebconf::OnLine)
     {
       state = disconnected;
+      log_v("state changed to disconnected");
       break;
     }
 
-    if (now > 1640991600) // Jan 1st 2022
+    if (time(nullptr) > 1640991600) // Jan 1st 2022
+    {
       state = connected;
+      log_v("state changed to connected");
+    }
 
     break;
   }

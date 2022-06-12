@@ -2,8 +2,11 @@
 
 #include <timezones.h>
 
-#define WIFI_MANAGER_APP_NAME "FlightRadar"
-#define WIFI_MANAGER_APP_PASSWORD nullptr
+#define APP_TITLE "Flight Radar"
+#define APP_VERSION "0.1"
+
+#define WIFI_SSID "FlightRadar"
+#define WIFI_PASSWORD nullptr
 
 // Time servers
 #define NTP_SERVER_1 "nl.pool.ntp.org"
