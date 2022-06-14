@@ -258,9 +258,7 @@ std::string format_gps_location(float lat, float lon)
 
 void display_flight(const flight_info &flight_info)
 {
-  char time_buffer[20];
-  strftime(time_buffer, sizeof(time_buffer), "%F %T", localtime(&flight_info.timestamp));
-  log_i("Flight info. Seen: %s. ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", time_buffer, flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
+  log_i("ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
 
   const aircraft_t *aircraft = nullptr;
@@ -284,7 +282,7 @@ void display_flight(const flight_info &flight_info)
     tft.print((flight_info.flight + " ").c_str());
 
   tft.print(flight_info.from.c_str());
-  tft.println((flight_info.to.empty() ? "" : ">" + flight_info.to).c_str());
+  tft.println((flight_info.to.empty() ? "" : "-" + flight_info.to).c_str());
 
   auto y = tft.getCursorY();
   tft.setCursor(0, tft.getCursorY() + 2);
@@ -385,7 +383,9 @@ enum state_t
   disconnected,
   connecting,
   wait_for_ntp,
-  connected
+  display_flights,
+  display_flight_details,
+  display_info
 };
 
 state_t state = disconnected;
@@ -393,12 +393,12 @@ state_t state = disconnected;
 void loop()
 {
   iotWebConf.doLoop();
-
+  
   auto now = millis();
 
   switch (state)
   {
-  case connected:
+  case display_flights:
     if (iotWebConf.getState() != iotwebconf::OnLine)
     {
       state = disconnected;
@@ -488,7 +488,7 @@ void loop()
 
     if (time(nullptr) > 1640991600) // Jan 1st 2022
     {
-      state = connected;
+      state = display_flights;
       log_v("state changed to connected");
     }
 
