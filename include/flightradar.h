@@ -3,7 +3,7 @@
 #include <timezones.h>
 
 #define APP_TITLE "Flight Radar"
-#define APP_VERSION "0.1"
+#define APP_VERSION "1.1"
 
 #define WIFI_SSID "FlightRadar"
 #define WIFI_PASSWORD nullptr

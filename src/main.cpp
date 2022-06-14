@@ -161,17 +161,6 @@ void setup()
   tft.setTextColor(text_color);
   tft.setTextWrap(false, false);
 
-  // Show splash screen
-  auto image = z_image_decode(&image_splash);
-  tft.pushImage(0, 0, image_splash.width, image_splash.height, image);
-  delete[] image;
-
-  tft.setTextFont(font_26pt);
-  tft.print(APP_TITLE " v" APP_VERSION);
-
-  // Show logo for 2.5 seconds
-  delay(2500);
-
   // Initializing the configuration.
   param_group_location.addItem(&iotWebParamLocation);
   param_group_location.addItem(&iotWebParamLatitude);
@@ -180,7 +169,6 @@ void setup()
 
   iotWebConf.addParameterGroup(&param_group_location);
   iotWebConf.setFormValidator(form_validator);
-  // iotWebConf.loadConfig();
 
   iotWebConf.init();
 
@@ -294,7 +282,7 @@ void display_flight(const flight_info &flight_info)
 
   if (airline)
   {
-    log_i("Airline (%s): Callsign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
+    log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo)
     {
       auto image = z_image_decode(airline->logo);
@@ -371,48 +359,79 @@ void display_flight(const flight_info &flight_info)
   }
 }
 
+void process_network_state(iotwebconf::NetworkState state)
+{
+  log_i("Network state: %d", state);
+  unsigned short *image_data;
+  switch (state)
+  {
+  case iotwebconf::ApMode:
+    // Show WiFi AP screen
+    image_data = z_image_decode(&image_wifi);
+    tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
+    delete[] image_data;
+    tft.drawCentreString(String("Connect to AP: ") + iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+    break;
+  case iotwebconf::Connecting:
+    // Show splash screen
+    image_data = z_image_decode(&image_splash);
+    tft.pushImage(0, 0, image_splash.width, image_splash.height, image_data);
+    delete[] image_data;
+    tft.setTextFont(font_26pt);
+    tft.print(APP_TITLE " v" APP_VERSION);
+    break;
+  case iotwebconf::OffLine:
+    // Show Dinosaur / cactus image
+    image_data = z_image_decode(&image_no_internet);
+    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_data);
+    delete[] image_data;
+    break;
+  }
+}
+
 unsigned long next_refresh_flights;
 unsigned long next_update_flight;
 // Time per flight
 unsigned long update_flight_milliseconds;
+// List of flights
 std::list<flight_info> flights;
+// Flight to display
 std::list<flight_info>::const_iterator it;
 
-enum state_t
+enum display_state_t
 {
-  disconnected,
-  connecting,
-  wait_for_ntp,
   display_flights,
   display_flight_details,
   display_info
 };
 
-state_t state = disconnected;
-
 void loop()
 {
   iotWebConf.doLoop();
-  
-  auto now = millis();
 
-  switch (state)
+  static auto last_network_state = iotwebconf::NetworkState::Boot;
+
+  auto network_state = iotWebConf.getState();
+  if (network_state != last_network_state)
   {
-  case display_flights:
-    if (iotWebConf.getState() != iotwebconf::OnLine)
-    {
-      state = disconnected;
-      break;
-    }
+    last_network_state = network_state;
+    process_network_state(network_state);
+  }
 
+  switch (network_state)
+  {
+  case iotwebconf::NetworkState::OffLine:
+    next_refresh_flights = 0ul;
+    break;
+  case iotwebconf::NetworkState::OnLine:
+    auto now = millis();
     if (now > next_refresh_flights)
     {
       next_refresh_flights = now + refresh_flights_milliseconds;
       log_i("Updating flights");
-      // update flights
       flights = get_flights(atof(param_latitude), atof(param_longitude), range_latitude, range_longitude);
+      log_i("Number of flights: %d", flights.size());
 
-      log_i("Number of flights to display: %d", flights.size());
       if (flights.empty())
       {
         log_d("No flights in range");
@@ -430,18 +449,20 @@ void loop()
         tft.setTextColor(text_color);
         tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
         tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+
+        next_update_flight = UINT_MAX;
       }
       else
       {
-        it = flights.begin();
         update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
         log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
-      }
 
-      next_update_flight = 0;
+        next_update_flight = 0ul;
+        it = flights.begin();
+      }
     }
 
-    if (!flights.empty() && now > next_update_flight)
+    if (now > next_update_flight)
     {
       next_update_flight = now + update_flight_milliseconds;
 
@@ -455,44 +476,6 @@ void loop()
         }
       }
     }
-
-    break;
-
-  case disconnected:
-  {
-    // Show Dinosaur / cactus image and wait
-    auto image = z_image_decode(&image_no_internet);
-    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image);
-    delete[] image;
-    state = connecting;
-    log_v("state changed to connecting");
-  }
-  break;
-
-  case connecting:
-    if (iotWebConf.getState() == iotwebconf::OnLine)
-    {
-      state = wait_for_ntp;
-      log_v("state changed to wait_for_ntp");
-    }
-
-    break;
-
-  case wait_for_ntp:
-    if (iotWebConf.getState() != iotwebconf::OnLine)
-    {
-      state = disconnected;
-      log_v("state changed to disconnected");
-      break;
-    }
-
-    if (time(nullptr) > 1640991600) // Jan 1st 2022
-    {
-      state = display_flights;
-      log_v("state changed to connected");
-    }
-
-    break;
   }
 
   yield();
