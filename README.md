@@ -28,11 +28,18 @@ This file is by default (on purpose) not present and a compiler error is generat
 - Install Visual Studio Code
 - From the Extensions menu select PlatformIo
 - Clone this repository, and open the folder in your workspace
-- Make a copy of the file settings.h named .setting.h (not the dot in front). This will be **your** private configuration file.
-- Enter the SSID and password in the .settings file to connect to WiFi
-- Enter the GPS coordinates of the location to monitor and range in the .settings file
 - Compile and upload to the ESP32-TTGO-Display
+- When starting you can connect using Wifi to the SSID: FlightRadar (no password). Here you can:
+    - Set the name for the Thing name (Wifi SSID) and password for changing the configuration,
+    - Set the SSID and password for the network to connect to with internet access,
+    - Set the latitude and longitude (decimal format) to observe,
+    - Set the timezone.
+- When done disconnect / reset the device and wait till the connection is made with the network
 - Enjoy!
-
+## Modifying the configuration
+- When booting, the device waits 30 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password.
+- When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password.
+## Lost AP password
+A quick fix is to change the CONFIG_VERSION constant and flash the device. This will reset the configuration.
 ## Credits
 Thanks to [FlightRadar24.com](https://www.flightradar24.com/) to be able to hook into their API.
