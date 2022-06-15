@@ -370,7 +370,7 @@ void process_network_state(iotwebconf::NetworkState state)
     image_data = z_image_decode(&image_wifi);
     tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
     delete[] image_data;
-    tft.drawCentreString(String("Connect to AP: ") + iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+    tft.drawCentreString(String("Connect to SSID: ") + iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
     break;
   case iotwebconf::Connecting:
     // Show splash screen
