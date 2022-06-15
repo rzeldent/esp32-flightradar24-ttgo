@@ -20,8 +20,6 @@ This application loads the flights near you (defined in the file .settings.h) an
 
 ## Usage
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
-**Copy the file settings.h to .settings.h to keep your settings secret.**
-This file is by default (on purpose) not present and a compiler error is generated!
 
 ## Installing and running PlatformIO
 
@@ -36,10 +34,13 @@ This file is by default (on purpose) not present and a compiler error is generat
     - Set the timezone.
 - When done disconnect / reset the device and wait till the connection is made with the network
 - Enjoy!
+
 ## Modifying the configuration
 - When booting, the device waits 30 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password.
 - When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password.
+
 ## Lost AP password
 A quick fix is to change the CONFIG_VERSION constant and flash the device. This will reset the configuration.
+
 ## Credits
 Thanks to [FlightRadar24.com](https://www.flightradar24.com/) to be able to hook into their API.
