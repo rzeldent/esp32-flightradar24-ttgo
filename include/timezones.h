@@ -26,6 +26,3 @@ constexpr TimeChangeRule tcr_usMST = {"MST", First, Sun, Nov, 2, 60 * -7};
 // US Pacific Time (Las Vegas, Los Angeles)
 constexpr TimeChangeRule tcr_usPDT = {"PDT", Second, Sun, Mar, 2, 60 * -7};
 constexpr TimeChangeRule tcr_usPST = {"PST", First, Sun, Nov, 2, 60 * -8};
-
-
-#define TZ_CE tcr_CEST, tcr_CET
