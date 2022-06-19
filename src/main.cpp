@@ -116,6 +116,11 @@ void handleRoot()
   if (iotWebConf.handleCaptivePortal())
     return;
 
+  // Update values
+  latitude = atof(param_latitude);
+  longitude = atof(param_longitude);
+  tz_index = atoi(param_time_zone);
+
   auto now = time(nullptr);
   TimeChangeRule *tcr;
   auto local = time_zones[tz_index].toLocal(now, &tcr);
