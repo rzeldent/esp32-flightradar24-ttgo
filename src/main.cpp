@@ -437,6 +437,8 @@ unsigned long update_flight_milliseconds;
 std::list<flight_info> flights;
 // Flight to display
 std::list<flight_info>::const_iterator it;
+// Index
+unsigned flight_index = 0;
 
 enum display_state_t
 {
@@ -500,6 +502,7 @@ void loop()
 
         next_update_flight = 0ul;
         it = flights.begin();
+        flight_index = 0;
       }
     }
 
@@ -510,10 +513,13 @@ void loop()
       if (it != flights.end())
       {
         display_flight(*it);
+        // Show index of displayed and total of flights
+        tft.drawRightString(String(++flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
         if (++it == flights.end())
         {
           log_d("Restart with first flight");
           it = flights.begin();
+          flight_index = 0;
         }
       }
     }
@@ -522,3 +528,4 @@ void loop()
 
   yield();
 }
+
