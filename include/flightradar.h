@@ -17,31 +17,31 @@
 #define DEFAULT_LOCATION "Amsterdam Schiphol"
 #define DEFAULT_LATITUDE "52.308601"
 #define DEFAULT_LONGITUDE "4.76389"
-#define DEFAULT_TIMEZONE "1" // CEST
+#define DEFAULT_TIMEZONE "Europe/Amsterdam"
 
 // Charles de Gaulle International Airport
 //#define DEFAULT_LOCATION "Charles de Gaulle International"
 //#define DEFAULT_LATITUDE "49.012798"
 //#define DEFAULT_LONGITUDE "2.55000"
-// #define DEFAULT_TIMEZONE "2" // CEST
+// #define DEFAULT_TIMEZONE "Europe/Paris"
 
 // JFK Airport
 //#define DEFAULT_LOCATION "John F Kennedy International"
 //#define DEFAULT_LATITUDE "40.639801"
 //#define DEFAULT_LONGITUDE "-73.7789"
-// #define DEFAULT_TIMEZONE "5" // EDT
+// #define DEFAULT_TIMEZONE "America/New_York"
 
 // LAX Airport:
 //#define DEFAULT_LOCATION "Los Angeles International"
 //#define DEFAULT_LATITUDE "33.942501"
 //#define DEFAULT_LONGITUDE "-118.407997f"
-// #define DEFAULT_TIMEZONE "9" // PDT
+// #define DEFAULT_TIMEZONE "America/Los_Angeles"
 
 // Range: .1 degree is approx 10km (0.008998 degrees)
 constexpr auto range_latitude = 0.15f;
 constexpr auto range_longitude = 0.6f;
 
 // Refresh database every 3 minutes
-constexpr auto refresh_flights_milliseconds = 180000ul;
+constexpr auto refresh_flights_milliseconds = 3 * 60 * 1000ul;
 // Allow 4 cycles of each flight
 constexpr auto display_cycles = 4;

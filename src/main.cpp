@@ -1,6 +1,5 @@
 #include <soc/rtc_cntl_reg.h>
 #include <SPI.h>
-#include <TimeLib.h>
 #include <EEPROM.h>
 
 // Settings for the display are defined in platformio.ini
@@ -35,36 +34,14 @@ constexpr auto font_48pt_lcd = 7;
 #include <IotWebConfUsing.h>
 #include <IotWebConfOptionalGroup.h>
 
-#include <timezones.h>
+#include <timezonedb.h>
+
 #include <gps_formatting.h>
 
 #include <flightradar.h>
 
-Timezone time_zones[] = {
-    Timezone(tcr_UTC),               // 0
-    Timezone(tcr_CEST, tcr_CET),     // 1
-    Timezone(tcr_BST, tcr_GMT),      // 2
-    Timezone(tcr_MSK, tcr_MSK),      // 3
-    Timezone(tcr_aEDT, tcr_aEST),    // 4
-    Timezone(tcr_usEDT, tcr_usEST),  // 5
-    Timezone(tcr_usCDT, tcr_usCST),  // 6
-    Timezone(tcr_usMDT, tcr_usMST),  // 7
-    Timezone(tcr_usMST),             // 8
-    Timezone(tcr_usPDT, tcr_usPST)}; // 9
-
-const char time_zone_names[][55] = {
-    "UTC",                                                 // 0
-    "Central European Time (Frankfurt, Paris, Amsterdam)", // 1
-    "United Kingdom (London, Belfast)",                    // 2
-    "Moscow Standard Time (Moscow)",                       // 3
-    "Australia Eastern Time (Sydney, Melbourne)",          // 4
-    "US Eastern Time (New York, Detroit)",                 // 5
-    "US Central Time (Chicago, Houston)",                  // 6
-    "US Mountain Time (Denver, Salt Lake City)",           // 7
-    "US Mountain Time (Arizona)",                          // 8
-    "US Pacific Time (Las Vegas, Los Angeles)"};           // 9
-
-const char time_zone_values[][3] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
+constexpr time_t EPOCH_2000_01_01 = 946684800;
 
 // Web server
 DNSServer dnsServer;
@@ -74,18 +51,17 @@ IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERS
 char param_location[32];
 char param_latitude[12];
 char param_longitude[12];
-char param_time_zone[3];
+char param_time_zone[sizeof(timezonelocation_t)];
 
 auto param_group_location = IotWebConfParameterGroup("flightradar", "");
 auto iotWebParamLocation = IotWebConfTextParameter("Location", "location", param_location, sizeof(param_location), DEFAULT_LOCATION);
 auto iotWebParamLatitude = IotWebConfNumberParameter("Latitude", "latitude", param_latitude, sizeof(param_latitude), DEFAULT_LATITUDE, nullptr, "step=\"0.000001\"");
 auto iotWebParamLongitude = IotWebConfNumberParameter("Longitude", "longitude", param_longitude, sizeof(param_longitude), DEFAULT_LONGITUDE, nullptr, "step=\"0.00001\"");
-auto iotWebParamTimeZone = IotWebConfSelectParameter("Time zone", "time_zone", param_time_zone, sizeof(param_time_zone), (const char *)time_zone_values, (const char *)time_zone_names, sizeof(time_zone_names) / sizeof(time_zones[0]), sizeof(time_zone_names[0]), DEFAULT_TIMEZONE);
+auto iotWebParamTimeZone = IotWebConfSelectParameter("Time zone", "time_zone", param_time_zone, sizeof(timezonelocation_t), (const char *)timezonedb, (const char *)timezonedb, sizeof(timezonedb) / sizeof(timezonedb[0]), sizeof(timezonelocation_t), DEFAULT_TIMEZONE);
 
 // Run time parameters. Are set in connected callback
 float latitude;
 float longitude;
-int tz_index;
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
@@ -109,6 +85,18 @@ auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 Button2 button1(button_top);
 Button2 button2(button_bottom);
 
+void update_runtime_config()
+{
+  log_v("update_runtime_config");
+
+  // Update runtime configuration
+  latitude = atof(param_latitude);
+  longitude = atof(param_longitude);
+  auto tz_definition = timezonedb_get_definition(param_time_zone);
+  setenv("TZ", tz_definition, 1);
+  tzset();
+}
+
 void handleRoot()
 {
   log_v("Handle root");
@@ -117,15 +105,12 @@ void handleRoot()
     return;
 
   // Update values
-  latitude = atof(param_latitude);
-  longitude = atof(param_longitude);
-  tz_index = atoi(param_time_zone);
+  update_runtime_config();
 
-  auto now = time(nullptr);
-  TimeChangeRule *tcr;
-  auto local = time_zones[tz_index].toLocal(now, &tcr);
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
   char time_buffer[20];
-  strftime(time_buffer, sizeof(time_buffer), "%F   %R", gmtime(&local));
+  strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
 
   auto html = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>"
               "<title>" APP_TITLE " v" APP_VERSION "</title></head>"
@@ -145,7 +130,7 @@ void handleRoot()
               String(longitude) + " (" + format_lon(longitude).c_str() + ")" +
               "</li>"
               "<li>Time zone: " +
-              time_zone_names[tz_index] +
+              param_time_zone + " (" + timezonedb_get_definition(param_time_zone) + ")" +
               "</li>"
               "<li>Current time: " +
               time_buffer +
@@ -179,16 +164,6 @@ bool form_validator(iotwebconf::WebRequestWrapper *webRequestWrapper)
   }
 
   return true;
-}
-
-void connected_handler()
-{
-  log_v("connected_handler");
-
-  // Update runtime configuration
-  latitude = atof(param_latitude);
-  longitude = atof(param_longitude);
-  tz_index = atoi(param_time_zone);
 }
 
 void setup()
@@ -226,7 +201,7 @@ void setup()
 
   iotWebConf.addParameterGroup(&param_group_location);
   iotWebConf.setFormValidator(form_validator);
-  iotWebConf.setWifiConnectionCallback(connected_handler);
+  iotWebConf.setWifiConnectionCallback(update_runtime_config);
 
   iotWebConf.init();
 
@@ -239,6 +214,10 @@ void setup()
 
   // Set the time servers
   configTime(0, 0, NTP_SERVERS);
+  // Set the timezone
+  auto tz_definition = timezonedb_get_definition(param_time_zone);
+  setenv("TZ", tz_definition, 1);
+  tzset();
 }
 
 void clear()
@@ -341,7 +320,7 @@ void display_flight(const flight_info &flight_info)
   if (aircraft)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
-    tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type + " " + aircraft->engine_type + "/" + aircraft->engine_count).c_str());
+    tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type).c_str());
   }
   else
     tft.println(flight_info.type_designator.c_str());
@@ -409,8 +388,8 @@ void process_network_state(iotwebconf::NetworkState state)
     image_data = z_image_decode(&image_wifi);
     tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
     delete[] image_data;
-    tft.drawCentreString("To configure connect to SSID: ", TFT_HEIGHT / 2, TFT_WIDTH - 32, font_16pt);
-    tft.drawCentreString(iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+    tft.drawCentreString(state == iotwebconf::NotConfigured ? "No config. Connect to SSID:" : "To configure, connect to SSID:", TFT_HEIGHT / 2, TFT_WIDTH - 42, font_16pt);
+    tft.drawCentreString(iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 26, font_26pt);
     break;
   case iotwebconf::Connecting:
     // Show splash screen
@@ -480,11 +459,10 @@ void loop()
         log_d("No flights in range");
         clear();
 
-        auto now = time(nullptr);
-        TimeChangeRule *tcr;
-        auto local = time_zones[tz_index].toLocal(now, &tcr);
+        struct tm timeinfo;
+        getLocalTime(&timeinfo);
         char time_buffer[20];
-        strftime(time_buffer, sizeof(time_buffer), "%F   %R", gmtime(&local));
+        strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
         tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
 
         tft.setTextColor(TFT_ORANGE);
@@ -528,4 +506,3 @@ void loop()
 
   yield();
 }
-
