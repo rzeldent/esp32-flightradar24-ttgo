@@ -1,6 +1,6 @@
-#include <soc/rtc_cntl_reg.h>
-#include <SPI.h>
 #include <EEPROM.h>
+#include <SPI.h>
+#include <soc/rtc_cntl_reg.h>
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
@@ -12,35 +12,28 @@ constexpr auto font_48pt = 6;
 constexpr auto font_48pt_lcd = 7;
 
 #include <Button2.h>
-
-#include <WiFi.h>
 #include <HTTPClient.h>
-
+#include <WiFi.h>
+#include <flight_info.h>
 #include <time.h>
 
 #include <map>
 
-#include <flight_info.h>
-
 // Database of airplanes from https://openflights.org/data.html
-#include <aircraft.h>
-#include <airport.h>
-#include <airline.h>
-#include <images.h>
-
-#include <math.h>
-
 #include <IotWebConf.h>
-#include <IotWebConfUsing.h>
 #include <IotWebConfOptionalGroup.h>
-
+#include <IotWebConfUsing.h>
+#include <aircraft.h>
+#include <airline.h>
+#include <airport.h>
+#include <flightradar.h>
+#include <gps_formatting.h>
+#include <images.h>
+#include <math.h>
 #include <timezonedb.h>
 
-#include <gps_formatting.h>
-
-#include <flightradar.h>
-
-// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
+// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP
+// responses.
 constexpr time_t EPOCH_2000_01_01 = 946684800;
 
 // Web server
@@ -85,10 +78,19 @@ auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 Button2 button1(button_top);
 Button2 button2(button_bottom);
 
+typedef enum display_state
+{
+  display_airtraffic,
+  display_time,
+  display_info
+} display_state_t;
+
+// Current display state
+display_state_t display_state = display_state_t::display_airtraffic;
+
 void update_runtime_config()
 {
   log_v("update_runtime_config");
-
   // Update runtime configuration
   latitude = atof(param_latitude);
   longitude = atof(param_longitude);
@@ -116,37 +118,30 @@ void handleRoot()
               "<title>" APP_TITLE " v" APP_VERSION "</title></head>"
               "<body>"
               "<h2>Status page for " +
-              String(iotWebConf.getThingName()) +
-              "</h2>"
-              "<hr />"
-              "<ul>"
-              "<li>Location: " +
-              String(param_location) +
-              "</li>"
-              "<li>Latitude: " +
-              String(latitude) + " (" + format_lat(latitude).c_str() + ")" +
-              "</li>"
-              "<li>Longitude: " +
-              String(longitude) + " (" + format_lon(longitude).c_str() + ")" +
-              "</li>"
-              "<li>Time zone: " +
-              param_time_zone + " (" + timezonedb_get_definition(param_time_zone) + ")" +
-              "</li>"
-              "<li>Current time: " +
-              time_buffer +
-              "</li>"
-              "</ul>"
-              "<br/>"
-              "Go to <a href=\"config\">configure page</a> to change settings."
-              "</body>"
-              "</html>";
+              String(iotWebConf.getThingName()) + "</h2>"
+                                                  "<hr />"
+                                                  "<ul>"
+                                                  "<li>Location: " +
+              String(param_location) + "</li>"
+                                       "<li>Latitude: " +
+              String(latitude) + " (" + format_lat(latitude).c_str() + ")" + "</li>"
+                                                                             "<li>Longitude: " +
+              String(longitude) + " (" + format_lon(longitude).c_str() + ")" + "</li>"
+                                                                               "<li>Time zone: " +
+              param_time_zone + " (" + timezonedb_get_definition(param_time_zone) + ")" + "</li>"
+                                                                                          "<li>Current time: " +
+              time_buffer + "</li>"
+                            "</ul>"
+                            "<br/>"
+                            "Go to <a href=\"config\">configure page</a> to change settings."
+                            "</body>"
+                            "</html>";
   server.send(200, "text/html", html);
 }
 
 bool form_validator(iotwebconf::WebRequestWrapper *webRequestWrapper)
 {
   log_v("Validating form");
-
   auto latitude = atof(webRequestWrapper->arg(iotWebParamLatitude.getId()).c_str());
   log_v("Latitude: %f", latitude);
   if (latitude < -90.0 || latitude > 90.0)
@@ -218,6 +213,18 @@ void setup()
   auto tz_definition = timezonedb_get_definition(param_time_zone);
   setenv("TZ", tz_definition, 1);
   tzset();
+
+  button1.setClickHandler([](Button2 button)
+                          {
+        log_v("Button 1 clicked");
+        switch (display_state) {
+        case display_state_t::display_time:
+            display_state = display_state_t::display_airtraffic;
+            break;
+        case display_state_t::display_airtraffic:
+            display_state = display_state_t::display_time;
+            break;
+        } });
 }
 
 void clear()
@@ -376,7 +383,7 @@ void display_flight(const flight_info &flight_info)
   }
 }
 
-void process_network_state(iotwebconf::NetworkState state)
+void display_network_state(iotwebconf::NetworkState state)
 {
   log_i("Network state: %d", state);
   unsigned short *image_data;
@@ -419,16 +426,90 @@ std::list<flight_info>::const_iterator it;
 // Index
 unsigned flight_index = 0;
 
-enum display_state_t
+void display_flights()
 {
-  display_flights,
-  display_flight_details,
-  display_info
-};
+  auto now = millis();
+  if (now > next_refresh_flights)
+  {
+    next_refresh_flights = now + refresh_flights_milliseconds;
+    log_i("Updating flights");
+    flights = get_flights(atof(param_latitude), atof(param_longitude), range_latitude, range_longitude);
+    log_i("Number of flights: %d", flights.size());
+
+    if (flights.empty())
+    {
+      log_d("No flights in range");
+      clear();
+
+      struct tm timeinfo;
+      getLocalTime(&timeinfo);
+      char time_buffer[20];
+      strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
+      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
+
+      tft.setTextColor(TFT_ORANGE);
+      tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
+      tft.setTextColor(text_color);
+      tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+      tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+
+      next_update_flight = UINT_MAX;
+    }
+    else
+    {
+      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
+      log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
+
+      next_update_flight = 0ul;
+      it = flights.begin();
+      flight_index = 0;
+    }
+  }
+
+  if (now > next_update_flight)
+  {
+    next_update_flight = now + update_flight_milliseconds;
+
+    if (it != flights.end())
+    {
+      display_flight(*it);
+      // Show index of displayed and total of flights
+      tft.drawRightString(String(++flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
+      if (++it == flights.end())
+      {
+        log_d("Restart with first flight");
+        it = flights.begin();
+        flight_index = 0;
+      }
+    }
+  }
+}
+
+void display_clock()
+{
+  static int last_minute;
+
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  if (timeinfo.tm_min != last_minute)
+  {
+    last_minute = timeinfo.tm_min;
+    log_i("Updating clock");
+    char time_buffer[20];
+    clear();
+    strftime(time_buffer, sizeof(time_buffer), "%F", &timeinfo);
+    tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
+    strftime(time_buffer, sizeof(time_buffer), "%R", &timeinfo);
+    tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, TFT_WIDTH / 2 - 24, font_48pt_lcd);
+    tft.drawCentreString(param_time_zone, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+  }
+}
 
 void loop()
 {
   iotWebConf.doLoop();
+  button1.loop();
+  button2.loop();
 
   static auto last_network_state = iotwebconf::NetworkState::Boot;
 
@@ -436,7 +517,7 @@ void loop()
   if (network_state != last_network_state)
   {
     last_network_state = network_state;
-    process_network_state(network_state);
+    display_network_state(network_state);
   }
 
   switch (network_state)
@@ -446,60 +527,14 @@ void loop()
     break;
 
   case iotwebconf::NetworkState::OnLine:
-    auto now = millis();
-    if (now > next_refresh_flights)
+    switch (display_state)
     {
-      next_refresh_flights = now + refresh_flights_milliseconds;
-      log_i("Updating flights");
-      flights = get_flights(atof(param_latitude), atof(param_longitude), range_latitude, range_longitude);
-      log_i("Number of flights: %d", flights.size());
-
-      if (flights.empty())
-      {
-        log_d("No flights in range");
-        clear();
-
-        struct tm timeinfo;
-        getLocalTime(&timeinfo);
-        char time_buffer[20];
-        strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
-        tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
-
-        tft.setTextColor(TFT_ORANGE);
-        tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
-        tft.setTextColor(text_color);
-        tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
-        tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
-
-        next_update_flight = UINT_MAX;
-      }
-      else
-      {
-        update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
-        log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
-
-        next_update_flight = 0ul;
-        it = flights.begin();
-        flight_index = 0;
-      }
-    }
-
-    if (now > next_update_flight)
-    {
-      next_update_flight = now + update_flight_milliseconds;
-
-      if (it != flights.end())
-      {
-        display_flight(*it);
-        // Show index of displayed and total of flights
-        tft.drawRightString(String(++flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
-        if (++it == flights.end())
-        {
-          log_d("Restart with first flight");
-          it = flights.begin();
-          flight_index = 0;
-        }
-      }
+    case display_state_t::display_airtraffic:
+      display_flights();
+      break;
+    case display_state_t::display_time:
+      display_clock();
+      break;
     }
     break;
   }
