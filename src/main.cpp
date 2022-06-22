@@ -75,8 +75,24 @@ constexpr auto airline_logo_height_px = 40;
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
+// Buttons
 Button2 button1(button_top);
 Button2 button2(button_bottom);
+
+// Variables for flight info
+unsigned long next_refresh_flights;
+unsigned long next_update_flight;
+// Time per flight
+unsigned long update_flight_milliseconds;
+// List of flights
+std::list<flight_info> flights;
+// Flight to display
+std::list<flight_info>::const_iterator it;
+// Index
+unsigned flight_index = 0;
+
+// Variables for Clock
+int last_minute = -1;
 
 typedef enum display_state
 {
@@ -220,9 +236,11 @@ void setup()
         switch (display_state) {
         case display_state_t::display_time:
             display_state = display_state_t::display_airtraffic;
+            next_refresh_flights = 0;
             break;
         case display_state_t::display_airtraffic:
             display_state = display_state_t::display_time;
+            last_minute = -1;
             break;
         } });
 }
@@ -415,17 +433,6 @@ void display_network_state(iotwebconf::NetworkState state)
   }
 }
 
-unsigned long next_refresh_flights;
-unsigned long next_update_flight;
-// Time per flight
-unsigned long update_flight_milliseconds;
-// List of flights
-std::list<flight_info> flights;
-// Flight to display
-std::list<flight_info>::const_iterator it;
-// Index
-unsigned flight_index = 0;
-
 void display_flights()
 {
   auto now = millis();
@@ -487,8 +494,6 @@ void display_flights()
 
 void display_clock()
 {
-  static int last_minute;
-
   struct tm timeinfo;
   getLocalTime(&timeinfo);
   if (timeinfo.tm_min != last_minute)
