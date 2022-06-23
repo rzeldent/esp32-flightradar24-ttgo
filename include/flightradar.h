@@ -5,7 +5,7 @@
 
 #define WIFI_SSID "FlightRadar"
 #define WIFI_PASSWORD nullptr
-#define CONFIG_VERSION "1.1"
+#define CONFIG_VERSION "1.11"
 
 // Time servers
 #define NTP_SERVER_1 "nl.pool.ntp.org"
@@ -18,24 +18,28 @@
 #define DEFAULT_LATITUDE "52.308601"
 #define DEFAULT_LONGITUDE "4.76389"
 #define DEFAULT_TIMEZONE "Europe/Amsterdam"
+#define DEFAULT_METRIC ""
 
 // Charles de Gaulle International Airport
 //#define DEFAULT_LOCATION "Charles de Gaulle International"
 //#define DEFAULT_LATITUDE "49.012798"
 //#define DEFAULT_LONGITUDE "2.55000"
-// #define DEFAULT_TIMEZONE "Europe/Paris"
+//#define DEFAULT_TIMEZONE "Europe/Paris"
+//#define DEFAULT_METRIC ""
 
 // JFK Airport
 //#define DEFAULT_LOCATION "John F Kennedy International"
 //#define DEFAULT_LATITUDE "40.639801"
 //#define DEFAULT_LONGITUDE "-73.7789"
-// #define DEFAULT_TIMEZONE "America/New_York"
+//#define DEFAULT_TIMEZONE "America/New_York"
+//#define DEFAULT_METRIC "selected"
 
 // LAX Airport:
 //#define DEFAULT_LOCATION "Los Angeles International"
 //#define DEFAULT_LATITUDE "33.942501"
 //#define DEFAULT_LONGITUDE "-118.407997f"
-// #define DEFAULT_TIMEZONE "America/Los_Angeles"
+//#define DEFAULT_TIMEZONE "America/Los_Angeles"
+//#define DEFAULT_METRIC "selected"
 
 // Range: .1 degree is approx 10km (0.008998 degrees)
 constexpr auto range_latitude = 0.15f;

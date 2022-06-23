@@ -34,7 +34,10 @@ constexpr auto font_48pt_lcd = 7;
 
 // Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP
 // responses.
-constexpr time_t EPOCH_2000_01_01 = 946684800;
+constexpr time_t epoch_2000_01_01 = 946684800;
+
+constexpr float ft_to_m = 0.3048;
+constexpr float kts_to_kmh = 1.852f;
 
 // Web server
 DNSServer dnsServer;
@@ -45,16 +48,19 @@ char param_location[32];
 char param_latitude[12];
 char param_longitude[12];
 char param_time_zone[sizeof(timezonelocation_t)];
+char param_metric[9];
 
 auto param_group_location = IotWebConfParameterGroup("flightradar", "");
 auto iotWebParamLocation = IotWebConfTextParameter("Location", "location", param_location, sizeof(param_location), DEFAULT_LOCATION);
 auto iotWebParamLatitude = IotWebConfNumberParameter("Latitude", "latitude", param_latitude, sizeof(param_latitude), DEFAULT_LATITUDE, nullptr, "step=\"0.000001\"");
 auto iotWebParamLongitude = IotWebConfNumberParameter("Longitude", "longitude", param_longitude, sizeof(param_longitude), DEFAULT_LONGITUDE, nullptr, "step=\"0.00001\"");
 auto iotWebParamTimeZone = IotWebConfSelectParameter("Time zone", "time_zone", param_time_zone, sizeof(timezonelocation_t), (const char *)timezonedb, (const char *)timezonedb, sizeof(timezonedb) / sizeof(timezonedb[0]), sizeof(timezonelocation_t), DEFAULT_TIMEZONE);
+auto iotWebParamMetric = IotWebConfCheckboxParameter("Metric units", "metric", param_metric, sizeof(param_metric), DEFAULT_METRIC);
 
 // Run time parameters. Are set in connected callback
 float latitude;
 float longitude;
+bool metric_units;
 
 // GPIO of the buttons on the TTGO Display
 constexpr auto button_top = 35;
@@ -108,8 +114,13 @@ void update_runtime_config()
 {
   log_v("update_runtime_config");
   // Update runtime configuration
+  log_d("Latitude: %s", param_latitude);
   latitude = atof(param_latitude);
+  log_d("Longitude: %s", param_longitude);
   longitude = atof(param_longitude);
+  log_d("Metric: %s", param_metric);
+  metric_units = strlen(param_metric);
+
   auto tz_definition = timezonedb_get_definition(param_time_zone);
   setenv("TZ", tz_definition, 1);
   tzset();
@@ -130,28 +141,21 @@ void handleRoot()
   char time_buffer[20];
   strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
 
-  auto html = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>"
-              "<title>" APP_TITLE " v" APP_VERSION "</title></head>"
-              "<body>"
-              "<h2>Status page for " +
-              String(iotWebConf.getThingName()) + "</h2>"
-                                                  "<hr />"
-                                                  "<ul>"
-                                                  "<li>Location: " +
-              String(param_location) + "</li>"
-                                       "<li>Latitude: " +
-              String(latitude) + " (" + format_lat(latitude).c_str() + ")" + "</li>"
-                                                                             "<li>Longitude: " +
-              String(longitude) + " (" + format_lon(longitude).c_str() + ")" + "</li>"
-                                                                               "<li>Time zone: " +
-              param_time_zone + " (" + timezonedb_get_definition(param_time_zone) + ")" + "</li>"
-                                                                                          "<li>Current time: " +
-              time_buffer + "</li>"
-                            "</ul>"
-                            "<br/>"
-                            "Go to <a href=\"config\">configure page</a> to change settings."
-                            "</body>"
-                            "</html>";
+  String html;
+  html += "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
+  html += "<title>" APP_TITLE " v" APP_VERSION "</title></head>";
+  html += "<body>";
+  html += "<h2>Status page for " + String(iotWebConf.getThingName()) + "</h2><hr />";
+  html += "<ul>";
+  html += "<li>Location: " + String(param_location) + "</li>";
+  html += "<li>Latitude: " + String(latitude) + " (" + format_lat(latitude).c_str() + ")" + "</li>";
+  html += "<li>Longitude: " + String(longitude) + " (" + format_lon(longitude).c_str() + ")" + "</li>";
+  html += "<li>Time zone: " + String(param_time_zone) + " (" + timezonedb_get_definition(param_time_zone) + ")" + "</li>";
+  html += "<li>Current time: " + String(time_buffer) + "</li>";
+  html += "<li>Units: " + String(metric_units ? "Metric" : "Imperial") + "</li>";
+  html += "</ul>";
+  html += "<br/>Go to <a href=\"config\">configure page</a> to change settings.";
+  html += "</body></html>";
   server.send(200, "text/html", html);
 }
 
@@ -209,10 +213,12 @@ void setup()
   param_group_location.addItem(&iotWebParamLatitude);
   param_group_location.addItem(&iotWebParamLongitude);
   param_group_location.addItem(&iotWebParamTimeZone);
+  param_group_location.addItem(&iotWebParamMetric);
 
   iotWebConf.addParameterGroup(&param_group_location);
   iotWebConf.setFormValidator(form_validator);
   iotWebConf.setWifiConnectionCallback(update_runtime_config);
+  iotWebConf.setApTimeoutMs(15 * 1000);
 
   iotWebConf.init();
 
@@ -316,7 +322,11 @@ void display_flight(const flight_info &flight_info)
 
   auto y = tft.getCursorY();
   tft.setCursor(0, tft.getCursorY() + 2);
-  tft.println(String(flight_info.altitude) + " ft  " + String(flight_info.speed) + " kts ");
+  if (metric_units)
+    tft.println(String(flight_info.altitude * ft_to_m, 0) + " m " + String(flight_info.speed * kts_to_kmh, 0) + " km/h");
+  else
+    tft.println(String(flight_info.altitude) + " ft " + String(flight_info.speed) + " kts");
+
   tft.setCursor(0, tft.getCursorY() + 2);
 
   constexpr auto compass_width = 26;
