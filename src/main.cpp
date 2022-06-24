@@ -1,4 +1,3 @@
-#include <EEPROM.h>
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
@@ -12,12 +11,8 @@ constexpr auto font_48pt = 6;
 constexpr auto font_48pt_lcd = 7;
 
 #include <Button2.h>
-#include <HTTPClient.h>
-#include <WiFi.h>
 #include <flight_info.h>
 #include <time.h>
-
-#include <map>
 
 // Database of airplanes from https://openflights.org/data.html
 #include <IotWebConf.h>
@@ -32,10 +27,10 @@ constexpr auto font_48pt_lcd = 7;
 #include <math.h>
 #include <timezonedb.h>
 
-// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP
-// responses.
+// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
 constexpr time_t epoch_2000_01_01 = 946684800;
 
+// Conversions to metric
 constexpr float ft_to_m = 0.3048;
 constexpr float kts_to_kmh = 1.852f;
 
@@ -110,6 +105,11 @@ typedef enum display_state
 // Current display state
 display_state_t display_state = display_state_t::display_airtraffic;
 
+bool time_valid()
+{
+  return time(nullptr) > epoch_2000_01_01;
+}
+
 void update_runtime_config()
 {
   log_v("update_runtime_config");
@@ -139,7 +139,10 @@ void handleRoot()
   struct tm timeinfo;
   getLocalTime(&timeinfo);
   char time_buffer[20];
-  strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
+  if (time_valid())
+    strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
+  else
+    strcpy(time_buffer, "Time syncing...");
 
   String html;
   html += "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
@@ -258,47 +261,14 @@ void clear()
   tft.setCursor(0, 0);
 }
 
-void draw_compass(int32_t x, int32_t y, int32_t w, int32_t h, float heading, ushort color_border, ushort color_arrow)
-{
-  // TFT is rotated 90 degrees; correct angle
-  heading += 90;
-
-  // convert to radians: 0-360 => 0 - 2*PI
-  auto radians = heading / 360 * 2 * M_PI;
-  struct point
-  {
-    int x;
-    int y;
-  };
-  point center = {x + w / 2, y + h / 2};
-  // draw border
-  tft.drawCircle(center.x, center.y, w / 2, color_border);
-
-  auto arrow_length = w / 2 - 1;
-  auto arrow_width = arrow_length / 1;
-
-  double value_sin = sin(radians);
-  double value_cos = cos(radians);
-
-  auto transform = [center, value_sin, value_cos](point p)
-  {
-    return point{(int)(center.x + p.x * value_cos - p.y * value_sin), (int)(center.y + p.x * value_sin + p.y * value_cos)};
-  };
-
-  // angles of the triangle for the arrow
-  auto arrow_border = transform(point{-arrow_length, 0});
-  auto arrow_tip_left = transform(point{arrow_length, -arrow_width / 2});
-  auto arrow_tip_right = transform(point{arrow_length, arrow_width / 2});
-  tft.fillTriangle(arrow_tip_left.x, arrow_tip_left.y, arrow_tip_right.x, arrow_tip_right.y, arrow_border.x, arrow_border.y, color_arrow);
-}
-
 void display_flight(const flight_info &flight_info)
 {
   log_i("ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
+  int16_t y = 0;
 
   const aircraft_t *aircraft = nullptr;
-  if (!flight_info.type_designator.empty())
+  if (!flight_info.type_designator.isEmpty())
   {
     aircraft = lookupAircraft(flight_info.type_designator.c_str());
     if (aircraft == nullptr)
@@ -306,7 +276,7 @@ void display_flight(const flight_info &flight_info)
   }
 
   const airline_t *airline = nullptr;
-  if (!flight_info.flight_operator.empty())
+  if (!flight_info.flight_operator.isEmpty())
   {
     airline = lookupAirline(flight_info.flight_operator.c_str());
     if (airline == nullptr)
@@ -314,23 +284,24 @@ void display_flight(const flight_info &flight_info)
   }
 
   tft.setTextFont(font_26pt);
+
   if (flight_info.flight.length())
-    tft.print((flight_info.flight + " ").c_str());
+    tft.print(flight_info.flight + " ");
 
   tft.print(flight_info.from.c_str());
-  tft.println((flight_info.to.empty() ? "" : "-" + flight_info.to).c_str());
+  tft.println((flight_info.to.isEmpty() ? "" : "-" + flight_info.to).c_str());
 
-  auto y = tft.getCursorY();
+  y = tft.getCursorY();
   tft.setCursor(0, tft.getCursorY() + 2);
   if (metric_units)
-    tft.println(String(flight_info.altitude * ft_to_m, 0) + " m " + String(flight_info.speed * kts_to_kmh, 0) + " km/h");
+    tft.println(String(flight_info.altitude * ft_to_m, 0) + "m " + String(flight_info.speed * kts_to_kmh, 0) + "kmh");
   else
-    tft.println(String(flight_info.altitude) + " ft " + String(flight_info.speed) + " kts");
+    tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
+
+  // "`" is displayed as a degree symbol (°) in the font
+  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, y, font_16pt);
 
   tft.setCursor(0, tft.getCursorY() + 2);
-
-  constexpr auto compass_width = 26;
-  draw_compass(TFT_HEIGHT - 28, y, compass_width, compass_width, flight_info.track, TFT_LIGHTGREY, TFT_WHITE);
 
   if (airline)
   {
@@ -342,27 +313,31 @@ void display_flight(const flight_info &flight_info)
       delete[] image;
     }
     else
+    {
       log_w("No logo present for airline: %s", airline->icao_airline);
+      tft.drawRightString(airline->icao_airline, TFT_HEIGHT, tft.getCursorY(), font_26pt);
+    }
   }
 
   tft.setTextFont(font_16pt);
 
-  if (!flight_info.registration.empty())
-    tft.print((flight_info.registration + " ").c_str());
-  tft.println(format_gps_location(flight_info.latitude, flight_info.longitude).c_str());
+  if (!flight_info.registration.isEmpty())
+    tft.print(String(flight_info.registration) + " ");
+
+  tft.println(format_gps_location(flight_info.latitude, flight_info.longitude));
   tft.setCursor(0, tft.getCursorY() + 4);
 
   if (aircraft)
   {
     log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
-    tft.println((aircraft->manufacturer + std::string(" ") + aircraft->type).c_str());
+    tft.println(String(aircraft->manufacturer) + " " + aircraft->type);
   }
   else
-    tft.println(flight_info.type_designator.c_str());
+    tft.println(flight_info.type_designator);
 
   tft.setCursor(0, tft.getCursorY() + 6);
 
-  if (!flight_info.from.empty())
+  if (!flight_info.from.isEmpty())
   {
     auto from = lookupAirport(flight_info.from.c_str());
     if (from)
@@ -379,7 +354,8 @@ void display_flight(const flight_info &flight_info)
           tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
         }
       }
-      tft.println((from->city + std::string(" (") + from->region + std::string(") ") + from->country->name).c_str());
+
+      tft.println(String(from->city) + " (" + from->region + ") " + from->country->name);
     }
     else
       log_w("From airport (%s) not found", flight_info.from.c_str());
@@ -387,7 +363,7 @@ void display_flight(const flight_info &flight_info)
     tft.setCursor(0, tft.getCursorY() + 2);
   }
 
-  if (!flight_info.to.empty())
+  if (!flight_info.to.isEmpty())
   {
     auto to = lookupAirport(flight_info.to.c_str());
     if (to)
@@ -404,7 +380,8 @@ void display_flight(const flight_info &flight_info)
           tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
         }
       }
-      tft.println((to->city + std::string(" (") + to->region + std::string(") ") + to->country->name).c_str());
+
+      tft.println(String(to->city) + " (" + to->region + ") " + to->country->name);
     }
     else
       log_w("To airport (%s) not found", flight_info.to.c_str());
@@ -461,14 +438,21 @@ void display_flights()
       struct tm timeinfo;
       getLocalTime(&timeinfo);
       char time_buffer[20];
-      strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
+      if (time_valid())
+        strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
+      else
+        strcpy(time_buffer, "Time syncing...");
+
       tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
 
       tft.setTextColor(TFT_ORANGE);
       tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
+
       tft.setTextColor(text_color);
-      tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)).c_str(), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
-      tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH / 2 + 26, font_16pt);
+      tft.drawCentreString(format_gps_location(atof(param_latitude), atof(param_longitude)), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+
+      tft.drawCentreString(param_location, TFT_HEIGHT / 2, TFT_WIDTH - 32, font_16pt);
+      tft.drawCentreString(param_time_zone, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
 
       next_update_flight = UINT_MAX;
     }
@@ -508,23 +492,28 @@ void display_clock()
   getLocalTime(&timeinfo);
   if (timeinfo.tm_min != last_minute)
   {
+    clear();
     last_minute = timeinfo.tm_min;
     log_i("Updating clock");
-    char time_buffer[20];
-    clear();
-    strftime(time_buffer, sizeof(time_buffer), "%F", &timeinfo);
-    tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
-    strftime(time_buffer, sizeof(time_buffer), "%R", &timeinfo);
-    tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, TFT_WIDTH / 2 - 24, font_48pt_lcd);
-    tft.drawCentreString(param_time_zone, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+    if (time_valid())
+    {
+      char time_buffer[20];
+      strftime(time_buffer, sizeof(time_buffer), "%F", &timeinfo);
+      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
+      strftime(time_buffer, sizeof(time_buffer), "%R", &timeinfo);
+      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, TFT_WIDTH / 2 - 24, font_48pt_lcd);
+      tft.drawCentreString(param_time_zone, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+    }
+    else
+      tft.drawCentreString("Time syncing...", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 13, font_26pt);
   }
 }
 
 void loop()
 {
-  iotWebConf.doLoop();
   button1.loop();
   button2.loop();
+  iotWebConf.doLoop();
 
   static auto last_network_state = iotwebconf::NetworkState::Boot;
 

@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Arduino.h>
 #include <stdio.h>
-#include <string>
 
-std::string format_degrees(float value)
+String format_degrees(float value)
 {
     char buffer[10]; // "DDD°MM.MM"
     int degrees = value;
@@ -13,22 +13,22 @@ std::string format_degrees(float value)
     return buffer;
 }
 
-std::string format_lonlat(float lat, char pos, char neg)
+String format_lonlat(float lat, char pos, char neg)
 {
     return lat >= 0 ? format_degrees(lat) + pos : format_degrees(-lat) + neg;
 }
 
-std::string format_lat(float lat)
+String format_lat(float lat)
 {
     return format_lonlat(lat, 'N', 'S');
 }
 
-std::string format_lon(float lon)
+String format_lon(float lon)
 {
     return format_lonlat(lon, 'E', 'W');
 }
 
-std::string format_gps_location(float lat, float lon)
+String format_gps_location(float lat, float lon)
 {
     return format_lat(lat) + " " + format_lon(lon);
 }

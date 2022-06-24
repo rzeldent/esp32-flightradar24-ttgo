@@ -52,14 +52,14 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
             .altitude = items[4].as<const int>(),
             .speed = items[5].as<const int>(),
             .squawk = (ushort)atoi(items[6].as<const char*>()),
-            .radar = items[7].as<std::string>(),
-            .type_designator = items[8].as<std::string>(),
-            .registration = items[9].as<std::string>(),
+            .radar = items[7].as<const char*>(),
+            .type_designator = items[8].as<const char*>(),
+            .registration = items[9].as<const char*>(),
             .timestamp = items[10].as<time_t>(),
-            .from = items[11].as<std::string>(),
-            .to = items[12].as<std::string>(),
-            .flight = items[13].as<std::string>(),
-            .flight_operator = items[18].as<std::string>()
+            .from = items[11].as<const char*>(),
+            .to = items[12].as<const char*>(),
+            .flight = items[13].as<const char*>(),
+            .flight_operator = items[18].as<const char*>()
         };
         flights.push_back(flight);
     }
