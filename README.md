@@ -36,11 +36,12 @@ Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flas
 - Enjoy!
 
 ## Modifying the configuration
-- When booting, the device waits 30 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password.
+- When booting, the device waits 15 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password.
 - When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password.
 - When the password is lost, a quick fix is to change the CONFIG_VERSION constant and flash the device. This will reset the configuration.
+- When finished disconnect from the wireless network. This should reset the flightradar. Resetting is also a good alternative...
 
-## Case
+## Case / Enclosure
 Please take a look at the STL file to create a case for the flightradar to host the TTGO Display and a battery. Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files). Thanks to Erwin Reid for creating the models.
 
 ## Credits
