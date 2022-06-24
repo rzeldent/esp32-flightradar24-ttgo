@@ -299,7 +299,7 @@ void display_flight(const flight_info &flight_info)
     tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
 
   // "`" is displayed as a degree symbol (°) in the font
-  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, y, font_16pt);
+  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, y + 5, font_16pt);
 
   tft.setCursor(0, tft.getCursorY() + 2);
 
