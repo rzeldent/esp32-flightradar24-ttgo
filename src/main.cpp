@@ -1,5 +1,9 @@
+#include <flightradar.h>
+
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
+
+#include <ttgo_display.h>
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
@@ -14,21 +18,19 @@ constexpr auto font_48pt_lcd = 7;
 #include <flight_info.h>
 #include <time.h>
 
-// Database of airplanes from https://openflights.org/data.html
 #include <IotWebConf.h>
 #include <IotWebConfOptionalGroup.h>
 #include <IotWebConfUsing.h>
+
+// Database of airplanes from https://openflights.org/data.html
 #include <aircraft.h>
 #include <airline.h>
 #include <airport.h>
-#include <flightradar.h>
+
 #include <gps_formatting.h>
 #include <images.h>
-#include <math.h>
-#include <timezonedb.h>
 
-// Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
-constexpr time_t epoch_2000_01_01 = 946684800;
+#include <timezonedb.h>
 
 // Conversions to metric
 constexpr float ft_to_m = 0.3048;
@@ -42,7 +44,7 @@ IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERS
 char param_location[32];
 char param_latitude[12];
 char param_longitude[12];
-char param_time_zone[sizeof(timezonelocation_t)];
+char param_time_zone[sizeof(timezone_location_t)];
 char param_metric[9];
 
 auto param_group_location = IotWebConfParameterGroup("flightradar", "");
@@ -56,10 +58,6 @@ auto iotWebParamMetric = IotWebConfCheckboxParameter("Metric units", "metric", p
 float latitude;
 float longitude;
 bool metric_units;
-
-// GPIO of the buttons on the TTGO Display
-constexpr auto button_top = 35;
-constexpr auto button_bottom = 0;
 
 // Screen is 240 * 135 pixels (rotated)
 constexpr auto background_color = TFT_BLACK;
@@ -77,8 +75,8 @@ auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
 // Buttons
-Button2 button1(button_top);
-Button2 button2(button_bottom);
+Button2 button1(GPIO_BUTTON_TOP, INPUT);
+Button2 button2(GPIO_BUTTON_BOTTOM, INPUT);
 
 // Variables for flight info
 unsigned long next_refresh_flights;
@@ -90,7 +88,7 @@ std::list<flight_info> flights;
 // Flight to display
 std::list<flight_info>::const_iterator it;
 // Index
-unsigned flight_index = 0;
+unsigned flight_index;
 
 // Variables for Clock
 int last_minute = -1;
@@ -107,6 +105,8 @@ display_state_t display_state = display_state_t::display_airtraffic;
 
 bool time_valid()
 {
+  // Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
+  constexpr time_t epoch_2000_01_01 = 946684800;
   return time(nullptr) > epoch_2000_01_01;
 }
 
@@ -188,6 +188,12 @@ void setup()
 {
   // Disable brownout
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
+  //  ADC_EN is the ADC detection enable port
+  //  If the USB port is used for power supply, it is turned on by default.
+  //  If it is powered by battery, it needs to be set to high level
+  pinMode(GPIO_ADC_EN, OUTPUT);
+  digitalWrite(GPIO_ADC_EN, HIGH);
 
 #ifdef CORE_DEBUG_LEVEL
   Serial.begin(115200);
