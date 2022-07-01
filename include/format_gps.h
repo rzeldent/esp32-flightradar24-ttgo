@@ -1,14 +1,13 @@
 #pragma once
 
 #include <Arduino.h>
-#include <stdio.h>
 
 String format_degrees(float value)
 {
     char buffer[10]; // "DDD°MM.MM"
     int degrees = value;
     int minutes = (value - degrees) * 60;
-    int seconds = (value - degrees - minutes / 60.0) * 3600;
+    int seconds = (value - degrees - minutes / 60.0) * 60.0 * 60.0;
     snprintf(buffer, sizeof(buffer), "%d`%02d'%02d\"", degrees, minutes, seconds);
     return buffer;
 }
