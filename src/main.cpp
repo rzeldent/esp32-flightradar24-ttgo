@@ -247,7 +247,6 @@ void display_flight(const flight_info &flight_info)
 {
   log_i("ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
-  int16_t y = 0;
 
   const aircraft_t *aircraft = nullptr;
   if (!flight_info.type_designator.isEmpty())
@@ -270,19 +269,19 @@ void display_flight(const flight_info &flight_info)
   if (flight_info.flight.length())
     tft.print(flight_info.flight + " ");
 
-  tft.print(flight_info.from.c_str());
-  tft.println((flight_info.to.isEmpty() ? "" : "-" + flight_info.to).c_str());
+  tft.print(flight_info.from);
+  tft.println(flight_info.to.isEmpty() ? "" : "-" + flight_info.to);
 
-  y = tft.getCursorY();
+  // "`" is displayed as a degree symbol (°) in the font
+  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, tft.getCursorY() + 5, font_16pt);
+
   tft.setCursor(0, tft.getCursorY() + 2);
   if (iotWebParamMetric.value())
-    tft.println(String(flight_info.altitude * FT_TO_M, 0) + "m " + String(flight_info.speed * KTS_TO_KMH, 0) + "kmh");
+    tft.println(String((int)(flight_info.altitude * FT_TO_M)) + "m " + String((int)(flight_info.speed * KTS_TO_KMH)) + "kmh");
   else
     tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
 
-  // "`" is displayed as a degree symbol (°) in the font
-  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, y + 5, font_16pt);
-
+  
   tft.setCursor(0, tft.getCursorY() + 2);
 
   if (airline)
@@ -456,8 +455,10 @@ void display_flights()
     if (it != flights.end())
     {
       display_flight(*it);
+      flight_index++;
       // Show index of displayed and total of flights
-      tft.drawRightString(String(++flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
+      tft.drawRightString(String(flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
+
       if (++it == flights.end())
       {
         log_d("Restart with first flight");
