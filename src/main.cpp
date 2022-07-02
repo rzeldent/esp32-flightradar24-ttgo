@@ -48,7 +48,7 @@ auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
 auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
 auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(timezonelocation_t)>>("chooseParam").label("Choose timezone").optionValues((const char *)&timezonedb->location).optionNames((const char *)&timezonedb->location).optionCount(sizeof(timezonedb) / sizeof(timezonedb[0])).nameLength(sizeof(timezonelocation_t)).defaultValue(DEFAULT_TIMEZONE).build();
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(timezonelocation_t)>>("timezone").label("Choose timezone").optionValues((const char *)&timezonedb->location).optionNames((const char *)&timezonedb->location).optionCount(sizeof(timezonedb) / sizeof(timezonedb[0])).nameLength(sizeof(timezonelocation_t)).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
 // Screen is 240 * 135 pixels (rotated)
