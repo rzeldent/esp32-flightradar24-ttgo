@@ -20,7 +20,6 @@ constexpr auto font_48pt_lcd = 7;
 
 #include <IotWebConf.h>
 #include <IotWebConfTParameter.h>
-#include <IotWebConfUsing.h>
 
 // Database of airplanes from https://openflights.org/data.html
 #include <aircraft.h>
@@ -43,7 +42,7 @@ DNSServer dnsServer;
 WebServer server(80);
 IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
 
-auto param_group_location = IotWebConfParameterGroup("flightradar", "Flight radar");
+auto param_group_location = iotwebconf::ParameterGroup("flightradar", "Flight radar");
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
 auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat").label("Latitude").min(-90.0).max(90.0).defaultValue(DEFAULT_LATITUDE).step(0.01).placeholder("e.g. 52.3").build();
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
@@ -200,11 +199,11 @@ void setup()
   param_group_location.addItem(&iotWebParamLongitudeRange);
   param_group_location.addItem(&iotWebParamTimeZone);
   param_group_location.addItem(&iotWebParamMetric);
-
   iotWebConf.addParameterGroup(&param_group_location);
+  
+  iotWebConf.getApTimeoutParameter()->visible = true;
   iotWebConf.setWifiConnectionCallback(update_runtime_config);
-  iotWebConf.setApTimeoutMs(15 * 1000);
-
+ 
   iotWebConf.init();
 
   // Set up required URL handlers on the web server.
