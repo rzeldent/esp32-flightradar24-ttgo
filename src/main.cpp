@@ -200,14 +200,14 @@ void setup()
   param_group_location.addItem(&iotWebParamTimeZone);
   param_group_location.addItem(&iotWebParamMetric);
   iotWebConf.addParameterGroup(&param_group_location);
-  
+
   iotWebConf.getApTimeoutParameter()->visible = true;
   iotWebConf.setWifiConnectionCallback(update_runtime_config);
- 
+
   iotWebConf.init();
 
   // Set up required URL handlers on the web server.
-  server.on("/", handleRoot);
+  server.on("/", HTTP_GET, handleRoot);
   server.on("/config", []
             { iotWebConf.handleConfig(); });
   server.onNotFound([]()
@@ -280,7 +280,6 @@ void display_flight(const flight_info &flight_info)
   else
     tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
 
-  
   tft.setCursor(0, tft.getCursorY() + 2);
 
   if (airline)
