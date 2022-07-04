@@ -137,6 +137,8 @@ void handleRoot()
   html += "<li>CPU model: " + String(ESP.getChipModel()) + "</li>";
   html += "<li>CPU speed: " + String(ESP.getCpuFreqMHz()) + "Mhz</li>";
   html += "<li>Mac address: " + WiFi.macAddress() + "</li>";
+  html += "<li>IPv4 address: " + WiFi.localIP().toString() + "</li>";
+  html += "<li>IPv6 address: " + WiFi.localIPv6().toString() + "</li>";
   html += "</ul>";
   html += "<h3>Settings</h3>";
   html += "<ul>";
