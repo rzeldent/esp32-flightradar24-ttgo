@@ -12,8 +12,8 @@ typedef const char timezone_definition_t[46];
 
 typedef struct timezonelocation
 {
-  timezone_location_t location;
-  timezone_definition_t definition;
+  const timezone_location_t location;
+  const timezone_definition_t definition;
 } timezonelocation_t;
 
 const timezonelocation_t timezonedb[] = {
@@ -479,11 +479,11 @@ const timezonelocation_t timezonedb[] = {
     {"Etc/Universal", "UTC0"},
     {"Etc/Zulu", "UTC0"}};
 
-const char *timezonedb_get_definition(const char *location)
+const char* timezonedb_get_definition(const char* location)
 {
-  for (auto i = 0; i < sizeof(timezonedb) / sizeof(timezonedb[0]); ++i)
-    if (strcmp(location, timezonedb[i].location) == 0)
-      return timezonedb[i].definition;
+  for (const auto &timezone : timezonedb)
+    if (strncmp(location, timezone.location, sizeof(timezonelocation_t)) == 0)
+      return timezone.definition;
 
   return "UTC0";
 }
