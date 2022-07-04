@@ -18,6 +18,7 @@ constexpr auto font_48pt_lcd = 7;
 #include <flight_info.h>
 #include <time.h>
 
+#include <ESPmDNS.h>
 #include <IotWebConf.h>
 #include <IotWebConfTParameter.h>
 
@@ -233,6 +234,12 @@ void setup()
             last_minute = -1;
             break;
         } });
+
+        // Set DNS to thingname
+  if (!MDNS.begin(iotWebConf.getThingName()))
+    log_e("Error setting up MDNS responder!");
+
+    MDNS.addService("http", "tcp", 80);
 }
 
 void clear()
