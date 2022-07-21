@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 String format_duration(time_t seconds)
 {
   auto days = seconds / (60 * 60 * 24);
