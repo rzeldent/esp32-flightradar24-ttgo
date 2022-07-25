@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 // Data is stored as RLE (Run Length Encoding)
 typedef struct
 {
