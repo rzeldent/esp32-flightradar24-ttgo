@@ -237,11 +237,11 @@ void setup()
             break;
         } });
 
-        // Set DNS to thingname
+  // Set DNS to thingname
   if (!MDNS.begin(iotWebConf.getThingName()))
     log_e("Error setting up MDNS responder!");
 
-    MDNS.addService("http", "tcp", 80);
+  MDNS.addService("http", "tcp", 80);
 }
 
 void clear()
@@ -415,7 +415,20 @@ void display_flights()
   {
     next_refresh_flights = now + refresh_flights_milliseconds;
     log_i("Updating flights");
-    flights = get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value());
+    String error_message;
+    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), flights, error_message))
+    {
+      log_e("Error getting flights: %s", error_message.c_str());
+      // Show error message
+      clear();
+      auto image_data = z_image_decode(&image_error);
+      tft.pushImage(0, 0, image_error.width, image_error.height, image_data);
+      delete[] image_data;
+      tft.drawCentreString(error_message, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+      next_update_flight = UINT_MAX;
+      return;
+    }
+
     log_i("Number of flights: %d", flights.size());
 
     if (flights.empty())
