@@ -450,7 +450,7 @@ void display_flights()
       tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
 
       tft.setTextColor(text_color);
-      tft.drawCentreString(format_gps_location(iotWebParamLatitude.value(), iotWebParamLatitude.value()), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
+      tft.drawCentreString(format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
 
       tft.drawCentreString(iotWebParamLocation.value(), TFT_HEIGHT / 2, TFT_WIDTH - 32, font_16pt);
       tft.drawCentreString(iotWebParamTimeZone.value(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
