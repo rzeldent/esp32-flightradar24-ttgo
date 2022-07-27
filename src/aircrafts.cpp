@@ -4850,7 +4850,7 @@ static const aircraft_t aircrafts[] = {
     {"GLF5", "Gulfstream aerospace", "Eitam", "LandPlane", "Jet", '2'},
     {"GLF5", "Gulfstream aerospace", "Gulfstream G500 (G-5SP)", "LandPlane", "Jet", '2'},
     {"GLF6", "Gulfstream aerospace", "Gulfstream G650", "LandPlane", "Jet", '2'},
-    {"GLID", "", "", "Glider", "", '0'},
+    {"GLID", "Unknown", "Glider", "Glider", "", '0'},
     {"GLSP", "New glastar", "Sportsman 2+2", "LandPlane", "Piston", '1'},
     {"GLST", "Glasair", "GlaStar", "LandPlane", "Piston", '1'},
     {"GLST", "Glasair", "Sportsman 2+2", "LandPlane", "Piston", '1'},

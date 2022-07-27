@@ -317,7 +317,7 @@ void display_flight(const flight_info &flight_info)
 
   if (aircraft)
   {
-    log_i("Aircraft (%s): %s %s. Type: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
+    log_i("Aircraft (%s): %s %s. Description: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
     tft.println(String(aircraft->manufacturer) + " " + String(aircraft->type));
   }
   else
