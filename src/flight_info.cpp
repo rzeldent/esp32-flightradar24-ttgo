@@ -5,20 +5,30 @@
 #include <esp32-hal-log.h>
 #include <http_status.h>
 
-std::list<flight_info> get_flights(float latitude, float longitude, float range_latitude, float range_longitude)
+bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, std::list<flight_info> &flights, String &error_message)
 {
     const String bounds = String(latitude + range_latitude / 2.0) + "," + String(latitude - range_latitude / 2.0) + "," + String(longitude - range_longitude / 2.0) + "," + String(longitude + range_longitude / 2.0);
     const String flight_data_url = "http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + bounds + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=1&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0";
 
+    flights.clear();
+    error_message = "";
+
     HTTPClient client;
     log_i("Request states=%s", flight_data_url.c_str());
-    client.begin(flight_data_url);
+    if (!client.begin(flight_data_url))
+    {
+        error_message = "Failed to start client. DNS/TCP error?";
+        log_e("%s", error_message.c_str());
+        return false;
+    }
+
     const auto httpResultCode = client.GET();
     if (httpResultCode != HTTP_CODE_OK)
     {
         client.end();
-        log_e("Get error=%d (%s:%s)", httpResultCode, http_status_group(httpResultCode), http_status_reason(httpResultCode));
-        return std::list<flight_info>();
+        error_message = String(httpResultCode) + " " + (httpResultCode < 0 ? client.errorToString(httpResultCode) : http_status_reason(httpResultCode));
+        log_e("HTTP error: %d (%s)", httpResultCode, error_message);
+        return false;
     }
 
     auto response = client.getString();
@@ -30,12 +40,12 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
     {
         client.end();
         log_e("Deserialize. Error=%s", error.c_str());
-        return std::list<flight_info>();
+        error_message = error.c_str();
+        return false;
     }
 
     client.end();
 
-    std::list<flight_info> flights;
     auto flight_data_root = doc_flight_data.as<JsonObject>();
     for (const auto kvp : flight_data_root)
     {
@@ -64,5 +74,6 @@ std::list<flight_info> get_flights(float latitude, float longitude, float range_
         };
         flights.push_back(flight);
     }
-    return flights;
+
+    return true;
 }

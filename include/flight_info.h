@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <list>
-typedef struct flight_info
+struct flight_info
 {
     int32_t icao;           //  0 => ICAO 24-BIT ADDRESS - 4CA853
     float latitude;         //  1 => LAT - 52.3247
@@ -20,6 +20,6 @@ typedef struct flight_info
     String flight;          // 13 => FLIGHT NUMBER - LH8160
                             // 14 =>
     String flight_operator; // 15 => OPERATOR - RYR
-} flight_info_t;
+};
 
-std::list<flight_info> get_flights(float latitude, float longitude, float range_latitude, float range_longitude);
+extern bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, std::list<flight_info> &flights, String &error_message);
