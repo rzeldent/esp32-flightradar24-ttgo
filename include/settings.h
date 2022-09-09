@@ -19,7 +19,7 @@
 #define NTP_SERVERS NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3
 
 // Amsterdam Airport Schiphol
-#define DEFAULT_LOCATION "Amsterdam Schiphol"
+#define DEFAULT_LOCATION "Amsterdam Schiphol Airport"
 #define DEFAULT_LATITUDE 52.308601
 #define DEFAULT_LONGITUDE 4.76389
 #define DEFAULT_TIMEZONE "Europe/Amsterdam"
