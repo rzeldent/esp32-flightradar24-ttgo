@@ -8,7 +8,8 @@ Easy configuration through the web interface. Stable.
 ![FlightRadar](assets/20210611_183208.jpg)
 
 Display flights in your area and display them on the screen of the ESP32 TTGO-Display module.
-Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.com/).
+Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.com/) but only for flight updates.
+Internally there is a big database with airport, aircraft and airline data with graphics to minimize the requests.
 
 This application loads the flights near you (defined in the file .settings.h) and displays them sequentially on the display.
 
@@ -48,6 +49,10 @@ Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flas
 
 ## Case / Enclosure
 Please take a look at the STL file to create a case for the flightradar to host the TTGO Display and a battery. Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files). Thanks to Erwin Reid for creating the models.
+
+## Suggestions
+Suggestions especially to faulty logo's, airlines etc are welcome. Please make a PR and after verification, this will be added to the main version.
+
 
 ## Credits
 Thanks to [FlightRadar24.com](https://www.flightradar24.com/) to be able to hook into their API.
