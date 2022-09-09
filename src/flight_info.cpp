@@ -8,7 +8,7 @@
 bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, std::list<flight_info> &flights, String &error_message)
 {
     const String bounds = String(latitude + range_latitude / 2.0) + "," + String(latitude - range_latitude / 2.0) + "," + String(longitude - range_longitude / 2.0) + "," + String(longitude + range_longitude / 2.0);
-    const String flight_data_url = "https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=" + bounds + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=1&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0";
+    const String flight_data_url = "http://data-live.flightradar24.com/zones/fcgi/feed.js?bounds=" + bounds + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=1&air=1&vehicles=0&estimated=1&maxage=14400&gliders=1&stats=0";
 
     flights.clear();
     error_message = "";
@@ -32,7 +32,7 @@ bool get_flights(float latitude, float longitude, float range_latitude, float ra
     }
 
     auto response = client.getString();
-    log_d("Response=%s", response.c_str());
+    log_d("Body=%s", response.c_str());
     // Parse JSON states object 32k
     DynamicJsonDocument doc_flight_data(32 * 1024);
     const auto error = deserializeJson(doc_flight_data, response);
