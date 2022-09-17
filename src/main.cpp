@@ -135,7 +135,7 @@ void handleRoot()
   html += "<h3>ESP32</h3>";
   html += "<ul>";
   html += "<li>CPU model: " + String(ESP.getChipModel()) + "</li>";
-  html += "<li>CPU speed: " + String(ESP.getCpuFreqMHz()) + "Mhz</li>";
+  html += "<li>CPU speed: " + String(ESP.getCpuFreqMHz()) + " Mhz</li>";
   html += "<li>Mac address: " + WiFi.macAddress() + "</li>";
   html += "<li>IPv4 address: " + WiFi.localIP().toString() + "</li>";
   html += "<li>IPv6 address: " + WiFi.localIPv6().toString() + "</li>";
@@ -154,7 +154,7 @@ void handleRoot()
   html += "<ul>";
   html += "<li>Current time: " + String(time_buffer) + " (Local)</li>";
   html += "<li>Uptime: " + String(format_duration(millis() / 1000)) + "</li>";
-  html += "<li>Free heap: " + format_si(ESP.getFreeHeap()) + "b</li>";
+  html += "<li>Free heap: " + format_memory(ESP.getFreeHeap()) + "</li>";
   html += "</ul>";
   html += "<br/>Go to <a href=\"config\">configure page</a> to change settings.";
   html += "</body></html>";
