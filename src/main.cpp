@@ -28,7 +28,7 @@ constexpr auto font_48pt_lcd = 7;
 #include <airport.h>
 
 #include <format_gps.h>
-#include <format_si.h>
+#include <format_number.h>
 #include <format_duration.h>
 
 #include <images.h>
