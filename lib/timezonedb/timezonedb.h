@@ -7,13 +7,10 @@
 // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 // https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
 
-typedef const char timezone_location_t[32];
-typedef const char timezone_definition_t[46];
-
 typedef struct timezonelocation
 {
-  const timezone_location_t location;
-  const timezone_definition_t definition;
+  const char* location;
+  const char* definition;
 } timezonelocation_t;
 
 const timezonelocation_t timezonedb[] = {
