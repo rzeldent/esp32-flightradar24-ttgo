@@ -125,7 +125,7 @@ void handleRoot()
   if (time_valid())
     strftime(time_buffer, sizeof(time_buffer), "%F %T", &timeinfo);
   else
-    strcpy(time_buffer, "Time syncing...");
+    strcpy(time_buffer, "syncing...");
 
   String html;
   html += "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
@@ -222,6 +222,7 @@ void setup()
   auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
   setenv("TZ", tz_definition, 1);
   tzset();
+  log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz_definition);
 
   button1.setClickHandler([](Button2 button)
                           {
@@ -442,7 +443,7 @@ void display_flights()
       if (time_valid())
         strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
       else
-        strcpy(time_buffer, "Time syncing...");
+        strcpy(time_buffer, "syncing...");
 
       tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
 
@@ -508,7 +509,7 @@ void display_clock()
       tft.drawCentreString(iotWebParamTimeZone.value(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
     }
     else
-      tft.drawCentreString("Time syncing...", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 13, font_26pt);
+      tft.drawCentreString("syncing...", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 13, font_26pt);
   }
 }
 
