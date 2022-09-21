@@ -9,8 +9,8 @@
 
 typedef struct timezonelocation
 {
-  const char* location;
-  const char* definition;
+  const char location[31];
+  const char definition[45];
 } timezonelocation_t;
 
 const timezonelocation_t timezonedb[] = {
