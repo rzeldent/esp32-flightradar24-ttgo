@@ -12,4 +12,4 @@ typedef struct airline
     const z_image_data_t *logo;
 } airline_t;
 
-extern const airline_t *lookupAirline(const char *iata_code);
+extern const airline_t *lookup_airline(const char *iata_code);

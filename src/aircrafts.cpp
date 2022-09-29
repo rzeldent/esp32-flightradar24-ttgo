@@ -10323,10 +10323,9 @@ static const aircraft_t aircrafts[] = {
     {"ZULU", "Bul", "ZA1lA1", "LandPlane", "Piston", '1'},
 };
 
-const aircraft_t *lookupAircraft(const char *type_designator)
+const aircraft_t *lookup_aircraft(const char *type_designator)
 {
-    constexpr size_t aircraft_size = sizeof(aircrafts) / sizeof(aircrafts[0]);
     // Array must be sorted on item to lookup
-    return binary_array_lookup<aircraft_t, const char *>((aircraft_t *)aircrafts, aircraft_size, type_designator, [](const aircraft_t &other, const char *value)
+    return binary_array_lookup<aircraft_t, const char *>(aircrafts, type_designator, [](const aircraft_t &other, const char *value)
                                                          { return strcmp(other.type_designator, value); });
 }

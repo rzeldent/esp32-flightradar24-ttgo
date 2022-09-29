@@ -14,4 +14,4 @@ typedef struct airport
     int elevation_ft;
 } airport_t;
 
-extern const airport_t *lookupAirport(const char* iata_airport);
+extern const airport_t *lookup_airport(const char* iata_airport);

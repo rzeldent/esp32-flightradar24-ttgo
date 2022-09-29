@@ -6005,10 +6005,9 @@ static const airline_t airlines[] = {
     {"ZZZ", "", "Aircraft In Flight", "", &country_ZZ, &airline_logo_ZZZ},
 };
 
-const airline_t *lookupAirline(const char *icao_airline)
+const airline_t *lookup_airline(const char *icao_airline)
 {
-    constexpr size_t airline_size = sizeof(airlines) / sizeof(airlines[0]);
     // Array must be sorted on item to lookup
-    return binary_array_lookup<airline_t, const char *>((airline_t *)airlines, airline_size, icao_airline, [](const airline_t &other, const char *value)
+    return binary_array_lookup<airline_t, const char *>(airlines, icao_airline, [](const airline_t &other, const char *value)
                                                         { return strcmp(other.icao_airline, value); });
 }
