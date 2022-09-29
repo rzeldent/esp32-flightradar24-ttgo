@@ -260,7 +260,7 @@ void display_flight(const flight_info &flight_info)
   tft.setTextFont(font_26pt);
 
   // Special color if squawk is special code
-  if (flight_info.squawk_hijack() || flight_info.squawk_lost_communication_atc() || flight_info.squawk_emergency())
+  if (flight_info.squawk_hijack() || flight_info.squawk_radio_failure() || flight_info.squawk_emergency())
     tft.setTextColor(special_text_color);
 
   if (flight_info.flight.length())

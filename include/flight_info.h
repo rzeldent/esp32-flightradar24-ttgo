@@ -35,7 +35,7 @@ struct flight_info
     int speed_metric() const { return speed * KTS_TO_KMH; }
 
     bool squawk_hijack() const { return squawk == 7500; }
-    bool squawk_lost_communication_atc() const { return squawk == 7600; }
+    bool squawk_radio_failure() const { return squawk == 7600; }
     bool squawk_emergency() const { return squawk == 7700; }
 
     const aircraft_t *aircraft_type() const { return type_designator.isEmpty() ? nullptr : lookup_aircraft(type_designator.c_str()); }
