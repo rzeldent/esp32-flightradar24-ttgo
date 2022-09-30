@@ -266,7 +266,7 @@ void display_flight(const flight_info &flight_info)
   if (flight_info.flight.length())
     tft.print(flight_info.flight + " ");
 
-  tft.setTextColor(background_color);
+  tft.setTextColor(text_color);
 
   tft.print(flight_info.from);
   tft.println(flight_info.to.isEmpty() ? "" : "-" + flight_info.to);
