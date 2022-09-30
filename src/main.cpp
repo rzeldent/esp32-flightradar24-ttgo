@@ -22,21 +22,12 @@ constexpr auto font_48pt_lcd = 7;
 #include <IotWebConf.h>
 #include <IotWebConfTParameter.h>
 
-// Database of airplanes from https://openflights.org/data.html
-#include <aircraft.h>
-#include <airline.h>
-#include <airport.h>
-
 #include <format_gps.h>
 #include <format_number.h>
 #include <format_duration.h>
 
 #include <images.h>
 #include <timezonedb.h>
-
-// Conversions to metric
-#define FT_TO_M 0.3048
-#define KTS_TO_KMH 1.852f
 
 // Web server
 DNSServer dnsServer;
@@ -55,6 +46,7 @@ auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("me
 // Screen is 240 * 135 pixels (rotated)
 constexpr auto background_color = TFT_BLACK;
 constexpr auto text_color = TFT_WHITE;
+constexpr auto special_text_color = TFT_RED;
 
 // Flag
 constexpr auto flag_margin_x_px = 4;
@@ -257,26 +249,24 @@ void display_flight(const flight_info &flight_info)
   log_i("ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
   clear();
 
-  const aircraft_t *aircraft = nullptr;
-  if (!flight_info.type_designator.isEmpty())
-  {
-    aircraft = lookupAircraft(flight_info.type_designator.c_str());
-    if (aircraft == nullptr)
-      log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
-  }
+  const aircraft_t *aircraft = flight_info.aircraft_type();
+  if (aircraft == nullptr)
+    log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
 
-  const airline_t *airline = nullptr;
-  if (!flight_info.flight_operator.isEmpty())
-  {
-    airline = lookupAirline(flight_info.flight_operator.c_str());
-    if (airline == nullptr)
-      log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
-  }
+  const airline_t *airline = flight_info.airline();
+  if (airline == nullptr)
+    log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
 
   tft.setTextFont(font_26pt);
 
+  // Special color if squawk is special code
+  if (flight_info.squawk_hijack() || flight_info.squawk_radio_failure() || flight_info.squawk_emergency())
+    tft.setTextColor(special_text_color);
+
   if (flight_info.flight.length())
     tft.print(flight_info.flight + " ");
+
+  tft.setTextColor(text_color);
 
   tft.print(flight_info.from);
   tft.println(flight_info.to.isEmpty() ? "" : "-" + flight_info.to);
@@ -286,7 +276,7 @@ void display_flight(const flight_info &flight_info)
 
   tft.setCursor(0, tft.getCursorY() + 2);
   if (iotWebParamMetric.value())
-    tft.println(String((int)(flight_info.altitude * FT_TO_M)) + "m " + String((int)(flight_info.speed * KTS_TO_KMH)) + "kmh");
+    tft.println(String(flight_info.altitude_metric()) + "m " + String(flight_info.speed_metric()) + "kmh");
   else
     tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
 
@@ -326,55 +316,49 @@ void display_flight(const flight_info &flight_info)
 
   tft.setCursor(0, tft.getCursorY() + 6);
 
-  if (!flight_info.from.isEmpty())
+  auto from = flight_info.from_airport();
+  if (from)
   {
-    auto from = lookupAirport(flight_info.from.c_str());
-    if (from)
+    log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
+    if (from->country->flag)
     {
-      log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
       if (from->country->flag)
       {
-        if (from->country->flag)
-        {
-          auto cursor_y = tft.getCursorY();
-          auto image = z_image_decode(from->country->flag);
-          tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, image);
-          delete[] image;
-          tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
-        }
+        auto cursor_y = tft.getCursorY();
+        auto image = z_image_decode(from->country->flag);
+        tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, image);
+        delete[] image;
+        tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
       }
-
-      tft.println(String(from->city) + " (" + from->region + ") " + from->country->name);
     }
-    else
-      log_w("From airport (%s) not found", flight_info.from.c_str());
 
-    tft.setCursor(0, tft.getCursorY() + 2);
+    tft.println(String(from->city) + " (" + from->region + ") " + from->country->name);
   }
+  else
+    log_w("From airport (%s) not found", flight_info.from.c_str());
 
-  if (!flight_info.to.isEmpty())
+  tft.setCursor(0, tft.getCursorY() + 2);
+
+  auto to = flight_info.to_airport();
+  if (to)
   {
-    auto to = lookupAirport(flight_info.to.c_str());
-    if (to)
+    log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
+    if (to->country)
     {
-      log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
-      if (to->country)
+      if (to->country->flag)
       {
-        if (to->country->flag)
-        {
-          auto cursor_y = tft.getCursorY();
-          auto image = z_image_decode(to->country->flag);
-          tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, image);
-          delete[] image;
-          tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
-        }
+        auto cursor_y = tft.getCursorY();
+        auto image = z_image_decode(to->country->flag);
+        tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, image);
+        delete[] image;
+        tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
       }
-
-      tft.println(String(to->city) + " (" + to->region + ") " + to->country->name);
     }
-    else
-      log_w("To airport (%s) not found", flight_info.to.c_str());
+
+    tft.println(String(to->city) + " (" + to->region + ") " + to->country->name);
   }
+  else
+    log_w("To airport (%s) not found", flight_info.to.c_str());
 }
 
 void display_network_state(iotwebconf::NetworkState state)

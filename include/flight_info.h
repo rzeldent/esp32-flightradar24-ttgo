@@ -3,6 +3,15 @@
 #include <Arduino.h>
 #include <list>
 
+// Database of airplanes from https://openflights.org/data.html
+#include <aircraft.h>
+#include <airline.h>
+#include <airport.h>
+
+// Conversions to metric
+#define FT_TO_M 0.3048
+#define KTS_TO_KMH 1.852f
+
 struct flight_info
 {
     int32_t icao;           //  0 => ICAO 24-BIT ADDRESS - 4CA853
@@ -21,6 +30,18 @@ struct flight_info
     String flight;          // 13 => FLIGHT NUMBER - LH8160
                             // 14 =>
     String flight_operator; // 15 => OPERATOR - RYR
+
+    int altitude_metric() const { return altitude * FT_TO_M; }
+    int speed_metric() const { return speed * KTS_TO_KMH; }
+
+    bool squawk_hijack() const { return squawk == 7500; }
+    bool squawk_radio_failure() const { return squawk == 7600; }
+    bool squawk_emergency() const { return squawk == 7700; }
+
+    const aircraft_t *aircraft_type() const { return type_designator.isEmpty() ? nullptr : lookup_aircraft(type_designator.c_str()); }
+    const airline_t *airline() const { return flight_operator.isEmpty() ? nullptr : lookup_airline(flight_operator.c_str()); }
+    const airport_t *from_airport() const { return from.isEmpty() ? nullptr : lookup_airport(from.c_str()); }
+    const airport_t *to_airport() const { return to.isEmpty() ? nullptr : lookup_airport(to.c_str()); }
 };
 
 extern bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, std::list<flight_info> &flights, String &error_message);

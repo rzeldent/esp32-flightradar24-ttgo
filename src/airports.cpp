@@ -9140,10 +9140,9 @@ static const airport_t airports[] = {
 { "ZZV", "Zanesville Municipal Airport", "Zanesville", "OH", &country_US, 39.9444007874, -81.89209747310001, 900 },
 };
 
-const airport_t *lookupAirport(const char *iata_airport)
+const airport_t *lookup_airport(const char *iata_airport)
 {
-    constexpr size_t airport_size = sizeof(airports) / sizeof(airports[0]);
     // Array must be sorted on item to lookup
-    return binary_array_lookup<airport_t, const char *>((airport_t *)airports, airport_size, iata_airport, [](const airport_t &other, const char *value)
+    return binary_array_lookup<airport_t, const char *>(airports, iata_airport, [](const airport_t &other, const char *value)
                                                         { return strcmp(other.iata_airport, value); });
 }
