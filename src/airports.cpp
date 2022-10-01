@@ -1,6 +1,6 @@
 #include <airport.h>
-#include <binary_search.h>
 #include <string.h>
+#include <stdlib.h>
 
 // List must be sorted because binary search is used
 
@@ -9142,7 +9142,11 @@ static const airport_t airports[] = {
 
 const airport_t *lookup_airport(const char *iata_airport)
 {
-    // Array must be sorted on item to lookup
-    return binary_array_lookup<airport_t, const char *>(airports, iata_airport, [](const airport_t &other, const char *value)
-                                                        { return strcmp(other.iata_airport, value); });
+    // Array must be sorted on item to do a bsearch
+    airport_t key = {.iata_airport = iata_airport};
+    return (airport_t *)bsearch(&key, airports, sizeof(airports) / sizeof(airport_t), sizeof(airport_t),
+                                [](const void *e1, const void *e2)
+                                {
+                                    return strcmp(((airport_t *)e1)->iata_airport, ((airport_t *)e2)->iata_airport);
+                                });
 }

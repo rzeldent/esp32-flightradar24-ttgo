@@ -1,8 +1,8 @@
 #include <airline.h>
 #include <airline_logos.h>
 #include <airline_logos_missing.h>
-#include <binary_search.h>
 #include <string.h>
+#include <stdlib.h>
 
 // List must be sorted because binary search is used
 
@@ -6007,7 +6007,11 @@ static const airline_t airlines[] = {
 
 const airline_t *lookup_airline(const char *icao_airline)
 {
-    // Array must be sorted on item to lookup
-    return binary_array_lookup<airline_t, const char *>(airlines, icao_airline, [](const airline_t &other, const char *value)
-                                                        { return strcmp(other.icao_airline, value); });
+    // Array must be sorted on item to do a bsearch
+    airline_t key = {.icao_airline = icao_airline};
+    return (airline_t *)bsearch(&key, airlines, sizeof(airlines) / sizeof(airline_t), sizeof(airline_t),
+                                [](const void *e1, const void *e2)
+                                {
+                                    return strcmp(((airline_t *)e1)->icao_airline, ((airline_t *)e2)->icao_airline);
+                                });
 }
