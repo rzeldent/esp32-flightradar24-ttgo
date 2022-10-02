@@ -62,8 +62,19 @@ Some tips:
 - When finished disconnect from the wireless network. This should reset the flight radar. Resetting is also a good alternative...
 
 ## Case / Enclosure
-Please take a look at the STL file to create a case for the flightradar to host the TTGO Display and a battery. Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files).
+Please take a look at the STL file to create a case for the flightradar to host the TTGO Display and a battery.
 Thanks to Erwin Reid for creating the models.
+
+Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files).
+
+![Erwin Reid case](assets/featured_preview_Capture.jpg)
+
+Another option is from LilyGo (AliExpress).
+With a little modification, the "LILYGO® T-Display Shell ABS Accessories For T-Display T-PicoC3 T-Display RP2040" can be adapted by removing the stands in the case.
+
+These can be ordered at [https://www.aliexpress.com/item/1005004507656890.html](https://www.aliexpress.com/item/1005004507656890.html)
+
+![LiliGo Case](assets/S6573ff3851164766ab1a3648b04ba30b1.jpg)
 
 ## Suggestions
 Suggestions especially to faulty or missing logo's, airlines etc are welcome. Please make a Pull request and, after verification, this will be added to the main version.
