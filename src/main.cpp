@@ -22,12 +22,16 @@ constexpr auto font_48pt_lcd = 7;
 #include <IotWebConf.h>
 #include <IotWebConfTParameter.h>
 
+#include <moustache.h>
 #include <format_gps.h>
 #include <format_number.h>
 #include <format_duration.h>
 
 #include <images.h>
 #include <timezonedb_lookup.h>
+
+#include <html_data.h>
+#include <html_data_gzip.h>
 
 // Web server
 DNSServer dnsServer;
@@ -88,6 +92,14 @@ typedef enum display_state
 // Current display state
 display_state_t display_state = display_state_t::display_airtraffic;
 
+void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
+{
+  server.sendHeader("Content-encoding", "gzip");
+  server.setContentLength(length);
+  server.send(200, mime_type, "");
+  server.sendContent(reinterpret_cast<const char *>(content), length);
+}
+
 bool time_valid()
 {
   // Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
@@ -129,39 +141,62 @@ void handleRoot()
   if (time_valid())
     strftime(time_buffer, sizeof(time_buffer), "%F %T", &timeinfo);
   else
-    strcpy(time_buffer, "syncing...");
+    strcpy(time_buffer, "Unknown");
 
-  String html;
-  html += "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  html += "<title>" APP_TITLE " v" APP_VERSION "</title></head>";
-  html += "<body>";
-  html += "<h2>Status page for " + String(iotWebConf.getThingName()) + "</h2><hr />";
-  html += "<h3>ESP32</h3>";
-  html += "<ul>";
-  html += "<li>CPU model: " + String(ESP.getChipModel()) + "</li>";
-  html += "<li>CPU speed: " + String(ESP.getCpuFreqMHz()) + " Mhz</li>";
-  html += "<li>Mac address: " + WiFi.macAddress() + "</li>";
-  html += "<li>IPv4 address: " + WiFi.localIP().toString() + "</li>";
-  html += "<li>IPv6 address: " + WiFi.localIPv6().toString() + "</li>";
-  html += "</ul>";
-  html += "<h3>Settings</h3>";
-  html += "<ul>";
-  html += "<li>Location: " + String(iotWebParamLocation.value()) + "</li>";
-  html += "<li>Latitude: " + String(iotWebParamLatitude.value()) + " (" + format_lat(iotWebParamLatitude.value()) + ")" + "</li>";
-  html += "<li>Longitude: " + String(iotWebParamLongitude.value()) + " (" + format_lon(iotWebParamLongitude.value()) + ")" + "</li>";
-  html += "<li>Latitude range: " + String(iotWebParamLatitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + String(" km") : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + String(" mi")) + ")" + "</li>";
-  html += "<li>Longitude range: " + String(iotWebParamLongitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + String(" km") : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + String(" mi")) + ")" + "</li>";
-  html += "<li>Time zone: " + String(iotWebParamTimeZone.value()) + " (" + String(tz) + ")" + "</li>";
-  html += "<li>Units: " + String(iotWebParamMetric.value() ? "Metric" : "Imperial") + "</li>";
-  html += "</ul>";
-  html += "<h3>Diagnostics</h3>";
-  html += "<ul>";
-  html += "<li>Current time: " + String(time_buffer) + " (Local)</li>";
-  html += "<li>Uptime: " + String(format_duration(millis() / 1000)) + "</li>";
-  html += "<li>Free heap: " + format_memory(ESP.getFreeHeap()) + "</li>";
-  html += "</ul>";
-  html += "<br/>Go to <a href=\"config\">configure page</a> to change settings.";
-  html += "</body></html>";
+  // Format hostname
+  auto hostname = "esp32-" + WiFi.macAddress() + ".local";
+  hostname.replace(":", "");
+  hostname.toLowerCase();
+
+  // Wifi Modes
+  const char *wifi_modes[] = {"NULL", "STA", "AP", "STA+AP"};
+
+  // Location; format degree symbol
+  auto html_location = format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value());
+  html_location.replace("`", "&deg;");
+
+// Calculations for range
+  auto latRange = String(iotWebParamLatitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
+  auto lonRange = String(iotWebParamLongitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
+
+  const moustache_variable_t substitutions[] = {
+      // Version / CPU
+      {"AppTitle", APP_TITLE},
+      {"AppVersion", APP_VERSION},
+      {"ThingName", iotWebConf.getThingName()},
+      {"ChipModel", ESP.getChipModel()},
+      {"ChipRevision", String(ESP.getChipRevision())},
+      {"CpuFreqMHz", String(ESP.getCpuFreqMHz())},
+      {"CpuCores", String(ESP.getChipCores())},
+      {"FlashSize", format_memory(ESP.getFlashChipSize(), 0)},
+      {"HeapSize", format_memory(ESP.getHeapSize())},
+      // Diagnostics
+      {"Uptime", String(format_duration(millis() / 1000))},
+      {"FreeHeap", format_memory(ESP.getFreeHeap())},
+      {"MaxAllocHeap", format_memory(ESP.getMaxAllocHeap())},
+      {"LocalTime", time_buffer},
+      // Network
+      {"HostName", hostname},
+      {"MacAddress", WiFi.macAddress()},
+      {"AccessPoint", WiFi.SSID()},
+      {"SignalStrength", String(WiFi.RSSI())},
+      {"IpV4", WiFi.localIP().toString()},
+      {"IpV6", WiFi.localIPv6().toString()},
+      {"WifiMode", wifi_modes[WiFi.getMode()]},
+      {"NetworkState.ApMode", String(iotWebConf.getState() == iotwebconf::NetworkState::ApMode)},
+      {"NetworkState.OnLine", String(iotWebConf.getState() == iotwebconf::NetworkState::OnLine)},
+      // Settings
+      {"Location", iotWebParamLocation.value()},
+      {"Lat", String(iotWebParamLatitude.value())},
+      {"Lon", String(iotWebParamLongitude.value())},
+      {"LatLon", html_location},
+      {"LatLongRanges", latRange + " / " + lonRange},
+      {"Timezone", iotWebParamTimeZone.value()},
+      {"TZ", tz},
+      {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
+
+  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  auto html = moustache_render(file_data_index_html, substitutions);
   server.send(200, "text/html", html);
 }
 
@@ -217,6 +252,14 @@ void setup()
   server.on("/", HTTP_GET, handleRoot);
   server.on("/config", []
             { iotWebConf.handleConfig(); });
+
+  // bootstrap
+  server.on("/bootstrap.min.css", HTTP_GET, []()
+            {
+              // Cache for 86400 seconds (one day)
+              server.sendHeader("Cache-Control", "max-age=86400");
+              send_content_gzip(file_data_bootstrap_min_css, sizeof(file_data_bootstrap_min_css), "text/css"); });
+
   server.onNotFound([]()
                     { iotWebConf.handleNotFound(); });
 
