@@ -155,6 +155,10 @@ void handleRoot()
   auto html_location = format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value());
   html_location.replace("`", "&deg;");
 
+// Calculations for range
+  auto latRange = String(iotWebParamLatitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
+  auto lonRange = String(iotWebParamLongitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
+
   const moustache_variable_t substitutions[] = {
       // Version / CPU
       {"AppTitle", APP_TITLE},
@@ -186,9 +190,7 @@ void handleRoot()
       {"Lat", String(iotWebParamLatitude.value())},
       {"Lon", String(iotWebParamLongitude.value())},
       {"LatLon", html_location},
-      //{"LatLongRanges", String(iotWebParamLatitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ") "} +
-      // String(iotWebParamLongitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi") + ")"},
-      {"LatLongRanges", String(iotWebParamLatitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi")},
+      {"LatLongRanges", latRange + " / " + lonRange},
       {"Timezone", iotWebParamTimeZone.value()},
       {"TZ", tz},
       {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
