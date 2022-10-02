@@ -27,7 +27,7 @@ constexpr auto font_48pt_lcd = 7;
 #include <format_duration.h>
 
 #include <images.h>
-#include <timezonedb.h>
+#include <timezonedb_lookup.h>
 
 // Web server
 DNSServer dnsServer;
@@ -40,7 +40,7 @@ auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
 auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
 auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(timezonelocation_t)>>("timezone").label("Choose timezone").optionValues((const char *)&timezonedb->location).optionNames((const char *)&timezonedb->location).optionCount(sizeof(timezonedb) / sizeof(timezonedb[0])).nameLength(sizeof(timezonelocation_t)).defaultValue(DEFAULT_TIMEZONE).build();
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
 // Screen is 240 * 135 pixels (rotated)
@@ -98,10 +98,15 @@ bool time_valid()
 void update_runtime_config()
 {
   log_v("update_runtime_config");
-  auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
-  setenv("TZ", iotWebParamTimeZone.value(), 1);
-  tzset();
-  log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz_definition);
+  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
+  if (tz != nullptr)
+  {
+    setenv("TZ", tz, 1);
+    tzset();
+    log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
+  }
+  else
+    log_e("Timezone %s not found!", iotWebParamTimeZone.value());
 }
 
 void handleRoot()
@@ -110,6 +115,13 @@ void handleRoot()
   // Let IotWebConf test and handle captive portal requests.
   if (iotWebConf.handleCaptivePortal())
     return;
+
+  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
+  if (tz == nullptr)
+  {
+    log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+    tz = "Unknown";
+  }
 
   struct tm timeinfo;
   getLocalTime(&timeinfo);
@@ -139,7 +151,7 @@ void handleRoot()
   html += "<li>Longitude: " + String(iotWebParamLongitude.value()) + " (" + format_lon(iotWebParamLongitude.value()) + ")" + "</li>";
   html += "<li>Latitude range: " + String(iotWebParamLatitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + String(" km") : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + String(" mi")) + ")" + "</li>";
   html += "<li>Longitude range: " + String(iotWebParamLongitudeRange.value()) + " (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + String(" km") : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + String(" mi")) + ")" + "</li>";
-  html += "<li>Time zone: " + String(iotWebParamTimeZone.value()) + " (" + timezonedb_get_definition(iotWebParamTimeZone.value()) + ")" + "</li>";
+  html += "<li>Time zone: " + String(iotWebParamTimeZone.value()) + " (" + String(tz) + ")" + "</li>";
   html += "<li>Units: " + String(iotWebParamMetric.value() ? "Metric" : "Imperial") + "</li>";
   html += "</ul>";
   html += "<h3>Diagnostics</h3>";
@@ -211,10 +223,15 @@ void setup()
   // Set the time servers
   configTime(0, 0, NTP_SERVERS);
   // Set the timezone
-  auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
-  setenv("TZ", tz_definition, 1);
-  tzset();
-  log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz_definition);
+  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
+  if (tz != nullptr)
+  {
+    setenv("TZ", tz, 1);
+    tzset();
+    log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
+  }
+  else
+    log_e("Timezone %s not found!", iotWebParamTimeZone.value());
 
   button1.setClickHandler([](Button2 button)
                           {
@@ -229,12 +246,6 @@ void setup()
             last_minute = -1;
             break;
         } });
-
-  // Set DNS to thingname
-  if (!MDNS.begin(iotWebConf.getThingName()))
-    log_e("Error setting up MDNS responder!");
-
-  MDNS.addService("http", "tcp", 80);
 }
 
 void clear()
@@ -381,6 +392,7 @@ void display_network_state(iotwebconf::NetworkState state)
     image_data = z_image_decode(&image_splash);
     tft.pushImage(0, 0, image_splash.width, image_splash.height, image_data);
     delete[] image_data;
+    tft.setCursor(0, 0);
     tft.setTextFont(font_26pt);
     tft.print(APP_TITLE " v" APP_VERSION);
     break;

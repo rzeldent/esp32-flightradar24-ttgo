@@ -5,7 +5,7 @@
 
 #define WIFI_SSID "FlightRadar"
 #define WIFI_PASSWORD nullptr
-#define CONFIG_VERSION "1.2"
+#define CONFIG_VERSION "1.3"
 
 // One degree is 110.567 km (69.091 miles)
 
