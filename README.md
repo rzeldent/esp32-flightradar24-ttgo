@@ -35,6 +35,11 @@ Take the following steps to install platformIo. There is a lot of information on
 - Clone this repository, and open the folder in your workspace
 - Compile and upload to the ESP32-TTGO-Display
 
+## Status overview
+When connected to the flightradar, the main screen is shown; the overview.
+Here details about the device, network and settings are shown.
+![Status page](assets/status.png)
+
 ## Modifying the configuration
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
 - During startup, connect to the access point ```FlightRadar``` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
