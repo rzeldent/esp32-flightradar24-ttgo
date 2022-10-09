@@ -24,6 +24,9 @@ The flight radar offers the following features:
 - Lookup of the full name for the from- and to airports name and region, lat/lon
 - Lookup and display flag for the countries
 - No account required!
+- Configuration using a Web interface
+- Status screen
+- Reset configuration pin (Top button)
 
 ## Usage
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
@@ -58,7 +61,7 @@ Some tips:
 - Sometimes after configuration a reboot is required. If the error screen is shown that it is unable to make a connection, first try to reboot the device,
 - When booting, the device waits 30 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password,
 - When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password. This field is **required** before saving the credentials,
-- When the password is lost, a fix is to completely erase the ESP32 using the ```pio run -t erase``` command. This will reset the device including configuration. Reflashing of the firmware is required.
+- When the password is lost, holding the top button while booting will clear the configuration.
 - When finished disconnect from the wireless network. This should reset the flight radar. Resetting is also a good alternative...
 
 ## Case / Enclosure

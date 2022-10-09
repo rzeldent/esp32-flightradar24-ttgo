@@ -245,6 +245,8 @@ void setup()
 
   iotWebConf.getApTimeoutParameter()->visible = true;
   iotWebConf.setWifiConnectionCallback(update_runtime_config);
+  // Set an IO pin (Top button) to reset config when pressed at boot
+  iotWebConf.setConfigPin(GPIO_BUTTON_TOP);
 
   iotWebConf.init();
 
