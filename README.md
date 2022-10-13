@@ -17,7 +17,7 @@ This application retrieves the current flights near a configured location and di
 ![Example3](assets/20220909_221104.jpg)
 
 ### Features
-The flight radar offers the following features:
+The FlightRadar firmware offers the following features:
 - Lookup of airplane type and specifics (manufacturer, type, description, engine type and count)
 - Lookup of carrier and (if available) display the logo
 - Display GPS location, registration,  altitude, heading and speed of the airplane
@@ -26,7 +26,7 @@ The flight radar offers the following features:
 - No account required!
 - Configuration using a Web interface
 - Status screen
-- Reset configuration pin (Top button)
+- Stay in AP mode at reset (Resetting + pressing top button)
 
 ## Usage
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
@@ -39,19 +39,19 @@ Take the following steps to install platformIo. There is a lot of information on
 - Compile and upload to the ESP32-TTGO-Display
 
 ## Status overview
-When connected to the flightradar, the main screen is shown; the overview.
+When connected to the FlightRadar, the main screen is shown; the overview.
 Here details about the device, network and settings are shown.
 ![Status page](assets/status.png)
 
 ## Modifying the configuration
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
 - During startup, connect to the access point ```FlightRadar``` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
-- Find the internal IP address of the flightradar (from your home router) and enter the url.
+- Find the internal IP address of the FlightRadar (from your home router) and enter the url.
 
 ![Settings page](assets/configuration.png)
 
 Configuration options:
-- The name for the Thing name (WiFi SSID) and password for changing the configuration,
+- The WIFI SSID and WIFI password for changing the configuration,
 - The SSID and password for the network to connect to with internet access,
 - The latitude and longitude (decimal format) to observe,
 - The timezone,
@@ -65,7 +65,7 @@ Some tips:
 - When finished disconnect from the wireless network. This should reset the flight radar. Resetting is also a good alternative...
 
 ## Case / Enclosure
-Please take a look at the STL file to create a case for the flightradar to host the TTGO Display and a battery.
+Please take a look at the STL file to create a case for the FlightRadar to host the TTGO Display and a battery.
 Thanks to Erwin Reid for creating the models.
 
 Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files).
