@@ -7,7 +7,6 @@
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
-#include <ttgo_backlight.h>
 
 constexpr auto font_16pt = 2;
 constexpr auto font_26pt = 4;
@@ -61,7 +60,6 @@ constexpr auto airline_logo_height_px = 40;
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
-auto lcd_backlight_intensity = TTGO_DEFAULT_BACKLIGHT_INTENSITY;
 
 // Buttons
 Button2 button1(GPIO_BUTTON_TOP, INPUT);
@@ -222,8 +220,6 @@ void setup()
   log_i("Starting " APP_TITLE "...");
 
   // Start Display
-  ttgo_backlight_init();
-  ttgo_backlight_intensity(lcd_backlight_intensity);
   tft.init();
 
   // Swap the colour byte order when rendering
