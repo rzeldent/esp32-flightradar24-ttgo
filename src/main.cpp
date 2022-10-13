@@ -298,16 +298,16 @@ void clear()
 
 void display_flight(const flight_info &flight_info)
 {
-  log_i("ICAO (%06x): %s from %s to %s, Squawk: %04d, Radar: %s, Registration: %s, GPS: %s, Altitude: %d ft, Speed: %d kts, Heading: %d degrees, Type: %s, Operator: %s", flight_info.icao, flight_info.flight.c_str(), flight_info.from.c_str(), flight_info.to.c_str(), flight_info.squawk, flight_info.radar.c_str(), flight_info.registration.c_str(), format_gps_location(flight_info.latitude, flight_info.longitude).c_str(), flight_info.altitude, flight_info.speed, flight_info.track, flight_info.type_designator.c_str(), flight_info.flight_operator.c_str());
+  log_i("%s", flight_info.toString().c_str());
   clear();
 
   const aircraft_t *aircraft = flight_info.aircraft_type();
   if (aircraft == nullptr)
-    log_w("Aircraft (%s) not found", flight_info.type_designator.c_str());
+    log_w("Aircraft (%s) not found", flight_info.aircraft_code.c_str());
 
   const airline_t *airline = flight_info.airline();
   if (airline == nullptr)
-    log_w("Airline (%s) not found", flight_info.flight_operator.c_str());
+    log_w("Airline (%s) not found", flight_info.icao_airline.c_str());
 
   tft.setTextFont(font_26pt);
 
@@ -320,23 +320,32 @@ void display_flight(const flight_info &flight_info)
 
   tft.setTextColor(text_color);
 
-  tft.print(flight_info.from);
-  tft.println(flight_info.to.isEmpty() ? "" : "-" + flight_info.to);
+  tft.print(flight_info.iata_origin_airport);
+  tft.println(flight_info.iata_destination_airport.isEmpty() ? "" : "-" + flight_info.iata_destination_airport);
 
   // "`" is displayed as a degree symbol (°) in the font
-  tft.drawRightString(String(flight_info.track) + "`", TFT_HEIGHT, tft.getCursorY() + 5, font_16pt);
+  tft.drawRightString(String(flight_info.heading) + "`", TFT_HEIGHT, tft.getCursorY() + 5, font_16pt);
 
   tft.setCursor(0, tft.getCursorY() + 2);
+  // Altitude
   if (iotWebParamMetric.value())
-    tft.println(String(flight_info.altitude_metric()) + "m " + String(flight_info.speed_metric()) + "kmh");
+    tft.print(String(flight_info.altitude_metric()) + "m ");
   else
-    tft.println(String(flight_info.altitude) + "ft " + String(flight_info.speed) + "kts");
+    tft.print(String(flight_info.altitude) + "ft ");
+
+  // Steady, Descending / Ascending
+  tft.print(flight_info.vertical_speed == 0 ? "= " : flight_info.vertical_speed < 0 ? "- " : "+ ");
+
+  if (iotWebParamMetric.value())
+    tft.println(String(flight_info.ground_speed_metric()) + "kmh");
+  else
+    tft.println(String(flight_info.ground_speed) + "kts");
 
   tft.setCursor(0, tft.getCursorY() + 2);
 
   if (airline)
   {
-    log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->callsign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
+    log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->call_sign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
     if (airline->logo)
     {
       auto image = z_image_decode(airline->logo);
@@ -360,57 +369,57 @@ void display_flight(const flight_info &flight_info)
 
   if (aircraft)
   {
-    log_i("Aircraft (%s): %s %s. Description: %s, Engine: %s, Number of engines: %c", aircraft->type_designator, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
+    log_i("Aircraft (%s): %s %s. Description: %s, Engine: %s, Number of engines: %c", aircraft->aircraft_code, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
     tft.println(String(aircraft->manufacturer) + " " + String(aircraft->type));
   }
   else
-    tft.println(flight_info.type_designator);
+    tft.println(flight_info.aircraft_code);
 
   tft.setCursor(0, tft.getCursorY() + 6);
 
-  auto from = flight_info.from_airport();
-  if (from)
+  auto iata_origin = flight_info.origin_airport();
+  if (iata_origin)
   {
-    log_i("From %s: %s - %s (%s) %s. %s", from->iata_airport, from->name, from->city, from->region, from->country->name, format_gps_location(from->latitude, from->longitude).c_str());
-    if (from->country->flag)
+    log_i("From %s: %s - %s (%s) %s. %s", iata_origin->iata_airport, iata_origin->name, iata_origin->city, iata_origin->region, iata_origin->country->name, format_gps_location(iata_origin->latitude, iata_origin->longitude).c_str());
+    if (iata_origin->country->flag)
     {
-      if (from->country->flag)
+      if (iata_origin->country->flag)
       {
         auto cursor_y = tft.getCursorY();
-        auto image = z_image_decode(from->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, from->country->flag->width, from->country->flag->height, image);
+        auto image = z_image_decode(iata_origin->country->flag);
+        tft.pushImage(0, cursor_y + flag_margin_y_px, iata_origin->country->flag->width, iata_origin->country->flag->height, image);
         delete[] image;
-        tft.setCursor(from->country->flag->width + flag_margin_x_px, cursor_y);
+        tft.setCursor(iata_origin->country->flag->width + flag_margin_x_px, cursor_y);
       }
     }
 
-    tft.println(String(from->city) + " (" + from->region + ") " + from->country->name);
+    tft.println(String(iata_origin->city) + " (" + iata_origin->region + ") " + iata_origin->country->name);
   }
   else
-    log_w("From airport (%s) not found", flight_info.from.c_str());
+    log_w("From airport (%s) not found", flight_info.iata_origin_airport.c_str());
 
   tft.setCursor(0, tft.getCursorY() + 2);
 
-  auto to = flight_info.to_airport();
-  if (to)
+  auto iata_destination = flight_info.destination_airport();
+  if (iata_destination)
   {
-    log_i("To %s: %s - %s (%s) %s. %s", to->iata_airport, to->name, to->city, to->region, to->country->name, format_gps_location(to->latitude, to->longitude).c_str());
-    if (to->country)
+    log_i("To %s: %s - %s (%s) %s. %s", iata_destination->iata_airport, iata_destination->name, iata_destination->city, iata_destination->region, iata_destination->country->name, format_gps_location(iata_destination->latitude, iata_destination->longitude).c_str());
+    if (iata_destination->country)
     {
-      if (to->country->flag)
+      if (iata_destination->country->flag)
       {
         auto cursor_y = tft.getCursorY();
-        auto image = z_image_decode(to->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, to->country->flag->width, to->country->flag->height, image);
+        auto image = z_image_decode(iata_destination->country->flag);
+        tft.pushImage(0, cursor_y + flag_margin_y_px, iata_destination->country->flag->width, iata_destination->country->flag->height, image);
         delete[] image;
-        tft.setCursor(to->country->flag->width + flag_margin_x_px, cursor_y);
+        tft.setCursor(iata_destination->country->flag->width + flag_margin_x_px, cursor_y);
       }
     }
 
-    tft.println(String(to->city) + " (" + to->region + ") " + to->country->name);
+    tft.println(String(iata_destination->city) + " (" + iata_destination->region + ") " + iata_destination->country->name);
   }
   else
-    log_w("To airport (%s) not found", flight_info.to.c_str());
+    log_w("To airport (%s) not found", flight_info.iata_destination_airport.c_str());
 }
 
 void display_network_state(iotwebconf::NetworkState state)

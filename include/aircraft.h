@@ -2,7 +2,7 @@
 
 typedef struct aircraft
 {
-    const char *type_designator;
+    const char *aircraft_code;
     const char *manufacturer;
     const char *type;
     const char *description;
@@ -10,4 +10,4 @@ typedef struct aircraft
     const char engine_count;
 } aircraft_t;
 
-extern const aircraft_t *lookup_aircraft(const char *type_designator);
+extern const aircraft_t *lookup_aircraft(const char *aircraft_code);

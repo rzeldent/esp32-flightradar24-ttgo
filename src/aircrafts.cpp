@@ -10323,13 +10323,13 @@ static const aircraft_t aircrafts[] = {
     {"ZULU", "Bul", "ZA1lA1", "LandPlane", "Piston", '1'},
 };
 
-const aircraft_t *lookup_aircraft(const char *type_designator)
+const aircraft_t *lookup_aircraft(const char *aircraft_code)
 {
     // Array must be sorted on item to do a bsearch
-    aircraft_t key = {.type_designator = type_designator};
+    aircraft_t key = {.aircraft_code = aircraft_code};
     return (aircraft_t *)bsearch(&key, aircrafts, sizeof(aircrafts) / sizeof(aircraft_t), sizeof(aircraft_t),
                                  [](const void *e1, const void *e2)
                                  {
-                                     return strcmp(((aircraft_t *)e1)->type_designator, ((aircraft_t *)e2)->type_designator);
+                                     return strcmp(((aircraft_t *)e1)->aircraft_code, ((aircraft_t *)e2)->aircraft_code);
                                  });
 }
