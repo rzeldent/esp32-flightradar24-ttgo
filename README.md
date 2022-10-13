@@ -1,6 +1,6 @@
 # FlightRadar24-TTGO
 
-![CI-Badge](https://github.com/rzeldent/esp32-flightradar24-ttgo/actions/workflows/main.yml/badge.svg?event=push)
+[![Platform IO CI](https://github.com/rzeldent/esp32-flightradar24-ttgo/actions/workflows/main.yml/badge.svg)](https://github.com/rzeldent/esp32-flightradar24-ttgo/actions/workflows/main.yml)
 
 Real-time flights display. No login or account required.
 Easy configuration through the web interface.
