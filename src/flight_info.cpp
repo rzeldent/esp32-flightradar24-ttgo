@@ -47,7 +47,7 @@ bool get_flights(float latitude, float longitude, float range_latitude, float ra
     client.end();
 
     auto flight_data_root = doc_flight_data.as<JsonObject>();
-    for (const auto kvp : flight_data_root)
+    for (const auto &kvp : flight_data_root)
     {
         if (!kvp.value().is<JsonArray>())
             continue;
@@ -56,24 +56,32 @@ bool get_flights(float latitude, float longitude, float range_latitude, float ra
         auto items = kvp.value().as<JsonArray>();
         struct flight_info flight
         {
-            .icao = strtol(items[0].as<const char *>(), nullptr, 0x10),
+            .icao_address = items[0].as<const char *>(),
             .latitude = items[1].as<const float>(),
             .longitude = items[2].as<const float>(),
-            .track = items[3].as<const int>(),
+            .heading = items[3].as<const int>(),
             .altitude = items[4].as<const int>(),
-            .speed = items[5].as<const int>(),
-            .squawk = (ushort)atoi(items[6].as<const char *>()),
+            .ground_speed = items[5].as<const int>(),
+            .squawk = items[6].as<const char *>(),
             .radar = items[7].as<const char *>(),
-            .type_designator = items[8].as<const char *>(),
+            .aircraft_code = items[8].as<const char *>(),
             .registration = items[9].as<const char *>(),
             .timestamp = items[10].as<time_t>(),
-            .from = items[11].as<const char *>(),
-            .to = items[12].as<const char *>(),
+            .iata_origin_airport = items[11].as<const char *>(),
+            .iata_destination_airport = items[12].as<const char *>(),
             .flight = items[13].as<const char *>(),
-            .flight_operator = items[18].as<const char *>()
+            .on_ground = items[14].as<const bool>(),
+            .vertical_speed = items[15].as<const int>(),
+            .call_sign = items[16].as<const char *>(),
+            .icao_airline = items[18].as<const char *>()
         };
         flights.push_back(flight);
     }
 
     return true;
+}
+
+String flight_info::toString() const
+{
+    return "ICAO " + icao_address + ": Flight " + flight + " from " + iata_origin_airport + " to " + iata_destination_airport + ", Squawk: " + String(squawk) + ", Radar: " + radar + ", Registration: " + registration + ", Lat: " + String(latitude) + ", Lon: " + String(longitude) + ", Altitude: " + String(altitude) + " ft, Ground speed: " + ground_speed + " kts, Heading: " + String(heading) + " degrees, Vertical speed: " + String(vertical_speed) + ", Aircraft code: " + aircraft_code + ", Airline: " + icao_airline;
 }
