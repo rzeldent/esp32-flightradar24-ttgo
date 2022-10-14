@@ -75,7 +75,7 @@ Thanks to Erwin Reid for creating the models.
 
 Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files).
 
-![Erwin Reid case](assets/featured_preview_Capture.jpg)
+![Erwin Reid case](assets/featured_preview_capture.jpg)
 
 Another option is from LilyGo (AliExpress).
 With a little modification, the "LILYGO® T-Display Shell ABS Accessories For T-Display T-PicoC3 T-Display RP2040" can be adapted by removing the stands in the case.
