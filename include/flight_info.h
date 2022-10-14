@@ -14,24 +14,24 @@
 
 struct flight_info
 {
-    String icao_address;                //  0 => ICAO 24BIT ADDRESS - 4CA853
-    float latitude;                     //  1 => LAT - 52.3247
-    float longitude;                    //  2 => LON - 4.9812
-    int heading;                        //  3 => TRACK - 263 (Degrees)
-    int altitude;                       //  4 => ALTITUDE - 2100  (Feet)
-    int ground_speed;                   //  5 => SPEED - 144 (Knots)
-    String squawk;                      //  6 => SQUAWK -
-    String radar;                       //  7 => RADAR -
-    String aircraft_code;               //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
-    String registration;                //  9 => REGISTRATION - N709CK
-    time_t timestamp;                   // 10 => TIMSTAMP - 1593976456
-    String iata_origin_airport;         // 11 => FROM - AMS
-    String iata_destination_airport;    // 12 => TO - JFK
-    String flight;                      // 13 => FLIGHT NUMBER - LH8160
-    bool on_ground;                     // 14 => ON GROUND - 0
-    int vertical_speed;                 // 15 => VSPEED - 0
-    String call_sign;                   // 16 => TRA822
-    String icao_airline;                // 18 => OPERATOR - RYR
+    String icao_address;             //  0 => ICAO 24BIT ADDRESS - 4CA853
+    float latitude;                  //  1 => LAT - 52.3247
+    float longitude;                 //  2 => LON - 4.9812
+    int heading;                     //  3 => TRACK - 263 (Degrees)
+    int altitude;                    //  4 => ALTITUDE - 2100  (Feet)
+    int ground_speed;                //  5 => SPEED - 144 (Knots)
+    String squawk;                   //  6 => SQUAWK -
+    String radar;                    //  7 => RADAR -
+    String aircraft_code;            //  8 => TYPE - B744 => Boeing 747-4B5(BCF)
+    String registration;             //  9 => REGISTRATION - N709CK
+    time_t timestamp;                // 10 => TIMSTAMP - 1593976456
+    String iata_origin_airport;      // 11 => FROM - AMS
+    String iata_destination_airport; // 12 => TO - JFK
+    String flight;                   // 13 => FLIGHT NUMBER - LH8160
+    bool on_ground;                  // 14 => ON GROUND - 0
+    int vertical_speed;              // 15 => VSPEED - 0
+    String call_sign;                // 16 => TRA822
+    String icao_airline;             // 18 => OPERATOR - RYR
 
     String toString() const;
 
@@ -49,4 +49,4 @@ struct flight_info
     const airport_t *destination_airport() const { return iata_destination_airport.isEmpty() ? nullptr : lookup_airport(iata_destination_airport.c_str()); }
 };
 
-extern bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, std::list<flight_info> &flights, String &error_message);
+extern bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, bool air, bool ground, bool gliders, bool vehicles, std::list<flight_info> &flights, String &error_message);

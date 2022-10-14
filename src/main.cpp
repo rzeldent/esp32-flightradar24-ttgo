@@ -41,8 +41,12 @@ auto param_group = iotwebconf::ParameterGroup("flightradar", "Flight radar");
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
 auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat").label("Latitude").min(-90.0).max(90.0).defaultValue(DEFAULT_LATITUDE).step(0.01).placeholder("e.g. 52.3").build();
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
-auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
+auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range (degrees)").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
+auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range (degrees)").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
+auto iotWebParamAir = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Show planes in the air").defaultValue(DEFAULT_AIR).build();
+auto iotWebParamGround = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Show planes on ground").defaultValue(DEFAULT_GROUND).build();
+auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Show gliders").defaultValue(DEFAULT_GLIDERS).build();
+auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Show other vehicles").defaultValue(DEFAULT_VEHICLES).build();
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
@@ -153,7 +157,7 @@ void handleRoot()
   auto html_location = format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value());
   html_location.replace("`", "&deg;");
 
-// Calculations for range
+  // Calculations for range
   auto latRange = String(iotWebParamLatitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
   auto lonRange = String(iotWebParamLongitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
 
@@ -334,7 +338,8 @@ void display_flight(const flight_info &flight_info)
     tft.print(String(flight_info.altitude) + "ft ");
 
   // Steady, Descending / Ascending
-  tft.print(flight_info.vertical_speed == 0 ? "= " : flight_info.vertical_speed < 0 ? "- " : "+ ");
+  tft.print(flight_info.vertical_speed == 0 ? "= " : flight_info.vertical_speed < 0 ? "- "
+                                                                                    : "+ ");
 
   if (iotWebParamMetric.value())
     tft.println(String(flight_info.ground_speed_metric()) + "kmh");
@@ -463,7 +468,7 @@ void display_flights()
     next_refresh_flights = now + refresh_flights_milliseconds;
     log_i("Updating flights");
     String error_message;
-    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), flights, error_message))
+    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAir.value(), iotWebParamGround.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
     {
       log_e("Error getting flights: %s", error_message.c_str());
       // Show error message

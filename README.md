@@ -59,6 +59,12 @@ Configuration options:
 - The WIFI SSID and WIFI password for changing the configuration,
 - The SSID and password for the network to connect to with internet access,
 - The latitude and longitude (decimal format) to observe,
+- The range in degrees of the area to observe,
+- Filtering on:
+  - Planes in the air
+  - Planes on the ground
+  - Include gliders
+  - Include vehicles on the ground
 - The timezone,
 - Usage of metric or imperial units
 
