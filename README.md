@@ -24,6 +24,7 @@ The FlightRadar firmware offers the following features:
 - Lookup of the full name for the from- and to airports name and region, lat/lon
 - Lookup and display flag for the countries
 - No account required!
+- Minimal interaction with FlightRadar24; database is present in firmware
 - Configuration using a Web interface
 - Status screen
 - Stay in AP mode at reset (Resetting + pressing top button)
@@ -47,6 +48,10 @@ Here details about the device, network and settings are shown.
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
 - During startup, connect to the access point ```FlightRadar``` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
 - Find the internal IP address of the FlightRadar (from your home router) and enter the url.
+- When the password is lost, a fix is to completely erase the ESP32 using the pio run -t erase command.
+  This will reset the device including configuration.
+  If using the esptool, you can do this using esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash.
+  However, after erasing, reflashing of the firmware is required.
 
 ![Settings page](assets/configuration.png)
 
