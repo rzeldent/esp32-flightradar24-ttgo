@@ -46,6 +46,20 @@
 //#define DEFAULT_RANGE_LATITUDE 0.1
 //#define DEFAULT_RANGE_LONGITUDE 0.1
 
+// Venice Marco Polo Airport
+//#define DEFAULT_LOCATION "Venice Marco Polo Airport"
+//#define DEFAULT_LATITUDE 45.50299
+//#define DEFAULT_LONGITUDE 12.3519
+//#define DEFAULT_AIR true
+//#define DEFAULT_GROUND false
+//#define DEFAULT_GLIDERS true
+//#define DEFAULT_VEHICLES false
+//#define DEFAULT_TIMEZONE "Europe/Rome"
+//#define DEFAULT_METRIC true
+// By default take a 10km range
+//#define DEFAULT_RANGE_LATITUDE 0.1
+//#define DEFAULT_RANGE_LONGITUDE 0.1
+
 // JFK Airport
 //#define DEFAULT_LOCATION "John F Kennedy International"
 //#define DEFAULT_LATITUDE 40.639801
