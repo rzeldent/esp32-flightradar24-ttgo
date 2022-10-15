@@ -43,8 +43,8 @@ auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
 auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range (degrees)").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
 auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range (degrees)").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamAir = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Include airborne").defaultValue(DEFAULT_AIR).build();
-auto iotWebParamGround = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Include grounded").defaultValue(DEFAULT_GROUND).build();
+auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Include airborne").defaultValue(DEFAULT_AIR).build();
+auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Include grounded").defaultValue(DEFAULT_GROUND).build();
 auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Include gliders").defaultValue(DEFAULT_GLIDERS).build();
 auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Include vehicles").defaultValue(DEFAULT_VEHICLES).build();
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
@@ -199,8 +199,8 @@ void handleRoot()
       {"Lon", String(iotWebParamLongitude.value())},
       {"LatLon", html_location},
       {"LatLongRanges", latRange + " / " + lonRange},
-      {"InAir", iotWebParamAir.value() ? "Yes" : "No"},
-      {"OnGround", iotWebParamGround.value() ? "Yes" : "No"},
+      {"Airborne", iotWebParamAirborne.value() ? "Yes" : "No"},
+      {"Groundde", iotWebParamGrounded.value() ? "Yes" : "No"},
       {"Gliders", iotWebParamGliders.value() ? "Yes" : "No"},
       {"Vehicles", iotWebParamVehicles.value() ? "Yes" : "No"},
       {"Timezone", iotWebParamTimeZone.value()},
@@ -249,8 +249,8 @@ void setup()
   param_group.addItem(&iotWebParamLongitude);
   param_group.addItem(&iotWebParamLatitudeRange);
   param_group.addItem(&iotWebParamLongitudeRange);
-  param_group.addItem(&iotWebParamAir);
-  param_group.addItem(&iotWebParamGround);
+  param_group.addItem(&iotWebParamAirborne);
+  param_group.addItem(&iotWebParamGrounded);
   param_group.addItem(&iotWebParamGliders);
   param_group.addItem(&iotWebParamVehicles);
   param_group.addItem(&iotWebParamTimeZone);
@@ -482,7 +482,7 @@ void display_flights()
     next_refresh_flights = now + refresh_flights_milliseconds;
     log_i("Updating flights");
     String error_message;
-    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAir.value(), iotWebParamGround.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
+    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
     {
       log_e("Error getting flights: %s", error_message.c_str());
       // Show error message
