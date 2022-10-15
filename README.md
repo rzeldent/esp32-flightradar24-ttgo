@@ -61,8 +61,8 @@ Configuration options:
 - The latitude and longitude (decimal format) to observe,
 - The range in degrees of the area to observe,
 - Filtering on:
-  - Planes in the air
-  - Planes on the ground
+  - Include airborne
+  - Include grounded
   - Include gliders
   - Include vehicles on the ground
 - The timezone,

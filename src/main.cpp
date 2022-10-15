@@ -43,10 +43,10 @@ auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
 auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range (degrees)").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
 auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range (degrees)").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamAir = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Show planes in the air").defaultValue(DEFAULT_AIR).build();
-auto iotWebParamGround = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Show planes on ground").defaultValue(DEFAULT_GROUND).build();
-auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Show gliders").defaultValue(DEFAULT_GLIDERS).build();
-auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Show other vehicles").defaultValue(DEFAULT_VEHICLES).build();
+auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Include airborne").defaultValue(DEFAULT_AIR).build();
+auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Include grounded").defaultValue(DEFAULT_GROUND).build();
+auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Include gliders").defaultValue(DEFAULT_GLIDERS).build();
+auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Include vehicles").defaultValue(DEFAULT_VEHICLES).build();
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
@@ -109,6 +109,18 @@ bool time_valid()
   return time(nullptr) > epoch_2000_01_01;
 }
 
+String get_localtime(const char *format)
+{
+  if (!time_valid())
+    return "No time available";
+
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  char time_buffer[32];
+  strftime(time_buffer, sizeof(time_buffer), format, &timeinfo);
+  return time_buffer;
+}
+
 void update_runtime_config()
 {
   log_v("update_runtime_config");
@@ -137,13 +149,7 @@ void handleRoot()
     tz = "Unknown";
   }
 
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  char time_buffer[20];
-  if (time_valid())
-    strftime(time_buffer, sizeof(time_buffer), "%F %T", &timeinfo);
-  else
-    strcpy(time_buffer, "Unknown");
+  auto localtime = get_localtime("%F, %T");
 
   // Format hostname
   auto hostname = "esp32-" + WiFi.macAddress() + ".local";
@@ -176,7 +182,7 @@ void handleRoot()
       {"Uptime", String(format_duration(millis() / 1000))},
       {"FreeHeap", format_memory(ESP.getFreeHeap())},
       {"MaxAllocHeap", format_memory(ESP.getMaxAllocHeap())},
-      {"LocalTime", time_buffer},
+      {"LocalTime", localtime},
       // Network
       {"HostName", hostname},
       {"MacAddress", WiFi.macAddress()},
@@ -193,6 +199,10 @@ void handleRoot()
       {"Lon", String(iotWebParamLongitude.value())},
       {"LatLon", html_location},
       {"LatLongRanges", latRange + " / " + lonRange},
+      {"Airborne", iotWebParamAirborne.value() ? "Yes" : "No"},
+      {"Groundde", iotWebParamGrounded.value() ? "Yes" : "No"},
+      {"Gliders", iotWebParamGliders.value() ? "Yes" : "No"},
+      {"Vehicles", iotWebParamVehicles.value() ? "Yes" : "No"},
       {"Timezone", iotWebParamTimeZone.value()},
       {"TZ", tz},
       {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
@@ -239,6 +249,10 @@ void setup()
   param_group.addItem(&iotWebParamLongitude);
   param_group.addItem(&iotWebParamLatitudeRange);
   param_group.addItem(&iotWebParamLongitudeRange);
+  param_group.addItem(&iotWebParamAirborne);
+  param_group.addItem(&iotWebParamGrounded);
+  param_group.addItem(&iotWebParamGliders);
+  param_group.addItem(&iotWebParamVehicles);
   param_group.addItem(&iotWebParamTimeZone);
   param_group.addItem(&iotWebParamMetric);
   iotWebConf.addParameterGroup(&param_group);
@@ -468,7 +482,7 @@ void display_flights()
     next_refresh_flights = now + refresh_flights_milliseconds;
     log_i("Updating flights");
     String error_message;
-    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAir.value(), iotWebParamGround.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
+    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
     {
       log_e("Error getting flights: %s", error_message.c_str());
       // Show error message
@@ -488,15 +502,8 @@ void display_flights()
       log_d("No flights in range");
       clear();
 
-      struct tm timeinfo;
-      getLocalTime(&timeinfo);
-      char time_buffer[20];
-      if (time_valid())
-        strftime(time_buffer, sizeof(time_buffer), "%F %R", &timeinfo);
-      else
-        strcpy(time_buffer, "syncing...");
-
-      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
+      auto localtime = get_localtime("%F %R");
+      tft.drawCentreString(localtime, TFT_HEIGHT / 2, 0, font_26pt);
 
       tft.setTextColor(TFT_ORANGE);
       tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
@@ -552,15 +559,10 @@ void display_clock()
     log_i("Updating clock");
     if (time_valid())
     {
-      char time_buffer[20];
-      strftime(time_buffer, sizeof(time_buffer), "%F", &timeinfo);
-      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, 0, font_26pt);
-      strftime(time_buffer, sizeof(time_buffer), "%R", &timeinfo);
-      tft.drawCentreString(time_buffer, TFT_HEIGHT / 2, TFT_WIDTH / 2 - 24, font_48pt_lcd);
+      tft.drawCentreString(get_localtime("%F"), TFT_HEIGHT / 2, 0, font_26pt);
+      tft.drawCentreString(get_localtime("%R"), TFT_HEIGHT / 2, TFT_WIDTH / 2 - 24, font_48pt_lcd);
       tft.drawCentreString(iotWebParamTimeZone.value(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
     }
-    else
-      tft.drawCentreString("syncing...", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 13, font_26pt);
   }
 }
 
