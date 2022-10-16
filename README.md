@@ -16,8 +16,10 @@ This application retrieves the current flights near a configured location and di
 ![Example2](assets/20220909_221101.jpg)
 ![Example3](assets/20220909_221104.jpg)
 
-### Features
+## Features
+
 The FlightRadar firmware offers the following features:
+
 - Lookup of airplane type and specifics (manufacturer, type, description, engine type and count)
 - Lookup of carrier and (if available) display the logo
 - Display GPS location, registration,  altitude, heading and speed of the airplane
@@ -30,22 +32,28 @@ The FlightRadar firmware offers the following features:
 - Stay in AP mode at reset (Resetting + pressing top button)
 
 ## Usage
+
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
 
 ## Installing and running PlatformIO
+
 Take the following steps to install platformIo. There is a lot of information on their site!
+
 - Install Visual Studio Code
 - From the Extensions menu select PlatformIo
 - Clone this repository, and open the folder in your workspace
 - Compile and upload to the ESP32-TTGO-Display
 
 ## Status overview
+
 When connected to the FlightRadar, the main screen is shown; the overview.
 Here details about the device, network and settings are shown.
 ![Status page](assets/status.png)
 
 ## Modifying the configuration
+
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
+
 - During startup, connect to the access point ```FlightRadar``` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
 - Find the internal IP address of the FlightRadar (from your home router) and enter the url.
 - When the password is lost, a fix is to completely erase the ESP32 using the pio run -t erase command.
@@ -56,6 +64,7 @@ The configuration can be changed using a web browser. Connecting to the flight r
 ![Settings page](assets/configuration.png)
 
 Configuration options:
+
 - The WIFI SSID and WIFI password for changing the configuration,
 - The SSID and password for the network to connect to with internet access,
 - The latitude and longitude (decimal format) to observe,
@@ -69,13 +78,19 @@ Configuration options:
 - Usage of metric or imperial units
 
 Some tips:
-- Sometimes after configuration a reboot is required. If the error screen is shown that it is unable to make a connection, first try to reboot the device,
-- When booting, the device waits 30 seconds for a connection. Make a connection to the SSID indicated on the screen using the AP password,
-- When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password. This field is **required** before saving the credentials,
+
+- Sometimes after configuration a reboot is required.
+  If the error screen is shown that it is unable to make a connection, first try to reboot the device,
+- When booting, the device waits 30 seconds for a connection.
+  Make a connection to the SSID indicated on the screen using the AP password,
+- When connected, go to the ip of the device and, when prompted for the credentials, enter 'admin' and the AP password.
+  This field is **required** before saving the credentials,
 - When the password is lost, holding the top button while booting will clear the configuration.
-- When finished disconnect from the wireless network. This should reset the flight radar. Resetting is also a good alternative...
+- When finished disconnect from the wireless network. This should reset the flight radar.
+  Resetting is also a good alternative...
 
 ## Case / Enclosure
+
 Please take a look at the STL file to create a case for the FlightRadar to host the TTGO Display and a battery.
 Thanks to Erwin Reid for creating the models.
 
@@ -91,7 +106,9 @@ These can be ordered at [https://www.aliexpress.com/item/1005004507656890.html](
 ![LiliGo Case](assets/S6573ff3851164766ab1a3648b04ba30b1.jpg)
 
 ## Suggestions
+
 Suggestions especially to faulty or missing logo's, airlines etc are welcome. Please make a Pull request and, after verification, this will be added to the main version.
 
 ## Credits
+
 Thanks to [FlightRadar24.com](https://www.flightradar24.com/) to be able to hook into their API.
