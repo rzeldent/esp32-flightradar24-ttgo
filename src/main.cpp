@@ -226,7 +226,6 @@ void setup()
 #ifdef CORE_DEBUG_LEVEL
   Serial.begin(115200);
   Serial.setDebugOutput(true);
-  // esp_log_level_set("*", ESP_LOG_WARN);
 #endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
@@ -235,6 +234,7 @@ void setup()
 
   // Start Display
   tft.init();
+  tft.initDMA(true);
 
   // Swap the colour byte order when rendering
   tft.setSwapBytes(true);
