@@ -7,6 +7,7 @@
 
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
+#include <lvgl.h>
 
 constexpr auto font_16pt = 2;
 constexpr auto font_26pt = 4;
@@ -200,7 +201,7 @@ void handleRoot()
       {"LatLon", html_location},
       {"LatLongRanges", latRange + " / " + lonRange},
       {"Airborne", iotWebParamAirborne.value() ? "Yes" : "No"},
-      {"Groundde", iotWebParamGrounded.value() ? "Yes" : "No"},
+      {"Grounded", iotWebParamGrounded.value() ? "Yes" : "No"},
       {"Gliders", iotWebParamGliders.value() ? "Yes" : "No"},
       {"Vehicles", iotWebParamVehicles.value() ? "Yes" : "No"},
       {"Timezone", iotWebParamTimeZone.value()},
@@ -210,6 +211,23 @@ void handleRoot()
   server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   auto html = moustache_render(file_data_index_html, substitutions);
   server.send(200, "text/html", html);
+}
+
+/* Display flushing */
+void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
+{
+  auto w = (area->x2 - area->x1 + 1);
+  auto h = (area->y2 - area->y1 + 1);
+  tft.startWrite();
+  tft.setAddrWindow(area->x1, area->y1, w, h);
+  tft.pushColors((uint16_t *)&color_p->full, w * h, true);
+  tft.endWrite();
+  lv_disp_flush_ready(disp);
+}
+
+void xlv_log(const char *buf)
+{
+  log_printf("%s", buf);
 }
 
 void setup()
@@ -223,26 +241,49 @@ void setup()
   pinMode(GPIO_ADC_EN, OUTPUT);
   digitalWrite(GPIO_ADC_EN, HIGH);
 
-#ifdef CORE_DEBUG_LEVEL
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
-#endif
-
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Free heap: %d bytes", ESP.getFreeHeap());
   log_i("Starting " APP_TITLE "...");
 
-  // Start Display
-  tft.init();
-  tft.initDMA(true);
+  // Start LVGL
+  log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
+  lv_init();
+  tft.begin();
+  // Rotate 90 degrees to Landscape
+  tft.setRotation(1);
+  // Width and height are flipped because is rotated 90 degrees
+  const uint16_t screen_width = TFT_HEIGHT;
+  const uint16_t screen_height = TFT_WIDTH;
 
-  // Swap the colour byte order when rendering
-  tft.setSwapBytes(true);
-  tft.setRotation(1);         // Landscape
-  tft.setTextDatum(TL_DATUM); // Top Left
-  tft.setTextColor(text_color);
-  tft.setTextWrap(false, false);
+  static lv_disp_draw_buf_t draw_buf;
+  static lv_color_t buf[screen_width * 10];
+  lv_disp_draw_buf_init(&draw_buf, buf, NULL, screen_width * 10);
 
+  // Initialize the display
+  static lv_disp_drv_t disp_drv;
+  lv_disp_drv_init(&disp_drv);
+  disp_drv.hor_res = screen_width;
+  disp_drv.ver_res = screen_height;
+  disp_drv.flush_cb = my_disp_flush;
+  disp_drv.draw_buf = &draw_buf;
+  lv_disp_drv_register(&disp_drv);
+
+  lv_log_register_print_cb(&xlv_log);
+
+  /*
+    // Show WiFi AP screen
+    lv_img_dsc_t img_dsc = {
+        .header = {
+            .cf = LV_IMG_CF_RGB565,
+            .w = image_wifi.width,
+            .h = image_wifi.height,
+        },
+        .data_size = image_wifi.width * image_wifi.height * LV_COLOR_SIZE / 4,
+        .data = (const uint8_t *)z_image_decode(&image_wifi)};
+
+    auto image = lv_img_create(lv_scr_act());
+    lv_img_set_src(image, &img_dsc);
+  */
   // Initializing the configuration for web configuration
   param_group.addItem(&iotWebParamLocation);
   param_group.addItem(&iotWebParamLatitude);
@@ -314,10 +355,11 @@ void clear()
   tft.setCursor(0, 0);
 }
 
-void display_flight(const flight_info &flight_info)
+void display_flight(const std::list<flight_info> flights, const flight_info &flight_info)
 {
   log_i("%s", flight_info.toString().c_str());
-  clear();
+  // clear();
+  lv_obj_clean(lv_scr_act());
 
   const aircraft_t *aircraft = flight_info.aircraft_type();
   if (aircraft == nullptr)
@@ -327,136 +369,197 @@ void display_flight(const flight_info &flight_info)
   if (airline == nullptr)
     log_w("Airline (%s) not found", flight_info.icao_airline.c_str());
 
-  tft.setTextFont(font_26pt);
+  // tft.setTextFont(font_26pt);
 
   // Special color if squawk is special code
+  //  if (flight_info.squawk_hijack() || flight_info.squawk_radio_failure() || flight_info.squawk_emergency())
+  //    tft.setTextColor(special_text_color);
+  auto label_flight = lv_label_create(lv_scr_act());
+  lv_label_set_text(label_flight, flight_info.flight.c_str());
+  lv_obj_align(label_flight, LV_ALIGN_TOP_LEFT, 0, 0);
+  // Special color if squawk is special code
   if (flight_info.squawk_hijack() || flight_info.squawk_radio_failure() || flight_info.squawk_emergency())
-    tft.setTextColor(special_text_color);
+    lv_obj_set_style_text_color(label_flight, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
 
-  if (flight_info.flight.length())
-    tft.print(flight_info.flight + " ");
+  //  if (flight_info.flight.length())
+  //    tft.print(flight_info.flight + " ");
 
-  tft.setTextColor(text_color);
+  // tft.setTextColor(text_color);
 
-  tft.print(flight_info.iata_origin_airport);
-  tft.println(flight_info.iata_destination_airport.isEmpty() ? "" : "-" + flight_info.iata_destination_airport);
+  auto label_from_to = lv_label_create(lv_scr_act());
+  lv_label_set_text(label_from_to, (flight_info.iata_origin_airport + "-" + flight_info.iata_destination_airport).c_str());
+  lv_obj_align(label_from_to, LV_ALIGN_TOP_MID, 0, 0);
+
+  //  tft.print(flight_info.iata_origin_airport);
+  //  tft.println(flight_info.iata_destination_airport.isEmpty() ? "" : "-" + flight_info.iata_destination_airport);
+
+  auto label_heading = lv_label_create(lv_scr_act());
+  lv_label_set_text(label_heading, String(flight_info.heading).c_str());
+  lv_obj_align(label_heading, LV_ALIGN_TOP_RIGHT, 0, 0);
 
   // "`" is displayed as a degree symbol (°) in the font
-  tft.drawRightString(String(flight_info.heading) + "`", TFT_HEIGHT, tft.getCursorY() + 5, font_16pt);
+  // tft.drawRightString(String(flight_info.heading) + "`", TFT_HEIGHT, tft.getCursorY() + 5, font_16pt);
 
-  tft.setCursor(0, tft.getCursorY() + 2);
-  // Altitude
-  if (iotWebParamMetric.value())
-    tft.print(String(flight_info.altitude_metric()) + "m ");
-  else
-    tft.print(String(flight_info.altitude) + "ft ");
+  // tft.setCursor(0, tft.getCursorY() + 2);
+  //  Altitude
+  auto label_altitude = lv_label_create(lv_scr_act());
+  lv_label_set_text(label_altitude, (iotWebParamMetric.value() ? (String(flight_info.altitude_metric()) + "m ") : (String(flight_info.altitude) + "ft ")).c_str());
+  lv_obj_align(label_altitude, LV_ALIGN_TOP_RIGHT, 0, 0);
+  /*
+    // if (iotWebParamMetric.value()
+    //   tft.print(String(flight_info.altitude_metric()) + "m ");
+    // else
+    //   tft.print(String(flight_info.altitude) + "ft ");
 
-  // Steady, Descending / Ascending
-  tft.print(flight_info.vertical_speed == 0 ? "= " : flight_info.vertical_speed < 0 ? "- "
-                                                                                    : "+ ");
+    // Steady, Descending / Ascending
+    // tft.print(flight_info.vertical_speed == 0 ? "= " : flight_info.vertical_speed < 0 ? "- "
+                                                                                      : "+ ");
 
-  if (iotWebParamMetric.value())
-    tft.println(String(flight_info.ground_speed_metric()) + "kmh");
-  else
-    tft.println(String(flight_info.ground_speed) + "kts");
+                                                                                        if (iotWebParamMetric.value())
+                                                                                          tft.println(String(flight_info.ground_speed_metric()) + "kmh");
+                                                                                        else
+                                                                                          tft.println(String(flight_info.ground_speed) + "kts");
 
-  tft.setCursor(0, tft.getCursorY() + 2);
+                                                                                        tft.setCursor(0, tft.getCursorY() + 2);
 
-  if (airline)
-  {
-    log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->call_sign, airline->name, airline->country->name, airline->logo ? "present" : "not available");
-    if (airline->logo)
-    {
-      auto image = z_image_decode(airline->logo);
-      tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, image);
-      delete[] image;
-    }
-    else
-    {
-      log_w("No logo present for airline: %s", airline->icao_airline);
-      tft.drawRightString(airline->icao_airline, TFT_HEIGHT, tft.getCursorY(), font_26pt);
-    }
-  }
+                                                                                        if (airline)
+                                                                                        {
+                                                                                          log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->call_sign, airline->name, airline->country->name, airline->logo.data ? "present" : "not available");
+                                                                                          if (airline->logo.data)
+                                                                                          {
+                                                                                            // auto image = z_image_decode(airline->logo);
+                                                                                            // tft.pushImage(TFT_HEIGHT - airline->logo->width, tft.getCursorY(), airline->logo->width, airline->logo->height, image);
+                                                                                            // delete[] image;
+                                                                                          }
+                                                                                          else
+                                                                                          {
+                                                                                            log_w("No logo present for airline: %s", airline->icao_airline);
+                                                                                            tft.drawRightString(airline->icao_airline, TFT_HEIGHT, tft.getCursorY(), font_26pt);
+                                                                                          }
+                                                                                        }
 
-  tft.setTextFont(font_16pt);
+                                                                                        tft.setTextFont(font_16pt);
 
-  if (!flight_info.registration.isEmpty())
-    tft.print(String(flight_info.registration) + " ");
+                                                                                        if (!flight_info.registration.isEmpty())
+                                                                                          tft.print(String(flight_info.registration) + " ");
 
-  tft.println(format_gps_location(flight_info.latitude, flight_info.longitude));
-  tft.setCursor(0, tft.getCursorY() + 4);
+                                                                                        tft.println(format_gps_location(flight_info.latitude, flight_info.longitude));
+                                                                                        tft.setCursor(0, tft.getCursorY() + 4);
 
-  if (aircraft)
-  {
-    log_i("Aircraft (%s): %s %s. Description: %s, Engine: %s, Number of engines: %c", aircraft->aircraft_code, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
-    tft.println(String(aircraft->manufacturer) + " " + String(aircraft->type));
-  }
-  else
-    tft.println(flight_info.aircraft_code);
+                                                                                        if (aircraft)
+                                                                                        {
+                                                                                          log_i("Aircraft (%s): %s %s. Description: %s, Engine: %s, Number of engines: %c", aircraft->aircraft_code, aircraft->manufacturer, aircraft->type, aircraft->description, aircraft->engine_type, aircraft->engine_count);
+                                                                                          tft.println(String(aircraft->manufacturer) + " " + String(aircraft->type));
+                                                                                        }
+                                                                                        else
+                                                                                          tft.println(flight_info.aircraft_code);
 
-  tft.setCursor(0, tft.getCursorY() + 6);
+                                                                                        tft.setCursor(0, tft.getCursorY() + 6);
 
-  auto iata_origin = flight_info.origin_airport();
-  if (iata_origin)
-  {
-    log_i("From %s: %s - %s (%s) %s. %s", iata_origin->iata_airport, iata_origin->name, iata_origin->city, iata_origin->region, iata_origin->country->name, format_gps_location(iata_origin->latitude, iata_origin->longitude).c_str());
-    if (iata_origin->country->flag)
-    {
-      if (iata_origin->country->flag)
-      {
-        auto cursor_y = tft.getCursorY();
-        auto image = z_image_decode(iata_origin->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, iata_origin->country->flag->width, iata_origin->country->flag->height, image);
-        delete[] image;
-        tft.setCursor(iata_origin->country->flag->width + flag_margin_x_px, cursor_y);
-      }
-    }
+                                                                                        auto iata_origin = flight_info.origin_airport();
+                                                                                        if (iata_origin)
+                                                                                        {
+                                                                                          log_i("From %s: %s - %s (%s) %s. %s", iata_origin->iata_airport, iata_origin->name, iata_origin->city, iata_origin->region, iata_origin->country->name, format_gps_location(iata_origin->latitude, iata_origin->longitude).c_str());
+                                                                                          if (iata_origin->country)
+                                                                                          {
+                                                                                            if (iata_origin->country->flag.data)
+                                                                                            {
+                                                                                              auto cursor_y = tft.getCursorY();
+                                                                                              // auto image = z_image_decode(iata_origin->country->flag);
+                                                                                              // tft.pushImage(0, cursor_y + flag_margin_y_px, iata_origin->country->flag->width, iata_origin->country->flag->height, image);
+                                                                                              // delete[] image;
+                                                                                              // tft.setCursor(iata_origin->country->flag->width + flag_margin_x_px, cursor_y);
+                                                                                            }
+                                                                                          }
 
-    tft.println(String(iata_origin->city) + " (" + iata_origin->region + ") " + iata_origin->country->name);
-  }
-  else
-    log_w("From airport (%s) not found", flight_info.iata_origin_airport.c_str());
+                                                                                          tft.println(String(iata_origin->city) + " (" + iata_origin->region + ") " + iata_origin->country->name);
+                                                                                        }
+                                                                                        else
+                                                                                          log_w("From airport (%s) not found", flight_info.iata_origin_airport.c_str());
 
-  tft.setCursor(0, tft.getCursorY() + 2);
+                                                                                        tft.setCursor(0, tft.getCursorY() + 2);
 
-  auto iata_destination = flight_info.destination_airport();
-  if (iata_destination)
-  {
-    log_i("To %s: %s - %s (%s) %s. %s", iata_destination->iata_airport, iata_destination->name, iata_destination->city, iata_destination->region, iata_destination->country->name, format_gps_location(iata_destination->latitude, iata_destination->longitude).c_str());
-    if (iata_destination->country)
-    {
-      if (iata_destination->country->flag)
-      {
-        auto cursor_y = tft.getCursorY();
-        auto image = z_image_decode(iata_destination->country->flag);
-        tft.pushImage(0, cursor_y + flag_margin_y_px, iata_destination->country->flag->width, iata_destination->country->flag->height, image);
-        delete[] image;
-        tft.setCursor(iata_destination->country->flag->width + flag_margin_x_px, cursor_y);
-      }
-    }
+                                                                                        auto iata_destination = flight_info.destination_airport();
+                                                                                        if (iata_destination)
+                                                                                        {
+                                                                                          log_i("To %s: %s - %s (%s) %s. %s", iata_destination->iata_airport, iata_destination->name, iata_destination->city, iata_destination->region, iata_destination->country->name, format_gps_location(iata_destination->latitude, iata_destination->longitude).c_str());
+                                                                                          if (iata_destination->country)
+                                                                                          {
+                                                                                            if (iata_destination->country->flag.data)
+                                                                                            {
+                                                                                              auto cursor_y = tft.getCursorY();
+                                                                                              // auto image = z_image_decode(iata_destination->country->flag);
+                                                                                              // tft.pushImage(0, cursor_y + flag_margin_y_px, iata_destination->country->flag->width, iata_destination->country->flag->height, image);
+                                                                                              // delete[] image;
+                                                                                              // tft.setCursor(iata_destination->country->flag->width + flag_margin_x_px, cursor_y);
+                                                                                            }
+                                                                                          }
 
-    tft.println(String(iata_destination->city) + " (" + iata_destination->region + ") " + iata_destination->country->name);
-  }
-  else
-    log_w("To airport (%s) not found", flight_info.iata_destination_airport.c_str());
+                                                                                          tft.println(String(iata_destination->city) + " (" + iata_destination->region + ") " + iata_destination->country->name);
+                                                                                        }
+                                                                                        else
+                                                                                          log_w("To airport (%s) not found", flight_info.iata_destination_airport.c_str());
+                                                                                        */
 }
 
 void display_network_state(iotwebconf::NetworkState state)
 {
   log_i("Network state: %d", state);
-  unsigned short *image_data;
+  // unsigned short *image_data;
   switch (state)
   {
   case iotwebconf::NotConfigured:
   case iotwebconf::ApMode:
-    // Show WiFi AP screen
-    image_data = z_image_decode(&image_wifi);
-    tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
-    delete[] image_data;
-    tft.drawCentreString(state == iotwebconf::NotConfigured ? "No config. Connect to SSID:" : "To configure, connect to SSID:", TFT_HEIGHT / 2, TFT_WIDTH - 42, font_16pt);
-    tft.drawCentreString(iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 26, font_26pt);
+  {
+    lv_obj_clean(lv_scr_act());
+    auto image = lv_img_create(lv_scr_act());
+    lv_img_set_src(image, &image_wifi);
+    auto label_state = lv_label_create(lv_scr_act());
+    lv_label_set_text(label_state, "Access point mode");
+    lv_obj_align(label_state, LV_ALIGN_TOP_MID, 0, 0);
+    auto label_message = lv_label_create(lv_scr_act());
+    auto message = String(state == iotwebconf::NotConfigured ? "No config" : "To configure") + ", connect to SSID:";
+    lv_label_set_text(label_message, message.c_str());
+    lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, -16);
+    auto label_ssid = lv_label_create(lv_scr_act());
+    lv_label_set_text(label_ssid, iotWebConf.getThingName());
+    lv_obj_align(label_ssid, LV_ALIGN_BOTTOM_MID, 0, 0);
+  }
+
+    if (false)
+    {
+      lv_obj_clean(lv_scr_act());
+      auto preload = lv_spinner_create(lv_scr_act(), 1000, 50);
+      lv_obj_align(preload, LV_ALIGN_CENTER, 0, 0);
+      auto label_state = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_state, "Access point mode");
+      lv_obj_align(label_state, LV_ALIGN_TOP_MID, 0, 0);
+      auto label_message = lv_label_create(lv_scr_act());
+      auto message = String(state == iotwebconf::NotConfigured ? "No config" : "To configure") + ", connect to SSID:\n" + String(iotWebConf.getThingName());
+      lv_label_set_text(label_message, message.c_str());
+      lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, 0);
+    }
+    /*
+      // Show WiFi AP screen
+      image_data = z_image_decode(&image_wifi);
+      tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
+      delete[] image_data;
+      tft.drawCentreString(state == iotwebconf::NotConfigured ? "No config. Connect to SSID:" : "To configure, connect to SSID:", TFT_HEIGHT / 2, TFT_WIDTH - 42, font_16pt);
+      tft.drawCentreString(iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 26, font_26pt);
+      */
     break;
   case iotwebconf::Connecting:
+  {
+    lv_obj_clean(lv_scr_act());
+    auto image = lv_img_create(lv_scr_act());
+    lv_img_set_src(image, &image_splash);
+    auto label_version = lv_label_create(lv_scr_act());
+    lv_label_set_text(label_version, APP_TITLE " v" APP_VERSION);
+    lv_obj_align(label_version, LV_ALIGN_TOP_MID, 0, 0);
+  }
+  // lv_msgbox_create(lv_scr_act(), "Connecting to", iotWebConf.getThingName(), nullptr, false);
+
+  /*
     // Show splash screen
     image_data = z_image_decode(&image_splash);
     tft.pushImage(0, 0, image_splash.width, image_splash.height, image_data);
@@ -464,13 +567,22 @@ void display_network_state(iotwebconf::NetworkState state)
     tft.setCursor(0, 0);
     tft.setTextFont(font_26pt);
     tft.print(APP_TITLE " v" APP_VERSION);
-    break;
+    */
+  break;
   case iotwebconf::OffLine:
+  {
+    lv_obj_clean(lv_scr_act());
+    auto image = lv_img_create(lv_scr_act());
+    lv_img_set_src(image, &image_no_internet);
+  }
+
+  /*
     // Show Dinosaur / cactus image
     image_data = z_image_decode(&image_no_internet);
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_data);
     delete[] image_data;
-    break;
+    */
+  break;
   }
 }
 
@@ -479,18 +591,25 @@ void display_flights()
   auto now = millis();
   if (now > next_refresh_flights)
   {
+    lv_obj_clean(lv_scr_act());
+
     next_refresh_flights = now + refresh_flights_milliseconds;
     log_i("Updating flights");
     String error_message;
     if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
     {
       log_e("Error getting flights: %s", error_message.c_str());
+      auto image = lv_img_create(lv_scr_act());
+      lv_img_set_src(image, &image_error);
+      auto label_message = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_message, error_message.c_str());
+      lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, 0);
       // Show error message
-      clear();
-      auto image_data = z_image_decode(&image_error);
-      tft.pushImage(0, 0, image_error.width, image_error.height, image_data);
-      delete[] image_data;
-      tft.drawCentreString(error_message, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+      // clear();
+      //      auto image_data = z_image_decode(&image_error);
+      //      tft.pushImage(0, 0, image_error.width, image_error.height, image_data);
+      //      delete[] image_data;
+      // tft.drawCentreString(error_message, TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
       next_update_flight = UINT_MAX;
       return;
     }
@@ -500,31 +619,44 @@ void display_flights()
     if (flights.empty())
     {
       log_d("No flights in range");
-      clear();
+      auto label_message = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_message, "No flights in range");
+      lv_obj_align(label_message, LV_ALIGN_TOP_MID, 0, 0);
+      auto label_time = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_time, get_localtime("%F %R").c_str());
+      lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
+      auto label_latlon = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_latlon, format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()).c_str());
+      lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 16);
+      auto label_location = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_location, iotWebParamLocation.value());
+      lv_obj_align(label_location, LV_ALIGN_BOTTOM_MID, 0, -16);
+      auto label_timezone = lv_label_create(lv_scr_act());
+      lv_label_set_text(label_timezone, iotWebParamTimeZone.value());
+      lv_obj_align(label_timezone, LV_ALIGN_BOTTOM_MID, 0, 0);
 
-      auto localtime = get_localtime("%F %R");
-      tft.drawCentreString(localtime, TFT_HEIGHT / 2, 0, font_26pt);
+      // clear();
+      // auto localtime = get_localtime("%F %R");
+      // tft.drawCentreString(localtime, TFT_HEIGHT / 2, 0, font_26pt);
+      // tft.setTextColor(TFT_ORANGE);
+      // tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
 
-      tft.setTextColor(TFT_ORANGE);
-      tft.drawCentreString("No flights in range", TFT_HEIGHT / 2, TFT_WIDTH / 2 - 26, font_26pt);
+      // tft.setTextColor(text_color);
+      // tft.drawCentreString(format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
 
-      tft.setTextColor(text_color);
-      tft.drawCentreString(format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()), TFT_HEIGHT / 2, TFT_WIDTH / 2, font_16pt);
-
-      tft.drawCentreString(iotWebParamLocation.value(), TFT_HEIGHT / 2, TFT_WIDTH - 32, font_16pt);
-      tft.drawCentreString(iotWebParamTimeZone.value(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
+      // tft.drawCentreString(iotWebParamLocation.value(), TFT_HEIGHT / 2, TFT_WIDTH - 32, font_16pt);
+      // tft.drawCentreString(iotWebParamTimeZone.value(), TFT_HEIGHT / 2, TFT_WIDTH - 16, font_16pt);
 
       next_update_flight = UINT_MAX;
+      return;
     }
-    else
-    {
-      update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
-      log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
 
-      next_update_flight = 0ul;
-      it = flights.begin();
-      flight_index = 0;
-    }
+    update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
+    log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
+
+    next_update_flight = 0ul;
+    it = flights.begin();
+    flight_index = 0;
   }
 
   if (now > next_update_flight)
@@ -533,10 +665,10 @@ void display_flights()
 
     if (it != flights.end())
     {
-      display_flight(*it);
+      display_flight(flights, *it);
       flight_index++;
       // Show index of displayed and total of flights
-      tft.drawRightString(String(flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
+      // tft.drawRightString(String(flight_index) + "/" + String(flights.size()), TFT_HEIGHT, 0, font_16pt);
 
       if (++it == flights.end())
       {
@@ -568,8 +700,14 @@ void display_clock()
 
 void loop()
 {
+  // LVGL
+  lv_timer_handler();
+
+  // Button
   button1.loop();
   button2.loop();
+
+  // Web configuration
   iotWebConf.doLoop();
 
   static auto last_network_state = iotwebconf::NetworkState::Boot;
@@ -599,6 +737,4 @@ void loop()
     }
     break;
   }
-
-  yield();
 }

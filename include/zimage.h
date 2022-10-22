@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include <miniz.h>
 
 // Data is stored as GZIP compressed data.
@@ -18,3 +19,4 @@ inline unsigned short* z_image_decode(const z_image_data_t *z_image_data)
     auto status = uncompress((unsigned char*)image, &uncompressed_len, z_image_data->compressed_data, z_image_data->compressed_size);
     return image;
 }
+*/
