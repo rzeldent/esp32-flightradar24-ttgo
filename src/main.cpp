@@ -200,7 +200,7 @@ void handleRoot()
       {"LatLon", html_location},
       {"LatLongRanges", latRange + " / " + lonRange},
       {"Airborne", iotWebParamAirborne.value() ? "Yes" : "No"},
-      {"Groundde", iotWebParamGrounded.value() ? "Yes" : "No"},
+      {"Grounded", iotWebParamGrounded.value() ? "Yes" : "No"},
       {"Gliders", iotWebParamGliders.value() ? "Yes" : "No"},
       {"Vehicles", iotWebParamVehicles.value() ? "Yes" : "No"},
       {"Timezone", iotWebParamTimeZone.value()},
