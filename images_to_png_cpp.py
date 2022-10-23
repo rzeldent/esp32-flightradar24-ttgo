@@ -11,22 +11,20 @@ from turtle import width
 from PIL import Image
 
 if (len(sys.argv) <= 2):
-    print('Usage: images_to_cpp.py <input_files> <file.h> <maxwidth> <maxheight>')
+    print('Usage: images_to_cpp.py <input_files> raw/png/gif <file.h> <maxwidth> <maxheight>')
     sys.exit(1)
 
-print (','.join(sys.argv))
-
-
 files = glob(sys.argv[1])
-file_h = sys.argv[2]
+type = sys.argv[2]
+file_h = sys.argv[3]
 resize = None
-if (len(sys.argv) >= 4):
-    resize= (int(sys.argv[3]), int(sys.argv[4]))
+if (len(sys.argv) >= 5):
+    resize= (int(sys.argv[4]), int(sys.argv[5]))
 
 output_file = open(file_h, 'w')
 output_file.write(
     '//*******************************************************************************\n'
-    '// Type: LVGL\n')
+    f'// Type: LVGL / {type}\n')
 if (resize != None):
     output_file.write('// Resize: ' + str(resize[0]) + 'x' + str(resize[1]) + '\n')
 
@@ -58,8 +56,10 @@ for file_name in files:
     image = image.convert('RGBA')
 
     # Create transparent background
-    #background = Image.new('RGBA', size, (0, 0, 0, 255))
-    #background.paste(image, (0, 0), image)
+    background = Image.new('RGBA', size, (0, 0, 0, 255))
+    background.paste(image, (0, 0), image)
+    image = background
+
     hash = hashlib.md5(image.tobytes()).hexdigest()
 
     base_name = os.path.splitext(os.path.basename(file_name))[0]
@@ -70,46 +70,49 @@ for file_name in files:
         output_file.write('\n')
         output_file.write('constexpr unsigned char ' + base_name + '_map[] = { \n')
 
-        # PNG
-        byte_io = io.BytesIO()
-        image.save(byte_io, optimize=True, format='PNG')
+        if (type == 'raw'):
+            convert_RGB888_to_RGB332 = lambda rgb: (rgb[0] >> 5) << 5 | (rgb[1] >> 6) << 2 | (rgb[2] >> 6)
+            convert_RGB888_to_RGB565 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
 
-        output_file.write('// PNG Data\n')
-        output_file.write(','.join(f'0x{(i):02x}' for i in byte_io))
-        output_file.write('\n')
+            output_file.write('#if LV_COLOR_DEPTH == 1 || LV_COLOR_DEPTH == 8\n'
+                '// Pixel format: RGB332 Red: 3 bit, Green: 3 bit, Blue: 2 bit\n')
+            output_file.write(', '.join(f'0x{(i):02x}' for i in map(convert_RGB888_to_RGB332, image.getdata())))
+            output_file.write('\n#endif\n')
 
-        """
-        convert_RGB888_to_RGB332 = lambda rgb: (rgb[0] >> 5) << 5 | (rgb[1] >> 6) << 2 | (rgb[2] >> 6)
-        convert_RGB888_to_RGB565 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
+            output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP == 0\n'
+                '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit\n')
+            output_file.write(', '.join(f'0x{(i & 0xff):02x},0x{(i >> 8):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
+            output_file.write('\n#endif\n')
+            
+            output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP != 0\n'
+                '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit BUT the 2 bytes are swapped\n')
+            output_file.write(', '.join(f'0x{(i >> 8):02x},0x{(i & 0xff):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
+            output_file.write('\n#endif\n')
+            
+            output_file.write('#if LV_COLOR_DEPTH == 32\n'
+                '// Pixel format: RGBA8888 Red: 8 bit, Green: 8 bit, Blue: 8 bit, Alpha: 8 bit \n')
+            output_file.write(', '.join(f'0x{i[0]:02x},0x{(i[1]):02x},0x{(i[2]):02x},0x{(i[3]):02x}' for i in image.getdata()))
+            output_file.write('\n#endif\n')
+        else:
+            byte_io = io.BytesIO()
+            image.save(byte_io, optimize=True, format=type)
 
-        output_file.write('#if LV_COLOR_DEPTH == 1 || LV_COLOR_DEPTH == 8\n'
-            '// Pixel format: RGB332 Red: 3 bit, Green: 3 bit, Blue: 2 bit\n')
-        output_file.write(', '.join(f'0x{(i):02x}' for i in map(convert_RGB888_to_RGB332, image.getdata())))
-        output_file.write('\n#endif\n')
-
-        output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP == 0\n'
-            '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit\n')
-        output_file.write(', '.join(f'0x{(i & 0xff):02x},0x{(i >> 8):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
-        output_file.write('\n#endif\n')
-        
-        output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP != 0\n'
-            '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit BUT the 2 bytes are swapped\n')
-        output_file.write(', '.join(f'0x{(i >> 8):02x},0x{(i & 0xff):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
-        output_file.write('\n#endif\n')
-        
-        output_file.write('#if LV_COLOR_DEPTH == 32\n'
-            '// Pixel format: RGBA8888 Red: 8 bit, Green: 8 bit, Blue: 8 bit, Alpha: 8 bit \n')
-        output_file.write(', '.join(f'0x{i[0]:02x},0x{(i[1]):02x},0x{(i[2]):02x},0x{(i[3]):02x}' for i in image.getdata()))
-        output_file.write('\n#endif\n')
-        """
+            output_file.write(f'// {type} Data\n')
+            output_file.write(','.join(f'0x{(i):02x}' for i in byte_io.getvalue()))
+            output_file.write('\n')
 
         output_file.write('};\n')
 
         output_file.write(
             f'const lv_img_dsc_t {base_name} = {{\n'
-            '  .header = {\n'
-#            '    .cf = LV_IMG_CF_TRUE_COLOR,\n'
-            '    .cf = LV_IMG_SRC_VARIABLE,\n'
+            '  .header = {\n');
+
+        if (type == 'raw'):
+            output_file.write('    .cf = LV_IMG_CF_TRUE_COLOR,\n')
+        else:
+            output_file.write('    .cf = LV_IMG_SRC_VARIABLE,\n')
+
+        output_file.write(
             '    .always_zero = 0,\n'
             f'    .w = {image.width},\n'
             f'    .h = {image.height}}},\n'

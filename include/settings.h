@@ -1,7 +1,7 @@
 #pragma once
 
 #define APP_TITLE "FlightRadar"
-#define APP_VERSION "1.1"
+#define APP_VERSION "1.2"
 
 #define WIFI_SSID "FlightRadar"
 #define WIFI_PASSWORD nullptr
