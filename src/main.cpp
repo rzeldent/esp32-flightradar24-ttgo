@@ -59,14 +59,11 @@ Button2 button1(GPIO_BUTTON_TOP, INPUT);
 Button2 button2(GPIO_BUTTON_BOTTOM, INPUT);
 
 // Variables for flight info
-unsigned long next_refresh_flights;
-unsigned long next_update_flight;
-// Time per flight
-unsigned long update_flight_milliseconds;
+unsigned long next_update;
 // List of flights
 std::list<flight_info> flights;
 // Flight to display
-std::list<flight_info>::const_iterator it;
+std::list<flight_info>::const_iterator it = flights.begin();
 // Index
 unsigned flight_index;
 
@@ -148,7 +145,7 @@ void handleRoot()
 
   // Location; format degree symbol
   auto html_location = format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value());
-  html_location.replace("`", "&deg;");
+  html_location.replace("\u00b0", "&deg;");
 
   // Calculations for range
   auto latRange = String(iotWebParamLatitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
@@ -169,7 +166,7 @@ void handleRoot()
       {"Uptime", String(format_duration(millis() / 1000))},
       {"FreeHeap", format_memory(ESP.getFreeHeap())},
       {"MaxAllocHeap", format_memory(ESP.getMaxAllocHeap())},
-      {"LocalTime", get_localtime("%F, %T")},
+      {"LocalTime", get_localtime("%F - %T")},
       // Network
       {"HostName", hostname},
       {"MacAddress", WiFi.macAddress()},
@@ -313,7 +310,7 @@ void setup()
         switch (display_state) {
         case display_state_t::display_time:
             display_state = display_state_t::display_airtraffic;
-            next_refresh_flights = 0;
+            next_update = 0;
             break;
         case display_state_t::display_airtraffic:
             display_state = display_state_t::display_time;
@@ -327,11 +324,11 @@ void display_flight(const flight_info &flight_info, int index, int total)
   log_i("%s", flight_info.toString().c_str());
   lv_obj_clean(lv_scr_act());
 
-  const aircraft_t *aircraft = flight_info.aircraft_type();
+  const auto aircraft = flight_info.aircraft_type();
   if (aircraft == nullptr)
     log_w("Aircraft (%s) not found", flight_info.aircraft_code.c_str());
 
-  const airline_t *airline = flight_info.airline();
+  const auto airline = flight_info.airline();
   if (airline == nullptr)
     log_w("Airline (%s) not found", flight_info.icao_airline.c_str());
 
@@ -351,7 +348,7 @@ void display_flight(const flight_info &flight_info, int index, int total)
   auto label_from_to = lv_label_create(lv_scr_act());
   lv_label_set_text(label_from_to, from_to.c_str());
   lv_obj_set_style_text_font(label_from_to, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-  lv_obj_align(label_from_to, LV_ALIGN_TOP_RIGHT, -35, 0);
+  lv_obj_align(label_from_to, LV_ALIGN_TOP_LEFT, 90, 0);
 
   auto index_total = String(index) + "/" + String(total);
   auto label_index_total = lv_label_create(lv_scr_act());
@@ -397,9 +394,9 @@ void display_flight(const flight_info &flight_info, int index, int total)
   lv_label_set_text(label_aircraft_type, aircraft_type.c_str());
   lv_obj_set_width(label_aircraft_type, 240 - 70);
   lv_label_set_long_mode(label_aircraft_type, LV_LABEL_LONG_SCROLL_CIRCULAR);
-  lv_obj_align(label_aircraft_type, LV_ALIGN_TOP_RIGHT, 0, 40);
+  lv_obj_align(label_aircraft_type, LV_ALIGN_TOP_LEFT, 70, 40);
 
-  // LINE 4
+  // LINE 4 - 56
 
   // Lat Lon
   auto latlon = format_gps_location(flight_info.latitude, flight_info.longitude);
@@ -407,9 +404,24 @@ void display_flight(const flight_info &flight_info, int index, int total)
   lv_label_set_text(label_latlon, latlon.c_str());
   lv_obj_align(label_latlon, LV_ALIGN_TOP_LEFT, 0, 56);
 
+  // Heading
+  auto heading = String(LV_SYMBOL_GPS) + " " + format_zero_padding(flight_info.heading, 3) + "\u00b0";
+  auto label_heading = lv_label_create(lv_scr_act());
+  lv_label_set_text(label_heading, heading.c_str());
+  lv_obj_align(label_heading, LV_ALIGN_TOP_RIGHT, -45, 56);
+
+  // LINE 5 - 72
+
   if (airline)
   {
     log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->call_sign, airline->name, airline->country->name, airline->logo.data ? "present" : "not available");
+
+    auto label_airline = lv_label_create(lv_scr_act());
+    lv_label_set_text(label_airline, airline->name);
+    lv_obj_set_width(label_airline, 240 - 45);
+    lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_align(label_airline, LV_ALIGN_TOP_LEFT, 0, 56 + 40 - 14);
+
     if (airline->logo.data)
     {
       auto image = lv_gif_create(lv_scr_act());
@@ -419,14 +431,6 @@ void display_flight(const flight_info &flight_info, int index, int total)
     else
       log_w("No logo present for airline: %s", airline->icao_airline);
   }
-
-  // LINE 5
-
-  // Heading
-  auto heading = String(LV_SYMBOL_GPS) + String(flight_info.heading);
-  auto label_heading = lv_label_create(lv_scr_act());
-  lv_label_set_text(label_heading, heading.c_str());
-  lv_obj_align(label_heading, LV_ALIGN_TOP_LEFT, 0, 72);
 
   // BOTTOM
 
@@ -496,6 +500,7 @@ void display_network_state(iotwebconf::NetworkState state)
 
     auto label_state = lv_label_create(lv_scr_act());
     lv_label_set_text(label_state, "Not configured!");
+    lv_obj_set_style_text_font(label_state, &lv_font_montserrat_22, LV_STATE_DEFAULT);
     lv_obj_align(label_state, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_text_color(label_state, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
 
@@ -559,75 +564,59 @@ void display_network_state(iotwebconf::NetworkState state)
 void display_flights()
 {
   auto now = millis();
-  if (now > next_refresh_flights)
+  if (now > next_update)
   {
     lv_obj_clean(lv_scr_act());
 
-    next_refresh_flights = now + refresh_flights_milliseconds;
-    log_i("Updating flights");
-    String error_message;
-    if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
+    if (it == flights.cend())
     {
-      log_e("Error getting flights: %s", error_message.c_str());
-      auto label_message = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_message, error_message.c_str());
-      lv_obj_set_style_text_color(label_message, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
-      lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, 0);
-      next_update_flight = UINT_MAX;
-      return;
-    }
-
-    log_i("Number of flights: %d", flights.size());
-
-    if (flights.empty())
-    {
-      log_d("No flights in range");
-      auto label_message = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_message, "No flights in range");
-      lv_obj_set_style_text_color(label_message, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
-      lv_obj_set_style_text_font(label_message, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-      lv_obj_align(label_message, LV_ALIGN_TOP_MID, 0, 0);
-      auto label_time = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_time, get_localtime("%F %R").c_str());
-      lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
-      auto label_latlon = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_latlon, format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()).c_str());
-      lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 16);
-      auto label_location = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_location, iotWebParamLocation.value());
-      lv_obj_align(label_location, LV_ALIGN_BOTTOM_MID, 0, -16);
-      auto label_timezone = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_timezone, iotWebParamTimeZone.value());
-      lv_obj_align(label_timezone, LV_ALIGN_BOTTOM_MID, 0, 0);
-
-      next_update_flight = UINT_MAX;
-      return;
-    }
-
-    update_flight_milliseconds = refresh_flights_milliseconds / display_cycles / flights.size();
-    log_i("Duration to show each flight: %d milliseconds", update_flight_milliseconds);
-
-    next_update_flight = 0ul;
-    it = flights.begin();
-    flight_index = 0;
-  }
-
-  if (now > next_update_flight)
-  {
-    next_update_flight = now + update_flight_milliseconds;
-
-    if (it != flights.end())
-    {
-      display_flight(*it, flight_index, flights.size());
-      flight_index++;
-
-      if (++it == flights.end())
+      log_i("Updating flights");
+      String error_message;
+      if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
       {
-        log_d("Restart with first flight");
-        it = flights.begin();
-        flight_index = 0;
+        log_e("Error getting flights: %s", error_message.c_str());
+        auto label_message = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_message, error_message.c_str());
+        lv_obj_set_style_text_color(label_message, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
+        lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, 0);
+
+        next_update = now + flight_milliseconds_error;
+        return;
       }
+
+      log_i("Number of flights: %d", flights.size());
+      if (flights.empty())
+      {
+        log_d("No flights in range");
+        auto label_message = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_message, "No flights in range");
+        lv_obj_set_style_text_color(label_message, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(label_message, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+        lv_obj_align(label_message, LV_ALIGN_TOP_MID, 0, 0);
+        auto label_time = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_time, get_localtime("%F - %R").c_str());
+        lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
+        auto label_latlon = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_latlon, format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()).c_str());
+        lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 16);
+        auto label_location = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_location, iotWebParamLocation.value());
+        lv_obj_align(label_location, LV_ALIGN_BOTTOM_MID, 0, -16);
+        auto label_timezone = lv_label_create(lv_scr_act());
+        lv_label_set_text(label_timezone, iotWebParamTimeZone.value());
+        lv_obj_align(label_timezone, LV_ALIGN_BOTTOM_MID, 0, 0);
+
+        next_update = now + flight_milliseconds_noflights;
+        return;
+      }
+
+      it = flights.begin();
+      flight_index = 1;
     }
+
+    display_flight(*it++, flight_index++, flights.size());
+
+    next_update = now + flight_milliseconds;
   }
 }
 
@@ -683,7 +672,7 @@ void loop()
   switch (network_state)
   {
   case iotwebconf::NetworkState::OffLine:
-    next_refresh_flights = 0ul;
+    next_update = 0ul;
     break;
 
   case iotwebconf::NetworkState::OnLine:

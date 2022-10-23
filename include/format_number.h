@@ -2,6 +2,15 @@
 
 #include <Arduino.h>
 
+String format_zero_padding(int value, int width)
+{
+    String s(value);
+    while (s.length() < width)
+        s = "0" + s;
+
+    return s;
+}
+
 String format_value(double value)
 {
     if (value == 0.0)

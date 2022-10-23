@@ -11,7 +11,7 @@ from turtle import width
 from PIL import Image
 
 if (len(sys.argv) <= 2):
-    print('Usage: images_to_cpp.py <input_files> raw/png/gif <file.h> <maxwidth> <maxheight>')
+    print('Usage: images_to_lvgl.py <input_files> raw/png/gif <file.h> <maxwidth> <maxheight>')
     sys.exit(1)
 
 files = glob(sys.argv[1])
@@ -54,12 +54,6 @@ for file_name in files:
         size = image.size
 
     image = image.convert('RGBA')
-
-    # Create transparent background
-    background = Image.new('RGBA', size, (0, 0, 0, 255))
-    background.paste(image, (0, 0), image)
-    image = background
-
     hash = hashlib.md5(image.tobytes()).hexdigest()
 
     base_name = os.path.splitext(os.path.basename(file_name))[0]
