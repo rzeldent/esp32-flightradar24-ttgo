@@ -1,8 +1,6 @@
 # pragma once
 
-#include <images.h>
-
-#define airline_logo_null   airline_logo
+#define airline_logo_null   lv_img_dsc_t{}
 
 #define airline_logo_AAA    airline_logo_null
 #define airline_logo_AAE    airline_logo_null
@@ -74,7 +72,6 @@
 #define airline_logo_AIG    airline_logo_null
 #define airline_logo_AIK    airline_logo_null
 #define airline_logo_AIM    airline_logo_null
-#define airline_logo_AIO    airline_logo_null
 #define airline_logo_AIR    airline_logo_null
 #define airline_logo_AIS    airline_logo_null
 #define airline_logo_AIU    airline_logo_null

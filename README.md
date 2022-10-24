@@ -16,6 +16,24 @@ This application retrieves the current flights near a configured location and di
 ![Example2](assets/20220909_221101.jpg)
 ![Example3](assets/20220909_221104.jpg)
 
+## History
+|             | |
+| ---         | --- |
+| Oct 25 2022 | Use LVGL for graphics |
+| Oct 15 2022 | Filtering for airborne/grounded/gliders/vehicles |
+| Oct 14 2022 | Added vertical speed |
+| Oct 2 2022  | Bootstrap for HTML overview |
+| Jun 16 2022 | Wifi manager for configuration |
+| Jun 15 2022 | Use time zones |
+| Apr 27 2022 | Import aircraft types |
+| Dec 5 2021  | Compressing of RGB565 |
+| Nov 21 2021 | Import airlines from Wiki page |
+| Nov 8 2021  | New airline logos |
+| Oct 31 2021 | Added heading, altitude and speed |
+| Oct 6 2021  | Move images from SPIFF to code |
+| May 25 2021 | GUI update |
+| Dec 26 2019 | Initial version: The "birth" of the project |
+
 ## Features
 
 The FlightRadar firmware offers the following features:

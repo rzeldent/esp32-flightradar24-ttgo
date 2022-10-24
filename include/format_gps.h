@@ -8,7 +8,8 @@ String format_degrees(float value)
     int degrees = value;
     int minutes = (value - degrees) * 60;
     int seconds = (value - degrees - minutes / 60.0) * 60.0 * 60.0;
-    snprintf(buffer, sizeof(buffer), "%d`%02d'%02d\"", degrees, minutes, seconds);
+    // \u00b0 = degree symbol
+    snprintf(buffer, sizeof(buffer), "%d\u00b0%02d'%02d\"", degrees, minutes, seconds);
     return buffer;
 }
 
