@@ -40,18 +40,24 @@ The FlightRadar firmware offers the following features:
 
 - Lookup of airplane type and specifics (manufacturer, type, description, engine type and count)
 - Lookup of carrier and (if available) display the logo
-- Display GPS location, registration,  altitude, heading and speed of the airplane
+- Display GPS location, registration,  altitude, heading, speed and vertical speed of the airplane
 - Lookup of the full name for the from- and to airports name and region, lat/lon
 - Lookup and display flag for the countries
-- No account required!
-- Minimal interaction with FlightRadar24; database is present in firmware
+- No account required, ony WiFi with internet connection!
+- Minimal interaction with FlightRadar24; database and graphics are present in firmware
 - Configuration using a Web interface
-- Status screen
+- HTML status screen
 - Stay in AP mode at reset (Resetting + pressing top button)
+- Clock mode
 
 ## Usage
 
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
+When installed make a WiFi connection to the device, initially called FlightRadar and configure the access point parameters.
+After configuration the device starts updating the flights in the configured area.
+
+When pressing the top button, the device switches to clock mode: just showing the date and time.
+To return to the flights mode, press the top button again.
 
 ## Installing and running PlatformIO
 
