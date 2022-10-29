@@ -9,11 +9,6 @@
 #include <TFT_eSPI.h>
 #include <lvgl.h>
 
-constexpr auto font_16pt = 2;
-constexpr auto font_26pt = 4;
-constexpr auto font_48pt = 6;
-constexpr auto font_48pt_lcd = 7;
-
 #include <Button2.h>
 #include <flight_info.h>
 #include <time.h>
@@ -33,6 +28,9 @@ constexpr auto font_48pt_lcd = 7;
 #include <html_data.h>
 #include <html_data_gzip.h>
 
+// LCD display
+auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
+
 // Web server
 DNSServer dnsServer;
 WebServer server(80);
@@ -51,9 +49,6 @@ auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
-// Use hardware SPI
-auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
-
 // Buttons
 Button2 button1(GPIO_BUTTON_TOP, INPUT);
 Button2 button2(GPIO_BUTTON_BOTTOM, INPUT);
@@ -63,9 +58,7 @@ unsigned long next_update;
 // List of flights
 std::list<flight_info> flights;
 // Flight to display
-std::list<flight_info>::const_iterator it = flights.begin();
-// Index
-unsigned flight_index;
+std::list<flight_info>::const_iterator it = flights.cbegin();
 
 // Variables for Clock
 int last_minute = -1;
@@ -196,8 +189,8 @@ void handleRoot()
   server.send(200, "text/html", html);
 }
 
-/* Display flushing */
-void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
+// Display flushing
+void tft_espi_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
   auto w = (area->x2 - area->x1 + 1);
   auto h = (area->y2 - area->y1 + 1);
@@ -208,7 +201,7 @@ void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color
   lv_disp_flush_ready(disp);
 }
 
-void xlv_log(const char *buf)
+void lvgl_log(const char *buf)
 {
   log_printf("%s", buf);
 }
@@ -248,12 +241,11 @@ void setup()
   lv_disp_drv_init(&disp_drv);
   disp_drv.hor_res = screen_width;
   disp_drv.ver_res = screen_height;
-  disp_drv.flush_cb = my_disp_flush;
+  disp_drv.flush_cb = tft_espi_flush;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);
-
   // For debugging
-  lv_log_register_print_cb(&xlv_log);
+  lv_log_register_print_cb(&lvgl_log);
 
   // Initializing the configuration for web configuration
   param_group.addItem(&iotWebParamLocation);
@@ -319,8 +311,10 @@ void setup()
         } });
 }
 
-void display_flight(const flight_info &flight_info, int index, int total)
+void display_flight(std::list<flight_info>::const_iterator it)
 {
+  const flight_info &flight_info = *it;
+
   log_i("%s", flight_info.toString().c_str());
   lv_obj_clean(lv_scr_act());
 
@@ -350,6 +344,8 @@ void display_flight(const flight_info &flight_info, int index, int total)
   lv_obj_set_style_text_font(label_from_to, &lv_font_montserrat_22, LV_STATE_DEFAULT);
   lv_obj_align(label_from_to, LV_ALIGN_TOP_LEFT, 90, 0);
 
+  auto index = std::distance(flights.cbegin(), it) + 1;
+  auto total = flights.size();
   auto index_total = String(index) + "/" + String(total);
   auto label_index_total = lv_label_create(lv_scr_act());
   lv_label_set_text(label_index_total, index_total.c_str());
@@ -358,7 +354,7 @@ void display_flight(const flight_info &flight_info, int index, int total)
   // LINE 2
 
   //  Altitude
-  auto altitude = iotWebParamMetric.value() ? String(flight_info.altitude_metric()) + "m " : String(flight_info.altitude) + "ft ";
+  auto altitude = iotWebParamMetric.value() ? String(flight_info.altitude_metric()) + "m" : String(flight_info.altitude) + "ft";
   auto label_altitude = lv_label_create(lv_scr_act());
   lv_label_set_text(label_altitude, altitude.c_str());
   lv_obj_align(label_altitude, LV_ALIGN_TOP_LEFT, 0, 24);
@@ -404,8 +400,8 @@ void display_flight(const flight_info &flight_info, int index, int total)
   lv_label_set_text(label_latlon, latlon.c_str());
   lv_obj_align(label_latlon, LV_ALIGN_TOP_LEFT, 0, 56);
 
-  // Heading
-  auto heading = String(LV_SYMBOL_GPS) + " " + format_zero_padding(flight_info.heading, 3) + "\u00b0";
+  // Heading \u00b0 = degrees
+  auto heading = format_zero_padding(flight_info.heading, 3) + "\u00b0";
   auto label_heading = lv_label_create(lv_scr_act());
   lv_label_set_text(label_heading, heading.c_str());
   lv_obj_align(label_heading, LV_ALIGN_TOP_RIGHT, -45, 56);
@@ -610,11 +606,10 @@ void display_flights()
         return;
       }
 
-      it = flights.begin();
-      flight_index = 1;
+      it = flights.cbegin();
     }
 
-    display_flight(*it++, flight_index++, flights.size());
+    display_flight(it++);
 
     next_update = now + flight_milliseconds;
   }
@@ -687,4 +682,6 @@ void loop()
     }
     break;
   }
+
+  yield();
 }
