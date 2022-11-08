@@ -25,8 +25,10 @@
 #include <images.h>
 #include <timezonedb_lookup.h>
 
-#include <html_data.h>
-#include <html_data_gzip.h>
+// Embedded data
+extern const uint8_t binary_html_bootstrap_min_css_gz_start[] asm("_binary_html_bootstrap_min_css_gz_start");
+extern const uint8_t binary_html_bootstrap_min_css_gz_end[] asm("_binary_html_bootstrap_min_css_gz_end");
+extern const char text_html_index_html[] asm("_binary_html_index_html_start");
 
 // LCD display
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
@@ -185,7 +187,7 @@ void handleRoot()
       {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
 
   server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-  auto html = moustache_render(file_data_index_html, substitutions);
+  auto html = moustache_render(text_html_index_html, substitutions);
   server.send(200, "text/html", html);
 }
 
@@ -278,7 +280,7 @@ void setup()
             {
               // Cache for 86400 seconds (one day)
               server.sendHeader("Cache-Control", "max-age=86400");
-              send_content_gzip(file_data_bootstrap_min_css, sizeof(file_data_bootstrap_min_css), "text/css"); });
+              send_content_gzip(binary_html_bootstrap_min_css_gz_start, binary_html_bootstrap_min_css_gz_end - binary_html_bootstrap_min_css_gz_start, "text/css"); });
 
   server.onNotFound([]()
                     { iotWebConf.handleNotFound(); });
