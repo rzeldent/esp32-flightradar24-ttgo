@@ -9,7 +9,6 @@
 #include <TFT_eSPI.h>
 #include <lvgl.h>
 
-#include <Button2.h>
 #include <flight_info.h>
 #include <time.h>
 
@@ -52,29 +51,12 @@ auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
-// Buttons
-Button2 button1(GPIO_BUTTON_TOP, INPUT);
-Button2 button2(GPIO_BUTTON_BOTTOM, INPUT);
-
 // Variables for flight info
 unsigned long next_update;
 // List of flights
 std::list<flight_info> flights;
 // Flight to display
 std::list<flight_info>::const_iterator it = flights.cbegin();
-
-// Variables for Clock
-int last_minute = -1;
-
-typedef enum display_state
-{
-  display_airtraffic,
-  display_time,
-  display_info
-} display_state_t;
-
-// Current display state
-display_state_t display_state = display_state_t::display_airtraffic;
 
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
@@ -193,7 +175,7 @@ void handleRoot()
 }
 
 // Display flushing
-void tft_espi_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
+void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_p)
 {
   auto w = (area->x2 - area->x1 + 1);
   auto h = (area->y2 - area->y1 + 1);
@@ -201,7 +183,30 @@ void tft_espi_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *colo
   tft.setAddrWindow(area->x1, area->y1, w, h);
   tft.pushColors((uint16_t *)&color_p->full, w * h, true);
   tft.endWrite();
-  lv_disp_flush_ready(disp);
+  lv_disp_flush_ready(drv);
+}
+
+void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
+{
+  static uint32_t last_key;
+
+  uint32_t key;
+  if (!digitalRead(GPIO_BUTTON_TOP))
+    key = LV_KEY_NEXT;
+  else if (!digitalRead(GPIO_BUTTON_BOTTOM))
+    key = LV_KEY_ENTER;
+  else
+    key = 0;
+
+  if (key)
+  {
+    data->state = LV_INDEV_STATE_PR;
+    log_d("Button: 0x%02x pressed", key);
+  }
+  else
+    data->state = LV_INDEV_STATE_REL;
+
+  data->key = last_key = key;
 }
 
 void lvgl_log(const char *buf)
@@ -223,6 +228,10 @@ void setup()
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Free heap: %d bytes", ESP.getFreeHeap());
   log_i("Starting " APP_TITLE "...");
+
+  // Input buttons
+  pinMode(GPIO_BUTTON_TOP, INPUT);
+  pinMode(GPIO_BUTTON_BOTTOM, INPUT);
 
   // Start LVGL
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
@@ -247,6 +256,12 @@ void setup()
   disp_drv.flush_cb = tft_espi_flush;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);
+  // Initialize the keyboard
+  static lv_indev_drv_t indev_drv;
+  lv_indev_drv_init(&indev_drv);
+  indev_drv.type = LV_INDEV_TYPE_KEYPAD;
+  indev_drv.read_cb = button_read;
+  lv_indev_drv_register(&indev_drv);
   // For debugging
   lv_log_register_print_cb(&lvgl_log);
 
@@ -299,6 +314,7 @@ void setup()
   else
     log_e("Timezone %s not found!", iotWebParamTimeZone.value());
 
+  /*
   button1.setClickHandler([](Button2 button)
                           {
         log_v("Button 1 clicked");
@@ -312,6 +328,7 @@ void setup()
             last_minute = -1;
             break;
         } });
+        */
 }
 
 void display_flight(std::list<flight_info>::const_iterator it)
@@ -618,42 +635,10 @@ void display_flights()
   }
 }
 
-void display_clock()
-{
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  if (timeinfo.tm_min != last_minute)
-  {
-    last_minute = timeinfo.tm_min;
-    log_i("Updating clock");
-
-    lv_obj_clean(lv_scr_act());
-
-    if (time_valid())
-    {
-      auto label_date = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_date, get_localtime("%F").c_str());
-      lv_obj_set_style_text_font(label_date, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-      lv_obj_align(label_date, LV_ALIGN_TOP_MID, 0, 0);
-      auto label_time = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_time, get_localtime("%R").c_str());
-      lv_obj_set_style_text_font(label_time, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-      lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
-      auto label_timezone = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_timezone, iotWebParamTimeZone.value());
-      lv_obj_align(label_timezone, LV_ALIGN_BOTTOM_MID, 0, 0);
-    }
-  }
-}
-
 void loop()
 {
   // LVGL
   lv_timer_handler();
-
-  // Button
-  button1.loop();
-  button2.loop();
 
   // Web configuration
   iotWebConf.doLoop();
@@ -674,15 +659,7 @@ void loop()
     break;
 
   case iotwebconf::NetworkState::OnLine:
-    switch (display_state)
-    {
-    case display_state_t::display_airtraffic:
-      display_flights();
-      break;
-    case display_state_t::display_time:
-      display_clock();
-      break;
-    }
+    display_flights();
     break;
   }
 
