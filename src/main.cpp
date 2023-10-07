@@ -35,7 +35,8 @@ auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 // Web server
 DNSServer dnsServer;
 WebServer server(80);
-IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
+auto deviceName = String(WIFI_SSID) + "-" + String(ESP.getEfuseMac(), 16);
+IotWebConf iotWebConf(deviceName.c_str(), &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
 
 auto param_group = iotwebconf::ParameterGroup("flightradar", "Flight radar");
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
@@ -141,7 +142,7 @@ void handleRoot()
   auto latRange = String(iotWebParamLatitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
   auto lonRange = String(iotWebParamLongitudeRange.value()) + "&deg; (" + (iotWebParamMetric.value() ? String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km" : String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi") + ")";
 
-  const moustache_variable_t substitutions[] = {
+  moustache_variable_t substitutions[] = {
       // Version / CPU
       {"AppTitle", APP_TITLE},
       {"AppVersion", APP_VERSION},
