@@ -58,19 +58,6 @@ std::list<flight_info> flights;
 // Flight to display
 std::list<flight_info>::const_iterator it = flights.cbegin();
 
-// Variables for Clock
-int last_minute = -1;
-
-typedef enum display_state
-{
-  display_airtraffic,
-  display_time,
-  display_info
-} display_state_t;
-
-// Current display state
-display_state_t display_state = display_state_t::display_airtraffic;
-
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
   server.sendHeader("Content-encoding", "gzip");
@@ -648,34 +635,6 @@ void display_flights()
   }
 }
 
-void display_clock()
-{
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  if (timeinfo.tm_min != last_minute)
-  {
-    last_minute = timeinfo.tm_min;
-    log_i("Updating clock");
-
-    lv_obj_clean(lv_scr_act());
-
-    if (time_valid())
-    {
-      auto label_date = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_date, get_localtime("%F").c_str());
-      lv_obj_set_style_text_font(label_date, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-      lv_obj_align(label_date, LV_ALIGN_TOP_MID, 0, 0);
-      auto label_time = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_time, get_localtime("%R").c_str());
-      lv_obj_set_style_text_font(label_time, &lv_font_montserrat_22, LV_STATE_DEFAULT);
-      lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
-      auto label_timezone = lv_label_create(lv_scr_act());
-      lv_label_set_text(label_timezone, iotWebParamTimeZone.value());
-      lv_obj_align(label_timezone, LV_ALIGN_BOTTOM_MID, 0, 0);
-    }
-  }
-}
-
 void loop()
 {
   // LVGL
@@ -700,15 +659,7 @@ void loop()
     break;
 
   case iotwebconf::NetworkState::OnLine:
-    switch (display_state)
-    {
-    case display_state_t::display_airtraffic:
-      display_flights();
-      break;
-    case display_state_t::display_time:
-      display_clock();
-      break;
-    }
+    display_flights();
     break;
   }
 
