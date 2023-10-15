@@ -21,5 +21,5 @@
 #define PIN_ADC 34
 
 // GPIO of the buttons on the TTGO Display
-#define GPIO_BUTTON_TOP 35
-#define GPIO_BUTTON_BOTTOM 0
+#define GPIO_BUTTON_TOP 35      // BUTTON1
+#define GPIO_BUTTON_BOTTOM 0    // BUTTON2

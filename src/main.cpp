@@ -189,15 +189,7 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
   static uint32_t last_key;
-
-  uint32_t key;
-  if (!digitalRead(GPIO_BUTTON_TOP))
-    key = LV_KEY_NEXT;
-  else if (!digitalRead(GPIO_BUTTON_BOTTOM))
-    key = LV_KEY_ENTER;
-  else
-    key = 0;
-
+  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER : 0;
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -230,8 +222,8 @@ void setup()
   log_i("Starting " APP_TITLE "...");
 
   // Input buttons
-  pinMode(GPIO_BUTTON_TOP, INPUT);
-  pinMode(GPIO_BUTTON_BOTTOM, INPUT);
+  pinMode(GPIO_BUTTON_TOP, INPUT_PULLUP);
+  pinMode(GPIO_BUTTON_BOTTOM, INPUT_PULLUP);
 
   // Start LVGL
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
@@ -313,22 +305,6 @@ void setup()
   }
   else
     log_e("Timezone %s not found!", iotWebParamTimeZone.value());
-
-  /*
-  button1.setClickHandler([](Button2 button)
-                          {
-        log_v("Button 1 clicked");
-        switch (display_state) {
-        case display_state_t::display_time:
-            display_state = display_state_t::display_airtraffic;
-            next_update = 0;
-            break;
-        case display_state_t::display_airtraffic:
-            display_state = display_state_t::display_time;
-            last_minute = -1;
-            break;
-        } });
-        */
 }
 
 void display_flight(std::list<flight_info>::const_iterator it)
