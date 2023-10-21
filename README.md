@@ -7,7 +7,7 @@ Easy configuration through the web interface.
 
 ![FlightRadar](assets/20220909_221059.jpg)
 
-Display flights in your area and display them on the screen of the ESP32 TTGO-Display module.
+Display flights in your area and display them on the screen of the ESP32 TTGO-Display or LilyGo-T-Display-S3 module.
 Under the hood it uses the API of [FlightRadar24.com](https://www.flightradar24.com/) but only for flight updates.
 Internally there is a database with airport, aircraft and airline data with graphics to minimize the requests.
 
@@ -17,22 +17,24 @@ This application retrieves the current flights near a configured location and di
 ![Example3](assets/20220909_221104.jpg)
 
 ## History
-|             | |
-| ---         | --- |
-| Oct 25 2022 | Use LVGL for graphics |
-| Oct 15 2022 | Filtering for airborne/grounded/gliders/vehicles |
-| Oct 14 2022 | Added vertical speed |
-| Oct 2 2022  | Bootstrap for HTML overview |
-| Jun 16 2022 | Wifi manager for configuration |
-| Jun 15 2022 | Use time zones |
-| Apr 27 2022 | Import aircraft types |
-| Dec 5 2021  | Compressing of RGB565 |
-| Nov 21 2021 | Import airlines from Wiki page |
-| Nov 8 2021  | New airline logos |
-| Oct 31 2021 | Added heading, altitude and speed |
-| Oct 6 2021  | Move images from SPIFF to code |
-| May 25 2021 | GUI update |
-| Dec 26 2019 | Initial version: The "birth" of the project |
+
+|             |                                                                      |
+| ----------- | -------------------------------------------------------------------- |
+| Oct 21 2023 | Added configuration from LilyGo-T-Display-S3 with help from ulihuber |
+| Oct 25 2022 | Use LVGL for graphics                                                |
+| Oct 15 2022 | Filtering for airborne/grounded/gliders/vehicles                     |
+| Oct 14 2022 | Added vertical speed                                                 |
+| Oct 2 2022  | Bootstrap for HTML overview                                          |
+| Jun 16 2022 | Wifi manager for configuration                                       |
+| Jun 15 2022 | Use time zones                                                       |
+| Apr 27 2022 | Import aircraft types                                                |
+| Dec 5 2021  | Compressing of RGB565                                                |
+| Nov 21 2021 | Import airlines from Wiki page                                       |
+| Nov 8 2021  | New airline logos                                                    |
+| Oct 31 2021 | Added heading, altitude and speed                                    |
+| Oct 6 2021  | Move images from SPIFF to code                                       |
+| May 25 2021 | GUI update                                                           |
+| Dec 26 2019 | Initial version: The "birth" of the project                          |
 
 ## Features
 
@@ -40,7 +42,7 @@ The FlightRadar firmware offers the following features:
 
 - Lookup of airplane type and specifics (manufacturer, type, description, engine type and count)
 - Lookup of carrier and (if available) display the logo
-- Display GPS location, registration,  altitude, heading, speed and vertical speed of the airplane
+- Display GPS location, registration, altitude, heading, speed and vertical speed of the airplane
 - Lookup of the full name for the from- and to airports name and region, lat/lon
 - Lookup and display flag for the countries
 - No account required, ony WiFi with internet connection!
@@ -66,7 +68,7 @@ Take the following steps to install platformIo. There is a lot of information on
 - Install Visual Studio Code
 - From the Extensions menu select PlatformIo
 - Clone this repository, and open the folder in your workspace
-- Compile and upload to the ESP32-TTGO-Display
+- Compile and upload to the ESP32-TTGO-Display / LilyGo-T-Display-S3
 
 ## Status overview
 
@@ -78,7 +80,7 @@ Here details about the device, network and settings are shown.
 
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
 
-- During startup, connect to the access point ```FlightRadar``` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
+- During startup, connect to the access point `FlightRadar` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
 - Find the internal IP address of the FlightRadar (from your home router) and enter the url.
 - When the password is lost, a fix is to completely erase the ESP32 using the pio run -t erase command.
   This will reset the device including configuration.
@@ -115,7 +117,7 @@ Some tips:
 
 ## Case / Enclosure
 
-Please take a look at the STL file to create a case for the FlightRadar to host the TTGO Display and a battery.
+Please take a look at the STL file to create a case for the FlightRadar to host the TTGO-Display and a battery.
 Thanks to Erwin Reid for creating the models.
 
 Files can be found at [Thingverse](https://www.thingiverse.com/thing:5412296/files).

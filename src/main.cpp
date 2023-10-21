@@ -189,7 +189,8 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
   static uint32_t last_key;
-  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER : 0;
+  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER
+                                                                                                            : 0;
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -229,7 +230,6 @@ void setup()
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
   lv_init();
   tft.begin();
-  tft.initDMA(true);
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
   // Width and height are flipped because is rotated 90 degrees
