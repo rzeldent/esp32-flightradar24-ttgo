@@ -3,8 +3,6 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
-#include <ttgo_display.h>
-
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <lvgl.h>
@@ -212,11 +210,13 @@ void setup()
   // Disable brownout
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
+#ifdef GPIO_ADC_EN
   //  ADC_EN is the ADC detection enable port
   //  If the USB port is used for power supply, it is turned on by default.
   //  If it is powered by battery, it needs to be set to high level
   pinMode(GPIO_ADC_EN, OUTPUT);
   digitalWrite(GPIO_ADC_EN, HIGH);
+#endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Free heap: %d bytes", ESP.getFreeHeap());

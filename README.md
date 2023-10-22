@@ -13,13 +13,16 @@ Internally there is a database with airport, aircraft and airline data with grap
 
 This application retrieves the current flights near a configured location and displays them sequentially on the display.
 
-![Example2](assets/20220909_221101.jpg)
-![Example3](assets/20220909_221104.jpg)
+![Example1](assets/20220909_221101.jpg)
+![Example2](assets/20220909_221104.jpg)
+
+Example of layout on LilyGo-T-Display-S3
+![Example3](assets/20231022_000000.jpeg)
 
 ## History
 
 |             |                                                                      |
-| ----------- | -------------------------------------------------------------------- |
+| :---------- | :------------------------------------------------------------------- |
 | Oct 21 2023 | Added configuration from LilyGo-T-Display-S3 with help from ulihuber |
 | Oct 25 2022 | Use LVGL for graphics                                                |
 | Oct 15 2022 | Filtering for airborne/grounded/gliders/vehicles                     |
