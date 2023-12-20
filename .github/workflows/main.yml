@@ -5,23 +5,30 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
         with:
-          python-version: '3.x'
-          architecture: 'x64'
+          submodules: 'true'      
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio          
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
       - name: Generate image files
         run: |
           chmod +x ./generate_images.sh
           ./generate_images.sh
         shell: bash
-      - name: Install PlatformIO
+      - name: Install PlatformIO Core
         run: python -m pip install platformio
       - name: Build firmware
         run: platformio run
-      - name: Archive
-        uses: actions/upload-artifact@v2
+      - name: Archive firmwares
+        uses: actions/upload-artifact@v3
         with:
-          name: firmware.bin
-          path: .pio/build/*/firmware.bin
+          name: firmwares.zip
+          path: .pio/build/*/*.bin

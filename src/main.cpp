@@ -3,8 +3,6 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
-#include <ttgo_display.h>
-
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <lvgl.h>
@@ -48,7 +46,7 @@ auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("
 auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Include grounded").defaultValue(DEFAULT_GROUND).build();
 auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Include gliders").defaultValue(DEFAULT_GLIDERS).build();
 auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Include vehicles").defaultValue(DEFAULT_VEHICLES).build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_tz_t)>>("timezone").label("Choose timezone").optionValues(posix_timezone_tzs->zone_name).optionNames(posix_timezone_tzs->zone_name).optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0])).nameLength(sizeof(timezone_name)).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
 // Variables for flight info
@@ -189,7 +187,8 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
   static uint32_t last_key;
-  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER : 0;
+  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER
+                                                                                                            : 0;
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -211,11 +210,13 @@ void setup()
   // Disable brownout
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
+#ifdef GPIO_ADC_EN
   //  ADC_EN is the ADC detection enable port
   //  If the USB port is used for power supply, it is turned on by default.
   //  If it is powered by battery, it needs to be set to high level
   pinMode(GPIO_ADC_EN, OUTPUT);
   digitalWrite(GPIO_ADC_EN, HIGH);
+#endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
   log_i("Free heap: %d bytes", ESP.getFreeHeap());
@@ -229,7 +230,6 @@ void setup()
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
   lv_init();
   tft.begin();
-  tft.initDMA(true);
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
   // Width and height are flipped because is rotated 90 degrees
