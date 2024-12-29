@@ -956,7 +956,6 @@ static const airport_t airports[] = {
 { "BQU", "J F Mitchell Airport", "Bequia", "06", &country_VC, 12.9884, -61.262001, 15 },
 { "BQV", "Bartlett Cove Seaplane Base", "Gustavus", "AK", &country_US, 58.4552001953, -135.884994507, 0 },
 { "BQW", "Balgo Hill Airport", "Balgo", "WA", &country_AU, -20.1483, 127.973, 1440 },
-{ "BR-", "Tucuma Airport", "Tucuma", "AM", &country_BR, -3.9670000076293945, -66.43299865722656, 59 },
 { "BRA", "Barreiras Airport", "Barreiras", "BA", &country_BR, -12.078900337219238, -45.00899887084961, 2447 },
 { "BRB", "Barreirinhas National Airport", "Barreirinhas", "MA", &country_BR, -2.756628, -42.805666, 40 },
 { "BRC", "San Carlos De Bariloche Airport", "San Carlos de Bariloche", "R", &country_AR, -41.151199, -71.157501, 2774 },
