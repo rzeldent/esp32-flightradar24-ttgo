@@ -37,7 +37,7 @@ struct flight_info
 
     int altitude_metric() const { return altitude * FT_TO_M; }
     int ground_speed_metric() const { return ground_speed * KTS_TO_KMH; }
-    int vertical_speed_metric() const { return vertical_speed * KTS_TO_KMH; }
+    int vertical_speed_metric() const { return vertical_speed * FT_TO_M; }
 
     bool squawk_hijack() const { return squawk == "7500"; }
     bool squawk_radio_failure() const { return squawk == "7600"; }
