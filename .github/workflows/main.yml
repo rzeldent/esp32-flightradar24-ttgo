@@ -41,11 +41,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-   steps:
+    steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ./**
+          pattern: firmware-*
           path: ./artifacts
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
