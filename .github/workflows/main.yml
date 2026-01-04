@@ -7,8 +7,11 @@ on:
 jobs:
 
   build:
-    name: Build
+    name: Build ${{ matrix.environment }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [esp32dev, lilygo-t-display-s3]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,7 +21,7 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-          key: ${{ runner.os }}-pio          
+          key: ${{ runner.os }}-pio-${{ matrix.environment }}
       - name: Set up python
         uses: actions/setup-python@v5
         with:
@@ -30,13 +33,13 @@ jobs:
         shell: bash
       - name: Install PlatformIO Core
         run: python -m pip install platformio
-      - name: Build firmware
-        run: platformio run
-      - name: Archive firmwares
+      - name: Build firmware for ${{ matrix.environment }}
+        run: platformio run -e ${{ matrix.environment }}
+      - name: Archive firmware for ${{ matrix.environment }}
         uses: actions/upload-artifact@v4
         with:
-          name: firmware.bin
-          path: .pio/build/*/firmware.bin
+          name: firmware-${{ matrix.environment }}
+          path: .pio/build/${{ matrix.environment }}/firmware.bin
 
   release:
     needs: build
@@ -45,14 +48,28 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download artifacts
+      - name: Download esp32dev firmware
         uses: actions/download-artifact@v4
         with:
-          name: firmware.bin
-          path: ./artifacts
+          name: firmware-esp32dev
+          path: ./artifacts/esp32dev
+      - name: Download lilygo-t-display-s3 firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-lilygo-t-display-s3
+          path: ./artifacts/lilygo-t-display-s3
+      - name: Rename firmware files
+        run: |
+          mv ./artifacts/esp32dev/firmware.bin ./artifacts/firmware-esp32dev.bin
+          mv ./artifacts/lilygo-t-display-s3/firmware.bin ./artifacts/firmware-lilygo-t-display-s3.bin
+        shell: bash
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**
+          files: |
+            artifacts/firmware-esp32dev.bin
+            artifacts/firmware-lilygo-t-display-s3.bin
           name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}          
+          tag_name: ${{ github.ref_name }}
+          overwrite: true
+          fail_on_unmatched_files: true
