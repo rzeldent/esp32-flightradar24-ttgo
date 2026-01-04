@@ -30,11 +30,14 @@ jobs:
         run: python -m pip install platformio
       - name: Build firmware for ${{ matrix.environment }}
         run: platformio run -e ${{ matrix.environment }}
-      - name: Archive firmware for ${{ matrix.environment }}
+      - name: Rename firmware
+        run: cp .pio/build/${{ matrix.environment }}/firmware.bin \
+               .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.environment }}
-          path: .pio/build/${{ matrix.environment }}/firmware.bin
+          path: .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
   release:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
@@ -42,14 +45,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          pattern: firmware-*
+          name: firmware-${{ matrix.environment }}
           path: ./artifacts
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+
+      - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**
+          files: artifacts/firmware-${{ matrix.environment }}.bin
+          overwrite: true
+          fail_on_unmatched_files: true
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
