@@ -43,18 +43,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    strategy:
-      matrix:
-        environment: [esp32dev, lilygo-t-display-s3]      
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: firmware-${{ matrix.environment }}
+          pattern: firmware-*.bin
           path: ./artifacts
+          merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/firmware-${{ matrix.environment }}.bin
+          files: |
+            artifacts/firmware-*.bin
           overwrite: true
           fail_on_unmatched_files: true
           name: Release ${{ github.ref_name }}
