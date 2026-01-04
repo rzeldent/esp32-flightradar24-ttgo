@@ -12,20 +12,15 @@ jobs:
     strategy:
       matrix:
         environment: [esp32dev, lilygo-t-display-s3]
+        
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'true'      
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio-${{ matrix.environment }}-${{ hashFiles('platformio.ini') }}
       - name: Set up python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.x"
       - name: Generate image files
         run: |
           chmod +x ./generate_images.sh
@@ -40,36 +35,21 @@ jobs:
         with:
           name: firmware-${{ matrix.environment }}
           path: .pio/build/${{ matrix.environment }}/firmware.bin
-
   release:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:
-      - name: Download esp32dev firmware
+   steps:
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: firmware-esp32dev
-          path: ./artifacts/esp32dev
-      - name: Download lilygo-t-display-s3 firmware
-        uses: actions/download-artifact@v4
-        with:
-          name: firmware-lilygo-t-display-s3
-          path: ./artifacts/lilygo-t-display-s3
-      - name: Rename firmware files
-        run: |
-          mv ./artifacts/esp32dev/firmware.bin ./artifacts/firmware-esp32dev.bin
-          mv ./artifacts/lilygo-t-display-s3/firmware.bin ./artifacts/firmware-lilygo-t-display-s3.bin
-        shell: bash
+          name: ./**
+          path: ./artifacts
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/firmware-esp32dev.bin
-            artifacts/firmware-lilygo-t-display-s3.bin
+          files: artifacts/**
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          overwrite: true
-          fail_on_unmatched_files: true
