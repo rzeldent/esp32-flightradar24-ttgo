@@ -46,14 +46,14 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: firmware-*.bin
+          pattern: firmware-*
           path: ./artifacts
           merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/firmware-*.bin
+            artifacts/firmware-*
           overwrite: true
           fail_on_unmatched_files: true
           name: Release ${{ github.ref_name }}
