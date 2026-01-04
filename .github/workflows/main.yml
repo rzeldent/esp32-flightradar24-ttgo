@@ -35,8 +35,8 @@ jobs:
       - name: Archive firmwares
         uses: actions/upload-artifact@v4
         with:
-          name: firmwares.zip
-          path: .pio/build/*/*.bin
+          name: firmware.bin
+          path: .pio/build/*/firmware.bin
 
   release:
     needs: build
