@@ -33,7 +33,7 @@ jobs:
       - name: Rename firmware
         run: mv .pio/build/${{ matrix.environment }}/firmware.bin .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
       - name: Upload firmware
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: firmware-${{ matrix.environment }}
           path: .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
