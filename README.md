@@ -23,6 +23,8 @@ Example of layout on LilyGo-T-Display-S3
 
 |             |                                                                      |
 | :---------- | :------------------------------------------------------------------- |
+| Jan 10 2026 | Optimized data tables                                                |
+| Jan 4 2026  | Created build / release script                                       |
 | Oct 21 2023 | Added configuration from LilyGo-T-Display-S3 with help from ulihuber |
 | Oct 25 2022 | Use LVGL for graphics                                                |
 | Oct 15 2022 | Filtering for airborne/grounded/gliders/vehicles                     |
