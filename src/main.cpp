@@ -432,9 +432,12 @@ void display_flight(std::list<flight_info>::const_iterator it)
   {
     auto country = get_country(iata_origin->country);
     log_i("From %s: %s - %s (%s) %s. %s", iata_origin->iata_airport, iata_origin->name, iata_origin->city, iata_origin->region, country->name, format_gps_location(iata_origin->latitude, iata_origin->longitude).c_str());
-    auto image = lv_gif_create(lv_scr_act());
-    lv_gif_set_src(image, (const lv_img_dsc_t *)&country->flag);
-    lv_obj_align(image, LV_ALIGN_BOTTOM_LEFT, 0, -20);
+    if (country->flag.data)
+    {
+      auto image = lv_gif_create(lv_scr_act());
+      lv_gif_set_src(image, &country->flag);
+      lv_obj_align(image, LV_ALIGN_BOTTOM_LEFT, 0, -20);
+    }
 
     auto label_origin = lv_label_create(lv_scr_act());
     lv_label_set_text(label_origin, iata_origin->name);
@@ -450,14 +453,11 @@ void display_flight(std::list<flight_info>::const_iterator it)
   {
     auto country = get_country(iata_destination->country);
     log_i("To %s: %s - %s (%s) %s. %s", iata_destination->iata_airport, iata_destination->name, iata_destination->city, iata_destination->region, country->name, format_gps_location(iata_destination->latitude, iata_destination->longitude).c_str());
-    if (iata_destination->country != COUNTRY_ZZ)
+    if (country->flag.data)
     {
-      if (country->flag.data)
-      {
-        auto image = lv_gif_create(lv_scr_act());
-        lv_gif_set_src(image, (const lv_img_dsc_t *)&country->flag);
-        lv_obj_align(image, LV_ALIGN_BOTTOM_LEFT, 0, 0);
-      }
+      auto image = lv_gif_create(lv_scr_act());
+      lv_gif_set_src(image, &country->flag);
+      lv_obj_align(image, LV_ALIGN_BOTTOM_LEFT, 0, 0);
     }
 
     auto label_destination = lv_label_create(lv_scr_act());
