@@ -9,8 +9,8 @@ typedef struct airport
     const char *city;
     const char *region;
     const country_code_t country;
-    const float latitude;
-    const float longitude;
+    const int32_t latitude;      // scaled by 1,000,000 (e.g., 40.7128 * 1000000 = 40712800)
+    const int32_t longitude;     // scaled by 1,000,000 (e.g., -74.0060 * 1000000 = -74006000)
     const int16_t elevation_ft;
 } airport_t;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <cstdint>
 
 String format_degrees(float value)
 {
@@ -32,3 +33,12 @@ String format_gps_location(float lat, float lon)
 {
     return format_lat(lat) + " " + format_lon(lon);
 }
+
+// Overload for int32_t scaled coordinates (scaled by 1,000,000)
+String format_gps_location(int32_t lat_scaled, int32_t lon_scaled)
+{
+    float lat = lat_scaled / 1000000.0f;
+    float lon = lon_scaled / 1000000.0f;
+    return format_gps_location(lat, lon);
+}
+
