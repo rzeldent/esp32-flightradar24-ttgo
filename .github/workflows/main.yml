@@ -1,23 +1,26 @@
 name: Platform IO CI
-on: [push]
+on:
+  push:
+    branches: '**'
+    tags: ['v*']
+
 jobs:
+
   build:
-    name: Build
+    name: Build ${{ matrix.environment }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [esp32dev, lilygo-t-display-s3]
+        
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'true'      
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio          
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.9"
+          python-version: "3.x"
       - name: Generate image files
         run: |
           chmod +x ./generate_images.sh
@@ -25,10 +28,30 @@ jobs:
         shell: bash
       - name: Install PlatformIO Core
         run: python -m pip install platformio
-      - name: Build firmware
-        run: platformio run
-      - name: Archive firmwares
-        uses: actions/upload-artifact@v4
+      - name: Build firmware for ${{ matrix.environment }}
+        run: platformio run -e ${{ matrix.environment }}
+      - name: Rename firmware
+        run: mv .pio/build/${{ matrix.environment }}/firmware.bin .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
+      - name: Upload firmware
+        uses: actions/upload-artifact@v6
         with:
-          name: firmwares.zip
-          path: .pio/build/*/*.bin
+          name: firmware-${{ matrix.environment }}
+          path: .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: firmware-*
+          path: ./artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}

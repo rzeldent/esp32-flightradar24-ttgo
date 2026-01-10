@@ -2,257 +2,41 @@
 
 #include <country_flags.h>
 
+typedef enum
+{
+    // These enumerators must match the index in the countries[] array in countries.cpp
+    COUNTRY_AD, COUNTRY_AE, COUNTRY_AF, COUNTRY_AG, COUNTRY_AI, COUNTRY_AL, COUNTRY_AM, COUNTRY_AO, COUNTRY_AQ, COUNTRY_AR,
+    COUNTRY_AS, COUNTRY_AT, COUNTRY_AU, COUNTRY_AW, COUNTRY_AZ, COUNTRY_BA, COUNTRY_BB, COUNTRY_BD, COUNTRY_BE, COUNTRY_BF,
+    COUNTRY_BG, COUNTRY_BH, COUNTRY_BI, COUNTRY_BJ, COUNTRY_BL, COUNTRY_BM, COUNTRY_BN, COUNTRY_BO, COUNTRY_BQ, COUNTRY_BR,
+    COUNTRY_BS, COUNTRY_BT, COUNTRY_BW, COUNTRY_BY, COUNTRY_BZ, COUNTRY_CA, COUNTRY_CC, COUNTRY_CD, COUNTRY_CF, COUNTRY_CG,
+    COUNTRY_CH, COUNTRY_CI, COUNTRY_CK, COUNTRY_CL, COUNTRY_CM, COUNTRY_CN, COUNTRY_CO, COUNTRY_CR, COUNTRY_CU, COUNTRY_CV,
+    COUNTRY_CW, COUNTRY_CX, COUNTRY_CY, COUNTRY_CZ, COUNTRY_DE, COUNTRY_DJ, COUNTRY_DK, COUNTRY_DM, COUNTRY_DO, COUNTRY_DZ,
+    COUNTRY_EC, COUNTRY_EE, COUNTRY_EG, COUNTRY_EH, COUNTRY_ER, COUNTRY_ES, COUNTRY_ET, COUNTRY_FI, COUNTRY_FJ, COUNTRY_FK,
+    COUNTRY_FM, COUNTRY_FO, COUNTRY_FR, COUNTRY_GA, COUNTRY_GB, COUNTRY_GD, COUNTRY_GE, COUNTRY_GF, COUNTRY_GG, COUNTRY_GH,
+    COUNTRY_GI, COUNTRY_GL, COUNTRY_GM, COUNTRY_GN, COUNTRY_GP, COUNTRY_GQ, COUNTRY_GR, COUNTRY_GS, COUNTRY_GT, COUNTRY_GU,
+    COUNTRY_GW, COUNTRY_GY, COUNTRY_HK, COUNTRY_HN, COUNTRY_HR, COUNTRY_HT, COUNTRY_HU, COUNTRY_ID, COUNTRY_IE, COUNTRY_IL,
+    COUNTRY_IM, COUNTRY_IN, COUNTRY_IO, COUNTRY_IQ, COUNTRY_IR, COUNTRY_IS, COUNTRY_IT, COUNTRY_JE, COUNTRY_JM, COUNTRY_JO,
+    COUNTRY_JP, COUNTRY_KE, COUNTRY_KG, COUNTRY_KH, COUNTRY_KI, COUNTRY_KM, COUNTRY_KN, COUNTRY_KP, COUNTRY_KR, COUNTRY_KW,
+    COUNTRY_KY, COUNTRY_KZ, COUNTRY_LA, COUNTRY_LB, COUNTRY_LC, COUNTRY_LI, COUNTRY_LK, COUNTRY_LR, COUNTRY_LS, COUNTRY_LT,
+    COUNTRY_LU, COUNTRY_LV, COUNTRY_LY, COUNTRY_MA, COUNTRY_MC, COUNTRY_MD, COUNTRY_ME, COUNTRY_MF, COUNTRY_MG, COUNTRY_MH,
+    COUNTRY_MK, COUNTRY_ML, COUNTRY_MM, COUNTRY_MN, COUNTRY_MO, COUNTRY_MP, COUNTRY_MQ, COUNTRY_MR, COUNTRY_MS, COUNTRY_MT,
+    COUNTRY_MU, COUNTRY_MV, COUNTRY_MW, COUNTRY_MX, COUNTRY_MY, COUNTRY_MZ, COUNTRY_NA, COUNTRY_NC, COUNTRY_NE, COUNTRY_NF,
+    COUNTRY_NG, COUNTRY_NI, COUNTRY_NL, COUNTRY_NO, COUNTRY_NP, COUNTRY_NR, COUNTRY_NU, COUNTRY_NZ, COUNTRY_OM, COUNTRY_PA,
+    COUNTRY_PE, COUNTRY_PF, COUNTRY_PG, COUNTRY_PH, COUNTRY_PK, COUNTRY_PL, COUNTRY_PM, COUNTRY_PN, COUNTRY_PR, COUNTRY_PS,
+    COUNTRY_PT, COUNTRY_PW, COUNTRY_PY, COUNTRY_QA, COUNTRY_RE, COUNTRY_RO, COUNTRY_RS, COUNTRY_RU, COUNTRY_RW, COUNTRY_SA,
+    COUNTRY_SB, COUNTRY_SC, COUNTRY_SD, COUNTRY_SE, COUNTRY_SG, COUNTRY_SH, COUNTRY_SI, COUNTRY_SK, COUNTRY_SL, COUNTRY_SM,
+    COUNTRY_SN, COUNTRY_SO, COUNTRY_SR, COUNTRY_SS, COUNTRY_ST, COUNTRY_SV, COUNTRY_SX, COUNTRY_SY, COUNTRY_SZ, COUNTRY_TC,
+    COUNTRY_TD, COUNTRY_TF, COUNTRY_TG, COUNTRY_TH, COUNTRY_TJ, COUNTRY_TK, COUNTRY_TL, COUNTRY_TM, COUNTRY_TN, COUNTRY_TO,
+    COUNTRY_TR, COUNTRY_TT, COUNTRY_TV, COUNTRY_TW, COUNTRY_TZ, COUNTRY_UA, COUNTRY_UG, COUNTRY_UM, COUNTRY_US, COUNTRY_UY,
+    COUNTRY_UZ, COUNTRY_VA, COUNTRY_VC, COUNTRY_VE, COUNTRY_VG, COUNTRY_VI, COUNTRY_VN, COUNTRY_VU, COUNTRY_WF, COUNTRY_WS,
+    COUNTRY_XK, COUNTRY_YE, COUNTRY_YT, COUNTRY_ZA, COUNTRY_ZM, COUNTRY_ZW, COUNTRY_ZZ
+} country_code_t;
+
 typedef struct country
 {
-    const char *iso3166;
+    char iso3166[2];
     const char *name;
     const lv_img_dsc_t flag;
 } country_t;
 
-extern const country_t country_AD;
-extern const country_t country_AE;
-extern const country_t country_AF;
-extern const country_t country_AG;
-extern const country_t country_AI;
-extern const country_t country_AL;
-extern const country_t country_AM;
-extern const country_t country_AO;
-extern const country_t country_AQ;
-extern const country_t country_AR;
-extern const country_t country_AS;
-extern const country_t country_AT;
-extern const country_t country_AU;
-extern const country_t country_AW;
-extern const country_t country_AZ;
-extern const country_t country_BA;
-extern const country_t country_BB;
-extern const country_t country_BD;
-extern const country_t country_BE;
-extern const country_t country_BF;
-extern const country_t country_BG;
-extern const country_t country_BH;
-extern const country_t country_BI;
-extern const country_t country_BJ;
-extern const country_t country_BL;
-extern const country_t country_BM;
-extern const country_t country_BN;
-extern const country_t country_BO;
-extern const country_t country_BQ;
-extern const country_t country_BR;
-extern const country_t country_BS;
-extern const country_t country_BT;
-extern const country_t country_BW;
-extern const country_t country_BY;
-extern const country_t country_BZ;
-extern const country_t country_CA;
-extern const country_t country_CC;
-extern const country_t country_CD;
-extern const country_t country_CF;
-extern const country_t country_CG;
-extern const country_t country_CH;
-extern const country_t country_CI;
-extern const country_t country_CK;
-extern const country_t country_CL;
-extern const country_t country_CM;
-extern const country_t country_CN;
-extern const country_t country_CO;
-extern const country_t country_CR;
-extern const country_t country_CU;
-extern const country_t country_CV;
-extern const country_t country_CW;
-extern const country_t country_CX;
-extern const country_t country_CY;
-extern const country_t country_CZ;
-extern const country_t country_DE;
-extern const country_t country_DJ;
-extern const country_t country_DK;
-extern const country_t country_DM;
-extern const country_t country_DO;
-extern const country_t country_DZ;
-extern const country_t country_EC;
-extern const country_t country_EE;
-extern const country_t country_EG;
-extern const country_t country_EH;
-extern const country_t country_ER;
-extern const country_t country_ES;
-extern const country_t country_ET;
-extern const country_t country_FI;
-extern const country_t country_FJ;
-extern const country_t country_FK;
-extern const country_t country_FM;
-extern const country_t country_FO;
-extern const country_t country_FR;
-extern const country_t country_GA;
-extern const country_t country_GB;
-extern const country_t country_GD;
-extern const country_t country_GE;
-extern const country_t country_GF;
-extern const country_t country_GG;
-extern const country_t country_GH;
-extern const country_t country_GI;
-extern const country_t country_GL;
-extern const country_t country_GM;
-extern const country_t country_GN;
-extern const country_t country_GP;
-extern const country_t country_GQ;
-extern const country_t country_GR;
-extern const country_t country_GS;
-extern const country_t country_GT;
-extern const country_t country_GU;
-extern const country_t country_GW;
-extern const country_t country_GY;
-extern const country_t country_HK;
-extern const country_t country_HN;
-extern const country_t country_HR;
-extern const country_t country_HT;
-extern const country_t country_HU;
-extern const country_t country_ID;
-extern const country_t country_IE;
-extern const country_t country_IL;
-extern const country_t country_IM;
-extern const country_t country_IN;
-extern const country_t country_IO;
-extern const country_t country_IQ;
-extern const country_t country_IR;
-extern const country_t country_IS;
-extern const country_t country_IT;
-extern const country_t country_JE;
-extern const country_t country_JM;
-extern const country_t country_JO;
-extern const country_t country_JP;
-extern const country_t country_KE;
-extern const country_t country_KG;
-extern const country_t country_KH;
-extern const country_t country_KI;
-extern const country_t country_KM;
-extern const country_t country_KN;
-extern const country_t country_KP;
-extern const country_t country_KR;
-extern const country_t country_KW;
-extern const country_t country_KY;
-extern const country_t country_KZ;
-extern const country_t country_LA;
-extern const country_t country_LB;
-extern const country_t country_LC;
-extern const country_t country_LI;
-extern const country_t country_LK;
-extern const country_t country_LR;
-extern const country_t country_LS;
-extern const country_t country_LT;
-extern const country_t country_LU;
-extern const country_t country_LV;
-extern const country_t country_LY;
-extern const country_t country_MA;
-extern const country_t country_MC;
-extern const country_t country_MD;
-extern const country_t country_ME;
-extern const country_t country_MF;
-extern const country_t country_MG;
-extern const country_t country_MH;
-extern const country_t country_MK;
-extern const country_t country_ML;
-extern const country_t country_MM;
-extern const country_t country_MN;
-extern const country_t country_MO;
-extern const country_t country_MP;
-extern const country_t country_MQ;
-extern const country_t country_MR;
-extern const country_t country_MS;
-extern const country_t country_MT;
-extern const country_t country_MU;
-extern const country_t country_MV;
-extern const country_t country_MW;
-extern const country_t country_MX;
-extern const country_t country_MY;
-extern const country_t country_MZ;
-extern const country_t country_NA;
-extern const country_t country_NC;
-extern const country_t country_NE;
-extern const country_t country_NF;
-extern const country_t country_NG;
-extern const country_t country_NI;
-extern const country_t country_NL;
-extern const country_t country_NO;
-extern const country_t country_NP;
-extern const country_t country_NR;
-extern const country_t country_NU;
-extern const country_t country_NZ;
-extern const country_t country_OM;
-extern const country_t country_PA;
-extern const country_t country_PE;
-extern const country_t country_PF;
-extern const country_t country_PG;
-extern const country_t country_PH;
-extern const country_t country_PK;
-extern const country_t country_PL;
-extern const country_t country_PM;
-extern const country_t country_PN;
-extern const country_t country_PR;
-extern const country_t country_PS;
-extern const country_t country_PT;
-extern const country_t country_PW;
-extern const country_t country_PY;
-extern const country_t country_QA;
-extern const country_t country_RE;
-extern const country_t country_RO;
-extern const country_t country_RS;
-extern const country_t country_RU;
-extern const country_t country_RW;
-extern const country_t country_SA;
-extern const country_t country_SB;
-extern const country_t country_SC;
-extern const country_t country_SD;
-extern const country_t country_SE;
-extern const country_t country_SG;
-extern const country_t country_SH;
-extern const country_t country_SI;
-extern const country_t country_SK;
-extern const country_t country_SL;
-extern const country_t country_SM;
-extern const country_t country_SN;
-extern const country_t country_SO;
-extern const country_t country_SR;
-extern const country_t country_SS;
-extern const country_t country_ST;
-extern const country_t country_SV;
-extern const country_t country_SX;
-extern const country_t country_SY;
-extern const country_t country_SZ;
-extern const country_t country_TC;
-extern const country_t country_TD;
-extern const country_t country_TF;
-extern const country_t country_TG;
-extern const country_t country_TH;
-extern const country_t country_TJ;
-extern const country_t country_TK;
-extern const country_t country_TL;
-extern const country_t country_TM;
-extern const country_t country_TN;
-extern const country_t country_TO;
-extern const country_t country_TR;
-extern const country_t country_TT;
-extern const country_t country_TV;
-extern const country_t country_TW;
-extern const country_t country_TZ;
-extern const country_t country_UA;
-extern const country_t country_UG;
-extern const country_t country_UM;
-extern const country_t country_US;
-extern const country_t country_UY;
-extern const country_t country_UZ;
-extern const country_t country_VA;
-extern const country_t country_VC;
-extern const country_t country_VE;
-extern const country_t country_VG;
-extern const country_t country_VI;
-extern const country_t country_VN;
-extern const country_t country_VU;
-extern const country_t country_WF;
-extern const country_t country_WS;
-extern const country_t country_XK;
-extern const country_t country_YE;
-extern const country_t country_YT;
-extern const country_t country_ZA;
-extern const country_t country_ZM;
-extern const country_t country_ZW;
-extern const country_t country_ZZ;
+extern const country_t *get_country(country_code_t country_code);
