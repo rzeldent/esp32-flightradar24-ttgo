@@ -9142,10 +9142,9 @@ static const airport_t airports[] = {
 const airport_t *lookup_airport(const char *iata_airport)
 {
     // Array must be sorted on item to do a bsearch
-    airport_t key = {.iata_airport = iata_airport};
-    return (airport_t *)bsearch(&key, airports, sizeof(airports) / sizeof(airport_t), sizeof(airport_t),
+    return (airport_t *)bsearch(iata_airport, airports, sizeof(airports) / sizeof(airport_t), sizeof(airport_t),
                                 [](const void *e1, const void *e2)
                                 {
-                                    return strcmp(((airport_t *)e1)->iata_airport, ((airport_t *)e2)->iata_airport);
+                                    return strcmp((const char *)e1, ((airport_t *)e2)->iata_airport);
                                 });
 }

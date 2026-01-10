@@ -6008,10 +6008,9 @@ static const airline_t airlines[] = {
 const airline_t *lookup_airline(const char *icao_airline)
 {
     // Array must be sorted on item to do a bsearch
-    airline_t key = {.icao_airline = icao_airline};
-    return (airline_t *)bsearch(&key, airlines, sizeof(airlines) / sizeof(airline_t), sizeof(airline_t),
+    return (airline_t *)bsearch(icao_airline, airlines, sizeof(airlines) / sizeof(airline_t), sizeof(airline_t),
                                 [](const void *e1, const void *e2)
                                 {
-                                    return strcmp(((airline_t *)e1)->icao_airline, ((airline_t *)e2)->icao_airline);
+                                    return strcmp((const char *)e1, ((airline_t *)e2)->icao_airline);
                                 });
 }
