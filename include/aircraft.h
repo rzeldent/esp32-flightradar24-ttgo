@@ -32,9 +32,9 @@ typedef struct aircraft
     const char *aircraft_code;
     const char *manufacturer;
     const char *type;
-    aircraft_type_t description;
-    engine_type_t engine_type;
-    uint8_t engine_count;
+    const aircraft_type_t description;
+    const engine_type_t engine_type;
+    const uint8_t engine_count;
 } aircraft_t;
 
 extern const aircraft_t *lookup_aircraft(const char *aircraft_code);
