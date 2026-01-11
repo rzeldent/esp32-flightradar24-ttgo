@@ -139,7 +139,7 @@ inline String format_to_latin(const char* input)
         }
         else
         {
-            // ASCII character, copy as-is else // Invalid UTF-8, replace with ?
+            // ASCII character: copy as-is. Non-ASCII (invalid UTF-8 here), replace with '?'
             output += c < 0x80 ? (char)c : '?';
         }
     }
