@@ -18,6 +18,12 @@ inline String format_to_latin(const char* input)
         auto c = (unsigned char)input[i];
         // Handle UTF-8 multi-byte sequences for accented characters
         if (c >= 0xC0) {  // Multi-byte UTF-8 character
+            // Ensure there is a continuation byte before accessing input[i + 1]
+            if (input[i + 1] == '\0') {
+                // Truncated or malformed multi-byte sequence at end of string
+                output += '?';
+                continue;
+            }
             auto next = (unsigned char)input[i + 1];
            
             // Common Latin-1 supplement characters (0xC0-0xFF range in UTF-8)
