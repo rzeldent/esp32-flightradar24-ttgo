@@ -592,13 +592,11 @@ void display_flights()
         auto label_latlon = lv_label_create(lv_scr_act());
         lv_label_set_text(label_latlon, format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()).c_str());
         lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 0);
-        auto label_latLonRange = lv_label_create(lv_scr_act());
-        auto latLonRange = iotWebParamMetric.value()
-                               ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) +
-                                     " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km"
         auto label_lat_lon_range = lv_label_create(lv_scr_act());
-        auto latLonRange = iotWebParamMetric.value() ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " / lon: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " km" : "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " / lon: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " mi";
-        lv_label_set_text(label_lat_lon_range, latLonRange.c_str());
+        auto lat_lon_range = iotWebParamMetric.value()
+          ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km"
+          : "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi";
+        lv_label_set_text(label_lat_lon_range, lat_lon_range.c_str());
         lv_obj_align(label_lat_lon_range, LV_ALIGN_CENTER, 0, 16);
         auto label_location = lv_label_create(lv_scr_act());
         lv_label_set_text(label_location, iotWebParamLocation.value());

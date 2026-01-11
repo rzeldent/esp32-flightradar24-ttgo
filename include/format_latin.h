@@ -17,9 +17,11 @@ inline String format_to_latin(const char* input)
     {
         auto c = (unsigned char)input[i];
         // Handle UTF-8 multi-byte sequences for accented characters
-        if (c >= 0xC0) {  // Multi-byte UTF-8 character
+        if (c >= 0xC0)
+        {
             // Ensure there is a continuation byte before accessing input[i + 1]
-            if (input[i + 1] == '\0') {
+            if (input[i + 1] == '\0')
+            {
                 // Truncated or malformed multi-byte sequence at end of string
                 output += '?';
                 continue;
@@ -140,7 +142,7 @@ inline String format_to_latin(const char* input)
         }
         else
         {
-            // ASCII character, copy as-is else // Invalid UTF-8, replace with ?
+            // ASCII character: copy as-is. Non-ASCII (invalid UTF-8 here), replace with '?'
             output += c < 0x80 ? (char)c : '?';
         }
     }
