@@ -18,6 +18,7 @@
 #include <format_gps.h>
 #include <format_number.h>
 #include <format_duration.h>
+#include <format_latin.h>
 
 #include <images.h>
 #include <timezonedb_lookup.h>
@@ -358,7 +359,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_obj_set_style_text_color(label_altitude, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
 
   // Vertical speed
-  auto vertical_speed = iotWebParamMetric.value() ? String(flight_info.vertical_speed_metric()) + "m/m" : String(flight_info.vertical_speed) + "ft/m";
+  auto vertical_speed = iotWebParamMetric.value() ? String(flight_info.vertical_speed_metric()) + "m/min" : String(flight_info.vertical_speed) + "ft/min";
   auto label_vertical_speed = lv_label_create(lv_scr_act());
   lv_label_set_text(label_vertical_speed, vertical_speed.c_str());
   lv_obj_align(label_vertical_speed, LV_ALIGN_TOP_MID, 0, 24);
@@ -410,7 +411,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     log_i("Airline (%s): CallSign: %s. %s - %s. Logo: %s", airline->icao_airline, airline->call_sign, airline->name, country->name, airline->logo.data ? "present" : "not available");
 
     auto label_airline = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_airline, airline->name);
+    lv_label_set_text(label_airline, format_to_latin(airline->name).c_str());
     lv_obj_set_width(label_airline, 240 - 45);
     lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_align(label_airline, LV_ALIGN_TOP_LEFT, 0, 56 + 40 - 14);
@@ -440,10 +441,10 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_origin = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_origin, iata_origin->name);
-    lv_obj_set_width(label_origin, 240 - 26);
+    lv_label_set_text(label_origin, format_to_latin(iata_origin->name).c_str());
+    lv_obj_set_width(label_origin, 240 - 24);
     lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_align(label_origin, LV_ALIGN_BOTTOM_LEFT, 26, -20);
+    lv_obj_align(label_origin, LV_ALIGN_BOTTOM_LEFT, 28, -20);
   }
   else
     log_w("From airport (%s) not found", flight_info.iata_origin_airport.c_str());
@@ -464,10 +465,10 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_destination = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_destination, iata_destination->name);
-    lv_obj_set_width(label_destination, 240 - 26);
+    lv_label_set_text(label_destination, format_to_latin(iata_destination->name).c_str());
+    lv_obj_set_width(label_destination, 240 - 24);
     lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_align(label_destination, LV_ALIGN_BOTTOM_LEFT, 26, 0);
+    lv_obj_align(label_destination, LV_ALIGN_BOTTOM_LEFT, 28, 0);
   }
   else
     log_w("To airport (%s) not found", flight_info.iata_destination_airport.c_str());
@@ -587,10 +588,16 @@ void display_flights()
         lv_obj_align(label_message, LV_ALIGN_TOP_MID, 0, 0);
         auto label_time = lv_label_create(lv_scr_act());
         lv_label_set_text(label_time, get_localtime("%F - %R").c_str());
-        lv_obj_align(label_time, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_align(label_time, LV_ALIGN_CENTER, 0, -16);
         auto label_latlon = lv_label_create(lv_scr_act());
         lv_label_set_text(label_latlon, format_gps_location(iotWebParamLatitude.value(), iotWebParamLongitude.value()).c_str());
-        lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 16);
+        lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 0);
+        auto label_lat_lon_range = lv_label_create(lv_scr_act());
+        auto lat_lon_range = iotWebParamMetric.value()
+          ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km"
+          : "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi";
+        lv_label_set_text(label_lat_lon_range, lat_lon_range.c_str());
+        lv_obj_align(label_lat_lon_range, LV_ALIGN_CENTER, 0, 16);
         auto label_location = lv_label_create(lv_scr_act());
         lv_label_set_text(label_location, iotWebParamLocation.value());
         lv_obj_align(label_location, LV_ALIGN_BOTTOM_MID, 0, -16);
