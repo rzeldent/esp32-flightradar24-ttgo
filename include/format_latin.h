@@ -95,30 +95,32 @@ inline String format_to_latin(const char* input)
                     i++;
                     break;
 
-                case 0xC4:  // UTF-8 Latin Extended-B block
+                case 0xC4:  // UTF-8 Latin Extended-A block
                     switch (next)
                     {
                         case 0x80: output += 'A'; break;  // Ā
                         case 0x81: output += 'a'; break;  // ā
-                        case 0x84: output += 'A'; break;  // Ă
-                        case 0x85: output += 'a'; break;  // ă
-                        case 0x98: output += 'C'; break;  // Č
-                        case 0x99: output += 'c'; break;  // č
-                        case 0xB8: output += 'N'; break;  // Ň
-                        case 0xB9: output += 'n'; break;  // ň
-                        case 0xBA: output += 'n'; break;  // ŉ
+                        case 0x84: output += 'A'; break;  // Ą
+                        case 0x85: output += 'a'; break;  // ą
+                        case 0x8C: output += 'C'; break;  // Č
+                        case 0x8D: output += 'c'; break;  // č
+                        case 0xB8: output += 'k'; break;  // ĸ
+                        case 0xB9: output += 'L'; break;  // Ĺ
+                        case 0xBA: output += 'l'; break;  // ĺ
                         default: output += '?'; break;
                     }
                     i++;
                     break;
-                case 0xC5:  // UTF-8 Latin Extended-C block
+                case 0xC5:  // UTF-8 Latin Extended-B block
                     switch (next) {
-                        case 0x9A: output += 'Z'; break;  // Ź
-                        case 0x9B: output += 'z'; break;  // ź
-                        case 0x9C: output += 'Z'; break;  // Ż
-                        case 0x9D: output += 'z'; break;  // ż
-                        case 0x9E: output += 'Z'; break;  // Ž
-                        case 0x9F: output += 'z'; break;  // ž
+                        case 0x9A: output += 'S'; break;  // Ś
+                        case 0x9B: output += 's'; break;  // ś
+                        case 0x9C: output += 'S'; break;  // Ŝ
+                        case 0x9D: output += 's'; break;  // ŝ
+                        case 0xBB: output += 'Z'; break;  // Ż
+                        case 0xBC: output += 'z'; break;  // ż
+                        case 0xBD: output += 'Z'; break;  // Ž
+                        case 0xBE: output += 'z'; break;  // ž
                         default: output += '?'; break;
                     }
                     i++;
@@ -132,7 +134,7 @@ inline String format_to_latin(const char* input)
         else
         {
             // ASCII character, copy as-is else // Invalid UTF-8, replace with ?
-                output += c < 0x80 ? (char)c : '?';
+            output += c < 0x80 ? (char)c : '?';
         }
     }
     
