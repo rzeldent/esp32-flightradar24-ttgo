@@ -134,6 +134,7 @@ inline String format_to_latin(const char* input)
                 default:
                     // Unknown multi-byte sequence, replace with ?
                     output += '?';
+                    i++;
                     break;
             }
         }
