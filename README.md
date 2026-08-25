@@ -23,6 +23,7 @@ Example of layout on LilyGo-T-Display-S3
 
 |             |                                                                      |
 | :---------- | :------------------------------------------------------------------- |
+| Aug 25 2026 | Fixed display issues with updating, new logo, removed scrollbar      |
 | Jan 10 2026 | Optimized data tables                                                |
 | Jan 4 2026  | Created build / release script                                       |
 | Oct 21 2023 | Added configuration from LilyGo-T-Display-S3 with help from ulihuber |
@@ -55,16 +56,12 @@ The FlightRadar firmware offers the following features:
 - Configuration using a Web interface
 - HTML status screen
 - Stay in AP mode at reset (Resetting + pressing top button)
-- Clock mode
 
 ## Usage
 
 Download the repo, open it in [**PlatformIO**](https://platformio.org/) and flash it to the ESP32-TTGO-Display.
 When installed make a WiFi connection to the device, initially called FlightRadar and configure the access point parameters.
 After configuration the device starts updating the flights in the configured area.
-
-When pressing the top button, the device switches to clock mode: just showing the date and time.
-To return to the flights mode, press the top button again.
 
 ## Installing and running PlatformIO
 
