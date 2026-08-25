@@ -3,6 +3,13 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
+// FS.h must be included before TFT_eSPI.h: when SMOOTH_FONT is enabled TFT_eSPI
+// defines FS_NO_GLOBALS, which suppresses the global `using fs::FS;` alias from
+// FS.h. WebServer.h (included later via IotWebConf.h) still uses the bare `FS`
+// type, so without this early include the build fails with
+// "WebServer.h: 'FS' was not declared in this scope".
+#include <FS.h>
+
 // Settings for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 #include <lvgl.h>
@@ -39,66 +46,66 @@ IotWebConf iotWebConf(deviceName.c_str(), &dnsServer, &server, WIFI_PASSWORD, CO
 
 auto param_group = iotwebconf::ParameterGroup("flightradar", "Flight radar");
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location")
-    .label("Location")
-    .defaultValue(DEFAULT_LOCATION)
-    .build();
+                               .label("Location")
+                               .defaultValue(DEFAULT_LOCATION)
+                               .build();
 auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat")
-    .label("Latitude")
-    .min(-90.0)
-    .max(90.0)
-    .defaultValue(DEFAULT_LATITUDE)
-    .step(0.01)
-    .placeholder("e.g. 52.3")
-    .build();
+                               .label("Latitude")
+                               .min(-90.0)
+                               .max(90.0)
+                               .defaultValue(DEFAULT_LATITUDE)
+                               .step(0.01)
+                               .placeholder("e.g. 52.3")
+                               .build();
 auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon")
-    .label("Longitude")
-    .min(-180.0)
-    .max(180.0)
-    .defaultValue(DEFAULT_LONGITUDE)
-    .step(0.01)
-    .placeholder("e.g. 4.76")
-    .build();
+                                .label("Longitude")
+                                .min(-180.0)
+                                .max(180.0)
+                                .defaultValue(DEFAULT_LONGITUDE)
+                                .step(0.01)
+                                .placeholder("e.g. 4.76")
+                                .build();
 auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range")
-    .label("Latitude range (degrees)")
-    .defaultValue(DEFAULT_RANGE_LATITUDE)
-    .step(0.01)
-    .placeholder("e.g. 0.1")
-    .build();
+                                    .label("Latitude range (degrees)")
+                                    .defaultValue(DEFAULT_RANGE_LATITUDE)
+                                    .step(0.01)
+                                    .placeholder("e.g. 0.1")
+                                    .build();
 auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range")
-    .label("Longitude range (degrees)")
-    .defaultValue(DEFAULT_RANGE_LONGITUDE)
-    .step(0.01)
-    .placeholder("e.g. 0.1")
-    .build();
+                                     .label("Longitude range (degrees)")
+                                     .defaultValue(DEFAULT_RANGE_LONGITUDE)
+                                     .step(0.01)
+                                     .placeholder("e.g. 0.1")
+                                     .build();
 auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air")
-    .label("Include airborne")
-    .defaultValue(DEFAULT_AIR)
-    .build();
+                               .label("Include airborne")
+                               .defaultValue(DEFAULT_AIR)
+                               .build();
 auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground")
-    .label("Include grounded")
-    .defaultValue(DEFAULT_GROUND)
-    .build();
+                               .label("Include grounded")
+                               .defaultValue(DEFAULT_GROUND)
+                               .build();
 auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders")
-    .label("Include gliders")
-    .defaultValue(DEFAULT_GLIDERS)
-    .build();
+                              .label("Include gliders")
+                              .defaultValue(DEFAULT_GLIDERS)
+                              .build();
 auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles")
-    .label("Include vehicles")
-    .defaultValue(DEFAULT_VEHICLES)
-    .build();
+                               .label("Include vehicles")
+                               .defaultValue(DEFAULT_VEHICLES)
+                               .build();
 // The timezone names live in a posix_timezone_tz_t[] array, where each zone_name starts at a fixed stride of sizeof(posix_timezone_tz_t)
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_tz_t)>>("timezone")
-    .label("Choose timezone")
-    .optionValues(posix_timezone_tzs->zone_name)
-    .optionNames(posix_timezone_tzs->zone_name)
-    .optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0]))
-    .nameLength(sizeof(posix_timezone_tz_t))
-    .defaultValue(DEFAULT_TIMEZONE)
-    .build();
+                               .label("Choose timezone")
+                               .optionValues(posix_timezone_tzs->zone_name)
+                               .optionNames(posix_timezone_tzs->zone_name)
+                               .optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0]))
+                               .nameLength(sizeof(posix_timezone_tz_t))
+                               .defaultValue(DEFAULT_TIMEZONE)
+                               .build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric")
-    .label("Use metric units")
-    .defaultValue(DEFAULT_METRIC)
-    .build();
+                             .label("Use metric units")
+                             .defaultValue(DEFAULT_METRIC)
+                             .build();
 
 // Variables for flight info
 unsigned long next_update;
@@ -281,13 +288,15 @@ void setup()
   // Start LVGL
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
   lv_init();
+  // The dark theme uses #15171A as the screen background; use pure black instead
+  lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
   tft.begin();
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
   // Width and height are flipped because is rotated 90 degrees
   const uint16_t screen_width = TFT_HEIGHT;
   const uint16_t screen_height = TFT_WIDTH;
-
+  
   static lv_disp_draw_buf_t draw_buf;
   static lv_color_t buf[screen_width * 10];
   lv_disp_draw_buf_init(&draw_buf, buf, NULL, screen_width * 10);
@@ -306,6 +315,7 @@ void setup()
   indev_drv.type = LV_INDEV_TYPE_KEYPAD;
   indev_drv.read_cb = button_read;
   lv_indev_drv_register(&indev_drv);
+
   // For debugging
   lv_log_register_print_cb(&lvgl_log);
 
@@ -438,6 +448,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
   lv_label_set_text(label_aircraft_type, aircraft_type.c_str());
   lv_obj_set_width(label_aircraft_type, 240 - 70);
   lv_label_set_long_mode(label_aircraft_type, LV_LABEL_LONG_SCROLL_CIRCULAR);
+  lv_obj_set_scrollbar_mode(label_aircraft_type, LV_SCROLLBAR_MODE_OFF);
   lv_obj_align(label_aircraft_type, LV_ALIGN_TOP_LEFT, 70, 40);
 
   // LINE 4 - 56
@@ -465,6 +476,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_airline, format_to_latin(airline->name).c_str());
     lv_obj_set_width(label_airline, 240 - 45);
     lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_scrollbar_mode(label_airline, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_airline, LV_ALIGN_TOP_LEFT, 0, 56 + 40 - 14);
 
     if (airline->logo.data)
@@ -495,6 +507,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_origin, format_to_latin(iata_origin->name).c_str());
     lv_obj_set_width(label_origin, 240 - 24);
     lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_scrollbar_mode(label_origin, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_origin, LV_ALIGN_BOTTOM_LEFT, 28, -20);
   }
   else
@@ -519,6 +532,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_destination, format_to_latin(iata_destination->name).c_str());
     lv_obj_set_width(label_destination, 240 - 24);
     lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_scrollbar_mode(label_destination, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_destination, LV_ALIGN_BOTTOM_LEFT, 28, 0);
   }
   else
@@ -613,9 +627,9 @@ void display_flights()
   {
     lv_obj_clean(lv_scr_act());
 
-    if (it == flights.cend())
+    if (flights.empty() || display_cycle >= display_cycles)
     {
-      log_i("Updating flights");
+      log_i("No flights in range or number of cycles exceeded. Updating flights");
       String error_message;
       if (!get_flights(iotWebParamLatitude.value(), iotWebParamLongitude.value(), iotWebParamLatitudeRange.value(), iotWebParamLongitudeRange.value(), iotWebParamAirborne.value(), iotWebParamGrounded.value(), iotWebParamGliders.value(), iotWebParamVehicles.value(), flights, error_message))
       {
@@ -629,10 +643,9 @@ void display_flights()
         return;
       }
 
-      log_i("Number of flights: %d", flights.size());
+      log_i("Number of flights available: %d", flights.size());
       if (flights.empty())
       {
-        log_d("No flights in range");
         auto label_message = lv_label_create(lv_scr_act());
         lv_label_set_text(label_message, "No flights in range");
         lv_obj_set_style_text_color(label_message, lv_palette_main(LV_PALETTE_RED), LV_STATE_DEFAULT);
@@ -646,8 +659,8 @@ void display_flights()
         lv_obj_align(label_latlon, LV_ALIGN_CENTER, 0, 0);
         auto label_lat_lon_range = lv_label_create(lv_scr_act());
         auto lat_lon_range = iotWebParamMetric.value()
-          ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km"
-          : "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi";
+                                 ? "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_KM) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_KM) + " km"
+                                 : "lat: " + String(iotWebParamLatitudeRange.value() * DEGREES_TO_MI) + " / lon: " + String(iotWebParamLongitudeRange.value() * DEGREES_TO_MI) + " mi";
         lv_label_set_text(label_lat_lon_range, lat_lon_range.c_str());
         lv_obj_align(label_lat_lon_range, LV_ALIGN_CENTER, 0, 16);
         auto label_location = lv_label_create(lv_scr_act());
@@ -661,18 +674,21 @@ void display_flights()
         return;
       }
 
+      log_i("Starting flight display cycle");
+      display_cycle = 0;
       it = flights.cbegin();
-      display_cycle = 0;
     }
-
-    display_flight(it);
-
-    // Keep showing the same flight for display_cycles cycles before advancing.
-    if (++display_cycle >= display_cycles)
+    else
     {
-      display_cycle = 0;
-      it++;
+      if (it == flights.cend())
+      {
+        it = flights.cbegin();
+        display_cycle++;
+        log_i("#Display cycle: %d. Reached end of flight list. Restarting from beginning.", display_cycle);
+      }
     }
+
+    display_flight(it++);
 
     next_update = now + flight_milliseconds;
   }
