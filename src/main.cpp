@@ -38,17 +38,67 @@ auto deviceName = String(WIFI_SSID) + "-" + String(ESP.getEfuseMac(), 16);
 IotWebConf iotWebConf(deviceName.c_str(), &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
 
 auto param_group = iotwebconf::ParameterGroup("flightradar", "Flight radar");
-auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
-auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat").label("Latitude").min(-90.0).max(90.0).defaultValue(DEFAULT_LATITUDE).step(0.01).placeholder("e.g. 52.3").build();
-auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon").label("Longitude").min(-180.0).max(180.0).defaultValue(DEFAULT_LONGITUDE).step(0.01).placeholder("e.g. 4.76").build();
-auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range").label("Latitude range (degrees)").defaultValue(DEFAULT_RANGE_LATITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range").label("Longitude range (degrees)").defaultValue(DEFAULT_RANGE_LONGITUDE).step(0.01).placeholder("e.g. 0.1").build();
-auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air").label("Include airborne").defaultValue(DEFAULT_AIR).build();
-auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground").label("Include grounded").defaultValue(DEFAULT_GROUND).build();
-auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders").label("Include gliders").defaultValue(DEFAULT_GLIDERS).build();
-auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles").label("Include vehicles").defaultValue(DEFAULT_VEHICLES).build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_tz_t)>>("timezone").label("Choose timezone").optionValues(posix_timezone_tzs->zone_name).optionNames(posix_timezone_tzs->zone_name).optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0])).nameLength(sizeof(timezone_name)).defaultValue(DEFAULT_TIMEZONE).build();
-auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
+auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("location")
+    .label("Location")
+    .defaultValue(DEFAULT_LOCATION)
+    .build();
+auto iotWebParamLatitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat")
+    .label("Latitude")
+    .min(-90.0)
+    .max(90.0)
+    .defaultValue(DEFAULT_LATITUDE)
+    .step(0.01)
+    .placeholder("e.g. 52.3")
+    .build();
+auto iotWebParamLongitude = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon")
+    .label("Longitude")
+    .min(-180.0)
+    .max(180.0)
+    .defaultValue(DEFAULT_LONGITUDE)
+    .step(0.01)
+    .placeholder("e.g. 4.76")
+    .build();
+auto iotWebParamLatitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lat_range")
+    .label("Latitude range (degrees)")
+    .defaultValue(DEFAULT_RANGE_LATITUDE)
+    .step(0.01)
+    .placeholder("e.g. 0.1")
+    .build();
+auto iotWebParamLongitudeRange = iotwebconf::Builder<iotwebconf::FloatTParameter>("lon_range")
+    .label("Longitude range (degrees)")
+    .defaultValue(DEFAULT_RANGE_LONGITUDE)
+    .step(0.01)
+    .placeholder("e.g. 0.1")
+    .build();
+auto iotWebParamAirborne = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("air")
+    .label("Include airborne")
+    .defaultValue(DEFAULT_AIR)
+    .build();
+auto iotWebParamGrounded = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("ground")
+    .label("Include grounded")
+    .defaultValue(DEFAULT_GROUND)
+    .build();
+auto iotWebParamGliders = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("gliders")
+    .label("Include gliders")
+    .defaultValue(DEFAULT_GLIDERS)
+    .build();
+auto iotWebParamVehicles = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("vehicles")
+    .label("Include vehicles")
+    .defaultValue(DEFAULT_VEHICLES)
+    .build();
+// The timezone names live in a posix_timezone_tz_t[] array, where each zone_name starts at a fixed stride of sizeof(posix_timezone_tz_t)
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_tz_t)>>("timezone")
+    .label("Choose timezone")
+    .optionValues(posix_timezone_tzs->zone_name)
+    .optionNames(posix_timezone_tzs->zone_name)
+    .optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0]))
+    .nameLength(sizeof(posix_timezone_tz_t))
+    .defaultValue(DEFAULT_TIMEZONE)
+    .build();
+auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric")
+    .label("Use metric units")
+    .defaultValue(DEFAULT_METRIC)
+    .build();
 
 // Variables for flight info
 unsigned long next_update;
