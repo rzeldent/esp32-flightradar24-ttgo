@@ -3,11 +3,6 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
-// FS.h must be included before TFT_eSPI.h: when SMOOTH_FONT is enabled TFT_eSPI
-// defines FS_NO_GLOBALS, which suppresses the global `using fs::FS;` alias from
-// FS.h. WebServer.h (included later via IotWebConf.h) still uses the bare `FS`
-// type, so without this early include the build fails with
-// "WebServer.h: 'FS' was not declared in this scope".
 #include <FS.h>
 
 // Settings for the display are defined in platformio.ini
@@ -288,15 +283,13 @@ void setup()
   // Start LVGL
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
   lv_init();
-  // The dark theme uses #15171A as the screen background; use pure black instead
-  lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
   tft.begin();
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
   // Width and height are flipped because is rotated 90 degrees
   const uint16_t screen_width = TFT_HEIGHT;
   const uint16_t screen_height = TFT_WIDTH;
-  
+
   static lv_disp_draw_buf_t draw_buf;
   static lv_color_t buf[screen_width * 10];
   lv_disp_draw_buf_init(&draw_buf, buf, NULL, screen_width * 10);
@@ -318,6 +311,12 @@ void setup()
 
   // For debugging
   lv_log_register_print_cb(&lvgl_log);
+
+  // Hide the scrollbar and disable scrolling on the screen
+  lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
+  lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
+  // The dark theme uses #15171A as the screen background; use pure black instead
+  lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
 
   // Initializing the configuration for web configuration
   param_group.addItem(&iotWebParamLocation);
@@ -448,7 +447,6 @@ void display_flight(std::list<flight_info>::const_iterator it)
   lv_label_set_text(label_aircraft_type, aircraft_type.c_str());
   lv_obj_set_width(label_aircraft_type, 240 - 70);
   lv_label_set_long_mode(label_aircraft_type, LV_LABEL_LONG_SCROLL_CIRCULAR);
-  lv_obj_set_scrollbar_mode(label_aircraft_type, LV_SCROLLBAR_MODE_OFF);
   lv_obj_align(label_aircraft_type, LV_ALIGN_TOP_LEFT, 70, 40);
 
   // LINE 4 - 56
@@ -476,7 +474,6 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_airline, format_to_latin(airline->name).c_str());
     lv_obj_set_width(label_airline, 240 - 45);
     lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_set_scrollbar_mode(label_airline, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_airline, LV_ALIGN_TOP_LEFT, 0, 56 + 40 - 14);
 
     if (airline->logo.data)
@@ -507,7 +504,6 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_origin, format_to_latin(iata_origin->name).c_str());
     lv_obj_set_width(label_origin, 240 - 24);
     lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_set_scrollbar_mode(label_origin, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_origin, LV_ALIGN_BOTTOM_LEFT, 28, -20);
   }
   else
@@ -532,7 +528,6 @@ void display_flight(std::list<flight_info>::const_iterator it)
     lv_label_set_text(label_destination, format_to_latin(iata_destination->name).c_str());
     lv_obj_set_width(label_destination, 240 - 24);
     lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_set_scrollbar_mode(label_destination, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(label_destination, LV_ALIGN_BOTTOM_LEFT, 28, 0);
   }
   else
