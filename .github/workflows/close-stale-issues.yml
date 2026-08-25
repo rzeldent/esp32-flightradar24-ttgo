@@ -17,11 +17,11 @@ jobs:
       - uses: actions/stale@v9
         with:
           # Issues
-          days-before-issue-stale: 30   # mark as stale after 30 days of inactivity
+          days-before-issue-stale: 60   # mark as stale after 60 days of inactivity
           days-before-issue-close: 7    # close 7 days after being marked stale
           stale-issue-message: >
             This issue has been automatically marked as stale because it has had no
-            activity in the last 30 days. It will be closed in 7 days if no further
+            activity in the last 60 days. It will be closed in 7 days if no further
             activity occurs. If this is still relevant, please leave a comment.
           close-issue-message: >
             This issue was automatically closed because it was stale for 7 days with
