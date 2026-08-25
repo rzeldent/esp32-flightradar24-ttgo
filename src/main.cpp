@@ -152,7 +152,6 @@ void handleRoot()
       {"AccessPoint", WiFi.SSID()},
       {"SignalStrength", String(WiFi.RSSI())},
       {"IpV4", WiFi.localIP().toString()},
-      {"IpV6", WiFi.localIPv6().toString()},
       {"WifiMode", wifi_modes[WiFi.getMode()]},
       {"NetworkState.ApMode", String(iotWebConf.getState() == iotwebconf::NetworkState::ApMode)},
       {"NetworkState.OnLine", String(iotWebConf.getState() == iotwebconf::NetworkState::OnLine)},
