@@ -1,9 +1,14 @@
 # FlightRadar24-TTGO
 
 [![Platform IO CI](https://github.com/rzeldent/esp32-flightradar24-ttgo/actions/workflows/main.yml/badge.svg)](https://github.com/rzeldent/esp32-flightradar24-ttgo/actions/workflows/main.yml)
-[![Release](https://img.shields.io/github/v/release/rzeldent/esp32-flightradar24-ttgo)](https://github.com/rzeldent/esp32-flightradar24-ttgo/releases)
-[![PlatformIO](https://img.shields.io/badge/PlatformIO-ESP32%20%2F%20LilyGo-blue)](https://platformio.org/)
+[![Release](https://img.shields.io/github/v/release/rzeldent/esp32-flightradar24-ttgo?include_prereleases&label=release)](https://github.com/rzeldent/esp32-flightradar24-ttgo/releases)
+[![Last commit](https://img.shields.io/github/last-commit/rzeldent/esp32-flightradar24-ttgo)](https://github.com/rzeldent/esp32-flightradar24-ttgo/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/rzeldent/esp32-flightradar24-ttgo)](https://github.com/rzeldent/esp32-flightradar24-ttgo/graphs/contributors)
+[![Repo size](https://img.shields.io/github/repo-size/rzeldent/esp32-flightradar24-ttgo)](https://github.com/rzeldent/esp32-flightradar24-ttgo)
+[![Language: C++](https://img.shields.io/github/languages/top/rzeldent/esp32-flightradar24-ttgo)](https://github.com/rzeldent/esp32-flightradar24-ttgo)
+[![Built with PlatformIO](https://img.shields.io/badge/Built%20with-PlatformIO-ff5a00?logo=platformio&logoColor=white)](https://platformio.org/)
 [![LVGL](https://img.shields.io/badge/LVGL-v8.3-yellowgreen)](https://lvgl.io/)
+[![Target: ESP32-TTGO / LilyGo](https://img.shields.io/badge/Target-ESP32--TTGO%20%2F%20LilyGo-4c9f38)](https://github.com/rzeldent/esp32-flightradar24-ttgo)
 
 Real-time flights display. No login or account required.
 Easy configuration through the web interface.
