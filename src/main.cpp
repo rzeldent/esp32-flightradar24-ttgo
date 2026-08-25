@@ -56,6 +56,8 @@ unsigned long next_update;
 std::list<flight_info> flights;
 // Flight to display
 std::list<flight_info>::const_iterator it = flights.cbegin();
+// Number of times the current flight has been displayed
+unsigned int display_cycle = 0;
 
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
@@ -150,7 +152,6 @@ void handleRoot()
       {"AccessPoint", WiFi.SSID()},
       {"SignalStrength", String(WiFi.RSSI())},
       {"IpV4", WiFi.localIP().toString()},
-      {"IpV6", WiFi.localIPv6().toString()},
       {"WifiMode", wifi_modes[WiFi.getMode()]},
       {"NetworkState.ApMode", String(iotWebConf.getState() == iotwebconf::NetworkState::ApMode)},
       {"NetworkState.OnLine", String(iotWebConf.getState() == iotwebconf::NetworkState::OnLine)},
@@ -557,7 +558,8 @@ void display_network_state(iotwebconf::NetworkState state)
 void display_flights()
 {
   auto now = millis();
-  if (now > next_update)
+  // Use a signed difference so the comparison is safe around the 49.7 day millis() wrap-around
+  if (static_cast<long>(now - next_update) > 0)
   {
     lv_obj_clean(lv_scr_act());
 
@@ -610,9 +612,17 @@ void display_flights()
       }
 
       it = flights.cbegin();
+      display_cycle = 0;
     }
 
-    display_flight(it++);
+    display_flight(it);
+
+    // Keep showing the same flight for display_cycles cycles before advancing.
+    if (++display_cycle >= display_cycles)
+    {
+      display_cycle = 0;
+      it++;
+    }
 
     next_update = now + flight_milliseconds;
   }
