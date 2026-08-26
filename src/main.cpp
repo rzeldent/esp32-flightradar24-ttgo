@@ -3,6 +3,10 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
+// ADC battery-voltage monitoring (legacy IDF ADC driver + calibration API)
+#include <driver/adc.h>
+#include <esp_adc_cal.h>
+
 #include <FS.h>
 
 // Settings for the display are defined in platformio.ini
