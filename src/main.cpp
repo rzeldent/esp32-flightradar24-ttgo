@@ -672,6 +672,7 @@ void display_flights()
       log_i("Starting flight display cycle");
       display_cycle = 0;
       it = flights.cbegin();
+      display_cycle = 0;
     }
     else
     {
@@ -683,7 +684,14 @@ void display_flights()
       }
     }
 
-    display_flight(it++);
+    display_flight(it);
+
+    // Keep showing the same flight for display_cycles cycles before advancing.
+    if (++display_cycle >= display_cycles)
+    {
+      display_cycle = 0;
+      it++;
+    }
 
     next_update = now + flight_milliseconds;
   }
