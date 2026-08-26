@@ -5,6 +5,7 @@ import os
 from pickletools import optimize
 import sys
 import hashlib
+from datetime import datetime
 
 from glob import glob
 from turtle import width
@@ -24,7 +25,8 @@ if (len(sys.argv) >= 5):
 output_file = open(file_h, 'w')
 output_file.write(
     '//*******************************************************************************\n'
-    f'// Type: LVGL / {type}\n')
+    f'// Type: LVGL / {type}\n'
+    f'// Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
 if (resize != None):
     output_file.write('// Resize: ' + str(resize[0]) + 'x' + str(resize[1]) + '\n')
 
@@ -70,29 +72,35 @@ for file_name in files:
 
             output_file.write('#if LV_COLOR_DEPTH == 1 || LV_COLOR_DEPTH == 8\n'
                 '// Pixel format: RGB332 Red: 3 bit, Green: 3 bit, Blue: 2 bit\n')
-            output_file.write(', '.join(f'0x{(i):02x}' for i in map(convert_RGB888_to_RGB332, image.getdata())))
+            output_file.write(', '.join(f'0x{(i):02x}' for i in map(convert_RGB888_to_RGB332, image.get_flattened_data())))
             output_file.write('\n#endif\n')
 
             output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP == 0\n'
                 '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit\n')
-            output_file.write(', '.join(f'0x{(i & 0xff):02x},0x{(i >> 8):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
+            output_file.write(', '.join(f'0x{(i & 0xff):02x},0x{(i >> 8):02x}' for i in map(convert_RGB888_to_RGB565, image.get_flattened_data())))
             output_file.write('\n#endif\n')
             
             output_file.write('#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP != 0\n'
                 '// Pixel format: RGB565 Red: 5 bit, Green: 6 bit, Blue: 5 bit BUT the 2 bytes are swapped\n')
-            output_file.write(', '.join(f'0x{(i >> 8):02x},0x{(i & 0xff):02x}' for i in map(convert_RGB888_to_RGB565, image.getdata())))
+            output_file.write(', '.join(f'0x{(i >> 8):02x},0x{(i & 0xff):02x}' for i in map(convert_RGB888_to_RGB565, image.get_flattened_data())))
             output_file.write('\n#endif\n')
             
             output_file.write('#if LV_COLOR_DEPTH == 32\n'
                 '// Pixel format: RGBA8888 Red: 8 bit, Green: 8 bit, Blue: 8 bit, Alpha: 8 bit \n')
-            output_file.write(', '.join(f'0x{i[0]:02x},0x{(i[1]):02x},0x{(i[2]):02x},0x{(i[3]):02x}' for i in image.getdata()))
+            output_file.write(', '.join(f'0x{i[0]:02x},0x{(i[1]):02x},0x{(i[2]):02x},0x{(i[3]):02x}' for i in image.get_flattened_data()))
             output_file.write('\n#endif\n')
         else:
             byte_io = io.BytesIO()
             image.save(byte_io, optimize=True, format=type)
 
+            # LVGL's GIF decoder (gifdec.c) only accepts GIF89a. Newer Pillow versions write GIF87a for static images without transparency,
+            # which LVGL rejects with "invalid version". GIF87a and GIF89a are binary-compatible for these images, so patch the version string.
+            gif_data = bytearray(byte_io.getvalue())
+            if gif_data[:6] == b'GIF87a':
+                gif_data[3:6] = b'89a'
+
             output_file.write(f'// {type} Data\n')
-            output_file.write(','.join(f'0x{(i):02x}' for i in byte_io.getvalue()))
+            output_file.write(','.join(f'0x{(i):02x}' for i in gif_data))
             output_file.write('\n')
 
         output_file.write('};\n')

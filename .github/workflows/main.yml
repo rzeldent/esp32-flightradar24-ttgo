@@ -14,11 +14,11 @@ jobs:
         environment: [esp32dev, lilygo-t-display-s3]
         
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'true'      
       - name: Set up python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
       - name: Generate image files
@@ -33,7 +33,7 @@ jobs:
       - name: Rename firmware
         run: mv .pio/build/${{ matrix.environment }}/firmware.bin .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
       - name: Upload firmware
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ matrix.environment }}
           path: .pio/build/${{ matrix.environment }}/firmware-${{ matrix.environment }}.bin
@@ -44,13 +44,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: firmware-*
           path: ./artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/**
           name: Release ${{ github.ref_name }}
