@@ -3,6 +3,8 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
+#include <esp_adc_cal.h>
+
 #include <FS.h>
 
 // Settings for the display are defined in platformio.ini
@@ -32,6 +34,8 @@ extern const char text_html_index_html[] asm("_binary_html_index_html_start");
 
 // LCD display
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
+
+esp_adc_cal_characteristics_t adc_chars;
 
 // Web server
 DNSServer dnsServer;
@@ -241,8 +245,7 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
   static uint32_t last_key;
-  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER
-                                                                                                            : 0;
+  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : (digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER : 0);
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -269,7 +272,13 @@ void setup()
   //  If the USB port is used for power supply, it is turned on by default.
   //  If it is powered by battery, it needs to be set to high level
   pinMode(GPIO_ADC_EN, OUTPUT);
-  digitalWrite(GPIO_ADC_EN, HIGH);
+  digitalWrite(GPIO_ADC_EN, LOW);
+
+  // ADC calibration: GPIO34 = ADC1_CH6. After the 2:1 voltage divider, USB (2.5V) and battery (1.85-2.1V)
+  // exceed ADC_ATTEN_DB_2_5 limit (~1.5V). Use ADC_ATTEN_DB_12 (~3.9V max) and set hardware attenuation
+  // explicitly so it matches the calibration curve.
+  adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_12);
+  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_12, 1100, &adc_chars);
 #endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
@@ -620,6 +629,22 @@ void display_flights()
   // Use a signed difference so the comparison is safe around the 49.7 day millis() wrap-around
   if (static_cast<long>(now - next_update) > 0)
   {
+#if defined(GPIO_ADC_EN) && defined(GPIO_ADC_IN)
+    // Read USB voltage: (GPIO_ADC_EN is LOW) means USB powered, (GPIO_ADC_EN is HIGH) means battery powered
+    auto usb_voltage = esp_adc_cal_raw_to_voltage(analogRead(GPIO_ADC_IN), &adc_chars) / 1000.0 * 2.0; // mV -> V, account for the 2:1 voltage divider
+    if (usb_voltage > 4.5)
+      log_i("USB voltage: %.2f V", usb_voltage);
+    else
+    {
+      // Read Li-ion battery voltage
+      digitalWrite(GPIO_ADC_EN, HIGH);
+      delay(1);
+      auto battery_voltage = esp_adc_cal_raw_to_voltage(analogRead(GPIO_ADC_IN), &adc_chars) / 1000.0 * 2.0; // mV -> V, account for the 2:1 voltage divider
+      digitalWrite(GPIO_ADC_EN, LOW);
+      log_i("Battery voltage: %.2fV", battery_voltage);
+    }
+#endif
+
     lv_obj_clean(lv_scr_act());
 
     if (flights.empty() || display_cycle >= display_cycles)
@@ -635,6 +660,7 @@ void display_flights()
         lv_obj_align(label_message, LV_ALIGN_BOTTOM_MID, 0, 0);
 
         next_update = now + flight_milliseconds_error;
+
         return;
       }
 
@@ -684,14 +710,7 @@ void display_flights()
       }
     }
 
-    display_flight(it);
-
-    // Keep showing the same flight for display_cycles cycles before advancing.
-    if (++display_cycle >= display_cycles)
-    {
-      display_cycle = 0;
-      it++;
-    }
+    display_flight(it++);
 
     next_update = now + flight_milliseconds;
   }
