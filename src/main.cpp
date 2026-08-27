@@ -3,9 +3,10 @@
 #include <SPI.h>
 #include <soc/rtc_cntl_reg.h>
 
-// ADC battery-voltage monitoring (legacy IDF ADC driver + calibration API)
-#include <driver/adc.h>
-#include <esp_adc_cal.h>
+// ADC battery-voltage monitoring (ESP-IDF oneshot driver + calibration scheme API)
+#include <esp_adc/adc_oneshot.h>
+#include <esp_adc/adc_cali.h>
+#include <esp_adc/adc_cali_scheme.h>
 
 #include <FS.h>
 
@@ -37,8 +38,9 @@ extern const char text_html_index_html[] asm("_binary_html_index_html_start");
 // LCD display
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 
-// ADC Calibration
-esp_adc_cal_characteristics_t adc_chars;
+// ADC unit + calibration handle for battery/USB voltage monitoring (GPIO34 = ADC1_CH6)
+adc_oneshot_unit_handle_t adc1_handle = nullptr;
+adc_cali_handle_t adc_cali_handle = nullptr;
 
 // Web server
 DNSServer dnsServer;
@@ -276,11 +278,33 @@ void setup()
   //  If it is powered by battery, it needs to be set to high level
   pinMode(GPIO_ADC_EN, OUTPUT);
   digitalWrite(GPIO_ADC_EN, LOW);
+
   // ADC calibration: GPIO34 = ADC1_CH6. After the 2:1 voltage divider, USB (2.5V) and battery (1.85-2.1V)
   // exceed ADC_ATTEN_DB_2_5 limit (~1.5V). Use ADC_ATTEN_DB_12 (~3.9V max) and set hardware attenuation
   // explicitly so it matches the calibration curve.
-  adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_12);
-  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+  const adc_oneshot_unit_init_cfg_t adc_init_cfg = {
+      .unit_id = ADC_UNIT_1
+  };
+  if (adc_oneshot_new_unit(&adc_init_cfg, &adc1_handle) != ESP_OK)
+    log_e("Failed to init ADC oneshot unit");
+
+  const adc_oneshot_chan_cfg_t adc_chan_cfg = {
+      .atten = ADC_ATTEN_DB_12,
+      .bitwidth = ADC_BITWIDTH_12,
+  };
+  if (adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_6, &adc_chan_cfg) != ESP_OK)
+    log_e("Failed to configure ADC1 channel 6");
+
+  // Line fitting scheme on ESP32 is per-unit (not per-channel). default_vref (1100 mV) is
+  // used only when the calibration value in eFuse is ADC_CALI_LINE_FITTING_EFUSE_VAL_DEFAULT_VREF.
+  adc_cali_line_fitting_config_t adc_cali_cfg = {
+      .unit_id = ADC_UNIT_1,
+      .atten = ADC_ATTEN_DB_12,
+      .bitwidth = ADC_BITWIDTH_12,
+      .default_vref = 1100,
+  };
+  if (adc_cali_create_scheme_line_fitting(&adc_cali_cfg, &adc_cali_handle) != ESP_OK)
+    log_e("Failed to create ADC calibration scheme");
 #endif
 
   log_i("CPU Freq = %d Mhz", getCpuFrequencyMhz());
@@ -625,6 +649,30 @@ void display_network_state(iotwebconf::NetworkState state)
   }
 }
 
+// Read the voltage present at the 2:1 divider input on GPIO34 (ADC1_CH6).
+// Returns volts, or 0.0 if the ADC/calibration handle is not ready or a read fails.
+float read_input_voltage()
+{
+  if (adc1_handle == nullptr || adc_cali_handle == nullptr)
+    return 0.0f;
+
+  int adc_raw = 0;
+  if (adc_oneshot_read(adc1_handle, ADC_CHANNEL_6, &adc_raw) != ESP_OK)
+  {
+    log_e("ADC oneshot read failed");
+    return 0.0f;
+  }
+
+  int adc_mv = 0;
+  if (adc_cali_raw_to_voltage(adc_cali_handle, adc_raw, &adc_mv) != ESP_OK)
+  {
+    log_e("ADC calibration read failed");
+    return 0.0f;
+  }
+
+  return adc_mv / 1000.0f * 2.0f; // mV -> V, account for the 2:1 voltage divider
+}
+
 void display_flights()
 {
   auto now = millis();
@@ -633,7 +681,7 @@ void display_flights()
   {
 #if defined(GPIO_ADC_EN) && defined(GPIO_ADC_IN)
     // Read USB voltage: (GPIO_ADC_EN is LOW) means USB powered, (GPIO_ADC_EN is HIGH) means battery powered
-    auto usb_voltage = esp_adc_cal_raw_to_voltage(analogRead(GPIO_ADC_IN), &adc_chars) / 1000.0 * 2.0; // Convert mV to V and account for voltage divider
+    auto usb_voltage = read_input_voltage();
     if (usb_voltage > 4.5)
       log_i("USB voltage: %.2f V", usb_voltage);
     else
@@ -641,7 +689,7 @@ void display_flights()
       // Read Li-ion battery voltage
       digitalWrite(GPIO_ADC_EN, HIGH);
       delay(1);
-      auto battery_voltage = esp_adc_cal_raw_to_voltage(analogRead(GPIO_ADC_IN), &adc_chars) / 1000.0 * 2.0; // Convert mV to V and account for voltage divider
+      auto battery_voltage = read_input_voltage();
       digitalWrite(GPIO_ADC_EN, LOW);
       log_i("Battery voltage: %.2fV", battery_voltage);
     }
