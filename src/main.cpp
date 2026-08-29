@@ -511,7 +511,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_origin = lv_label_create(lv_scr_act());
-    auto origin_text = std::string(iata_origin->name) + " - " + iata_origin->city + " - " + country->name;
+    auto origin_text = std::string(iata_origin->name) + " - " + iata_origin->city;
     lv_label_set_text(label_origin, format_to_latin(origin_text.c_str()).c_str());
     lv_obj_set_width(label_origin, 240 - 24);
     lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL_CIRCULAR);
@@ -536,7 +536,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_destination = lv_label_create(lv_scr_act());
-    auto destination_text = std::string(iata_destination->name) + " - " + iata_destination->city + " - " + country->name;
+    auto destination_text = std::string(iata_destination->name) + " - " + iata_destination->city;
     lv_label_set_text(label_destination, format_to_latin(destination_text.c_str()).c_str());
     lv_obj_set_width(label_destination, 240 - 24);
     lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL_CIRCULAR);
