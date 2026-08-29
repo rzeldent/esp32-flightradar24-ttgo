@@ -13,6 +13,7 @@
 
 #include <flight_info.h>
 #include <time.h>
+#include <string>
 
 #include <ESPmDNS.h>
 #include <IotWebConf.h>
@@ -455,7 +456,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
   auto label_aircraft_type = lv_label_create(lv_scr_act());
   lv_label_set_text(label_aircraft_type, aircraft_type.c_str());
   lv_obj_set_width(label_aircraft_type, 240 - 70);
-  lv_label_set_long_mode(label_aircraft_type, LV_LABEL_LONG_SCROLL);
+  lv_label_set_long_mode(label_aircraft_type, LV_LABEL_LONG_SCROLL_CIRCULAR);
   lv_obj_align(label_aircraft_type, LV_ALIGN_TOP_LEFT, 70, 40);
 
   // LINE 4 - 56
@@ -482,7 +483,7 @@ void display_flight(std::list<flight_info>::const_iterator it)
     auto label_airline = lv_label_create(lv_scr_act());
     lv_label_set_text(label_airline, format_to_latin(airline->name).c_str());
     lv_obj_set_width(label_airline, 240 - 45);
-    lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(label_airline, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_align(label_airline, LV_ALIGN_TOP_LEFT, 0, 56 + 40 - 14);
 
     if (airline->logo.data)
@@ -510,9 +511,10 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_origin = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_origin, format_to_latin(iata_origin->name).c_str());
+    auto origin_text = std::string(iata_origin->name) + " - " + iata_origin->city + " - " + country->name;
+    lv_label_set_text(label_origin, format_to_latin(origin_text.c_str()).c_str());
     lv_obj_set_width(label_origin, 240 - 24);
-    lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(label_origin, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_align(label_origin, LV_ALIGN_BOTTOM_LEFT, 28, -20);
   }
   else
@@ -534,9 +536,10 @@ void display_flight(std::list<flight_info>::const_iterator it)
     }
 
     auto label_destination = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_destination, format_to_latin(iata_destination->name).c_str());
+    auto destination_text = std::string(iata_destination->name) + " - " + iata_destination->city + " - " + country->name;
+    lv_label_set_text(label_destination, format_to_latin(destination_text.c_str()).c_str());
     lv_obj_set_width(label_destination, 240 - 24);
-    lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(label_destination, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_align(label_destination, LV_ALIGN_BOTTOM_LEFT, 28, 0);
   }
   else
