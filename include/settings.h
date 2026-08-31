@@ -88,7 +88,7 @@
 //#define DEFAULT_RANGE_LONGITUDE 0.05
 
 // Refresh screen every 10 seconds
-constexpr auto flight_milliseconds = 10 * 1000ul;
+constexpr auto flight_milliseconds = 15 * 1000ul;
 constexpr auto flight_milliseconds_error = 120 * 1000ul;
 constexpr auto  flight_milliseconds_noflights= 30 * 1000ul;
 // Allow 4 cycles of each flight
