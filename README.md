@@ -44,6 +44,7 @@ Example of layout on LilyGo-T-Display-S3
 
 |             |                                                                      |
 | :---------- | :------------------------------------------------------------------- |
+| Sep 3 2026  | Added backlight dimming controlled with the upper/lower buttons   |
 | Aug 25 2026 | Fixed display issues with updating, new logo, removed scrollbar      |
 | Jan 10 2026 | Optimized data tables                                                |
 | Jan 4 2026  | Created build / release script                                       |

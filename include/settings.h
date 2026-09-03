@@ -93,3 +93,13 @@ constexpr auto flight_milliseconds_error = 120 * 1000ul;
 constexpr auto  flight_milliseconds_noflights= 30 * 1000ul;
 // Allow 4 cycles of each flight
 constexpr auto display_cycles = 4;
+
+// Backlight dimming: the backlight LED (TFT_BL) is driven with PWM so the
+// brightness can be changed with the upper (brighter) and lower (dimmer) buttons.
+constexpr auto backlight_pwm_frequency = 5000;   // PWM frequency in Hz (outside the audible range)
+constexpr auto backlight_pwm_resolution = 8;     // PWM resolution in bits (duty cycle 0..255)
+constexpr auto backlight_max_level = 255;        // full brightness
+constexpr auto backlight_step = 8;               // brightness delta per button action
+constexpr auto backlight_debounce_ms = 20;       // button debounce time
+constexpr auto backlight_repeat_delay_ms = 500;  // hold time before auto-repeat starts
+constexpr auto backlight_repeat_rate_ms = 100;   // auto-repeat interval while holding a button
