@@ -116,6 +116,23 @@ std::list<flight_info>::const_iterator it = flights.cbegin();
 // Number of times the current flight has been displayed
 unsigned int display_cycle = 0;
 
+// PWM channel used to dim the backlight LED (TFT_BL)
+constexpr auto backlight_pwm_channel = 0;
+
+// Tracks the debounced state of a button that controls the backlight
+struct backlight_button_state_t
+{
+  bool last_raw = true;   // last raw sample (true = released / HIGH)
+  bool pressed = false;   // debounced pressed state
+  bool repeating = false; // auto-repeat already started
+  uint32_t raw_since = 0; // time the raw level last changed
+  uint32_t last_step = 0; // time of the last brightness step
+};
+
+uint8_t backlight_level = backlight_max_level;
+backlight_button_state_t backlight_top_button;
+backlight_button_state_t backlight_bottom_button;
+
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
   server.sendHeader("Content-encoding", "gzip");
@@ -243,10 +260,69 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
   lv_disp_flush_ready(drv);
 }
 
+void backlight_set(int level)
+{
+  backlight_level = constrain(level, 0, backlight_max_level);
+  ledcWrite(backlight_pwm_channel, backlight_level);
+  log_d("Backlight brightness: %d/%d", backlight_level, backlight_max_level);
+}
+
+void backlight_change(int delta)
+{
+  backlight_set(static_cast<int>(backlight_level) + delta);
+}
+
+// Debounced button handling that changes the brightness by a single step on
+// each press and keeps stepping (auto-repeat) while the button is held down.
+void handle_backlight_button(bool raw_pressed, backlight_button_state_t &state, int delta)
+{
+  const auto now = millis();
+
+  if (raw_pressed != state.last_raw)
+  {
+    // Raw level changed: (re)start the debounce timer
+    state.last_raw = raw_pressed;
+    state.raw_since = now;
+    return;
+  }
+
+  if (raw_pressed != state.pressed && now - state.raw_since >= backlight_debounce_ms)
+  {
+    // Debounced transition of the button
+    state.pressed = raw_pressed;
+    state.repeating = false;
+    state.last_step = now;
+    if (raw_pressed)
+      backlight_change(delta);
+    return;
+  }
+
+  // Auto-repeat while the button is held down
+  if (raw_pressed && state.pressed)
+  {
+    const auto delay = state.repeating ? backlight_repeat_rate_ms : backlight_repeat_delay_ms;
+    if (now - state.last_step >= delay)
+    {
+      state.repeating = true;
+      state.last_step = now;
+      backlight_change(delta);
+    }
+  }
+}
+
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
-  static uint32_t last_key;
-  uint32_t key = digitalRead(GPIO_BUTTON_TOP) == LOW ? LV_KEY_NEXT : (digitalRead(GPIO_BUTTON_BOTTOM) == LOW ? LV_KEY_ENTER : 0);
+  // Buttons are active low: pressed = LOW
+  const bool top_pressed = digitalRead(GPIO_BUTTON_TOP) == LOW;
+  const bool bottom_pressed = digitalRead(GPIO_BUTTON_BOTTOM) == LOW;
+
+  // Upper button brightens the screen, lower button dims it
+  handle_backlight_button(top_pressed, backlight_top_button, backlight_step);
+  handle_backlight_button(bottom_pressed, backlight_bottom_button, -backlight_step);
+
+  // Report the buttons to LVGL as keypad keys. No group is active, so the keys
+  // are currently unused by the flight display.
+  uint32_t key = top_pressed ? LV_KEY_NEXT : (bottom_pressed ? LV_KEY_ENTER : 0);
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -255,7 +331,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   else
     data->state = LV_INDEV_STATE_REL;
 
-  data->key = last_key = key;
+  data->key = key;
 }
 
 void lvgl_log(const char *buf)
@@ -296,6 +372,14 @@ void setup()
   tft.begin();
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
+
+  // Drive the backlight with PWM (instead of a fixed GPIO level) so the
+  // brightness can be dimmed. The upper button brightens, lower dims.
+  ledcSetup(backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution);
+  ledcAttachPin(TFT_BL, backlight_pwm_channel);
+  backlight_set(backlight_level);
+  log_i("Backlight PWM on pin %d (channel %d, %d Hz, %d-bit): level %d/%d", TFT_BL, backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution, backlight_level, backlight_max_level);
+  
   // Width and height are flipped because is rotated 90 degrees
   const uint16_t screen_width = TFT_HEIGHT;
   const uint16_t screen_height = TFT_WIDTH;
