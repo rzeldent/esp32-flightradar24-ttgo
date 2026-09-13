@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include <country_flags.h>
 
 typedef enum
@@ -39,4 +41,7 @@ typedef struct country
     const lv_img_dsc_t flag;
 } country_t;
 
+// All countries, indexed by the country code
+extern const country_t countries[];
+extern const size_t country_count;
 extern const country_t *get_country(country_code_t country_code);

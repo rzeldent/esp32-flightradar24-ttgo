@@ -4,7 +4,7 @@
 
 // List must be sorted because binary search is used
 
-static const aircraft_t aircrafts[] = {
+const aircraft_t aircrafts[] = {
     {"A002", "Irkut", "A-002", AIRCRAFT_TYPE_GYROCOPTER, ENGINE_TYPE_PISTON, 1},
     {"A1", "Douglas", "AD Skyraider", AIRCRAFT_TYPE_LANDPLANE, ENGINE_TYPE_PISTON, 1},
     {"A1", "Douglas", "EA-1 Skyraider", AIRCRAFT_TYPE_LANDPLANE, ENGINE_TYPE_PISTON, 1},
@@ -10374,6 +10374,10 @@ const char *aircraft_type_to_string(aircraft_type_t aircraft_type)
         return "Unknown";
     }
 }
+
+// Number of aircraft in the table
+const size_t aircraft_count = sizeof(aircrafts) / sizeof(aircraft_t);
+
 const aircraft_t *lookup_aircraft(const char *aircraft_code)
 {
     // Array must be sorted on item to do a bsearch

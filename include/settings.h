@@ -19,7 +19,7 @@
 #define NTP_SERVERS NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3
 
 // Amsterdam Airport Schiphol
-#define DEFAULT_LOCATION "Amsterdam Schiphol Airport"
+#define DEFAULT_LOCATION "AMS"
 #define DEFAULT_LATITUDE 52.308601
 #define DEFAULT_LONGITUDE 4.76389
 #define DEFAULT_AIR true
@@ -33,7 +33,7 @@
 #define DEFAULT_RANGE_LONGITUDE 0.1
 
 // Charles de Gaulle International Airport
-// #define DEFAULT_LOCATION "Charles de Gaulle International"
+// #define DEFAULT_LOCATION "CDG"
 // #define DEFAULT_LATITUDE 49.012798
 // #define DEFAULT_LONGITUDE 2.55000
 // #define DEFAULT_AIR true
@@ -47,7 +47,7 @@
 // #define DEFAULT_RANGE_LONGITUDE 0.1
 
 // Venice Marco Polo Airport
-// #define DEFAULT_LOCATION "Venice Marco Polo Airport"
+// #define DEFAULT_LOCATION "VCE"
 // #define DEFAULT_LATITUDE 45.50299
 // #define DEFAULT_LONGITUDE 12.3519
 // #define DEFAULT_AIR true
@@ -61,7 +61,7 @@
 // #define DEFAULT_RANGE_LONGITUDE 0.1
 
 // JFK Airport
-// #define DEFAULT_LOCATION "John F Kennedy International"
+// #define DEFAULT_LOCATION "JFK"
 // #define DEFAULT_LATITUDE 40.639801
 // #define DEFAULT_LONGITUDE -73.7789
 // #define DEFAULT_AIR true
@@ -72,10 +72,10 @@
 // #define DEFAULT_METRIC false
 // By default take a 5mile range
 // #define DEFAULT_RANGE_LATITUDE 0.05
-#//define DEFAULT_RANGE_LONGITUDE 0.05
+// #define DEFAULT_RANGE_LONGITUDE 0.05
 
 // LAX Airport:
-// #define DEFAULT_LOCATION "Los Angeles International"
+// #define DEFAULT_LOCATION "LAX"
 // #define DEFAULT_LATITUDE 33.942501
 // #define DEFAULT_LONGITUDE -118.407997
 // #define DEFAULT_AIR true
