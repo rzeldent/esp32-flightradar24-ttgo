@@ -14,6 +14,7 @@
 #include <flight_info.h>
 #include <time.h>
 #include <string>
+#include <string>
 
 #include <ESPmDNS.h>
 #include <IotWebConf.h>
@@ -115,6 +116,25 @@ std::list<flight_info> flights;
 std::list<flight_info>::const_iterator it = flights.cbegin();
 // Number of times the current flight has been displayed
 unsigned int display_cycle = 0;
+
+// Display mode
+enum DisplayMode
+{
+  DISPLAY_MODE_FLIGHTS,
+  DISPLAY_MODE_CLOCK
+};
+
+DisplayMode display_mode = DISPLAY_MODE_FLIGHTS;
+
+// One event per physical press of TOP and BOTTOM buttons
+volatile bool top_button_event = false;
+volatile bool bottom_button_event = false;
+
+// Clock screen objects
+lv_obj_t *clock_date_label = nullptr;
+lv_obj_t *clock_time_label = nullptr;
+lv_obj_t *clock_location_label = nullptr;
+int clock_last_second = -1;
 
 // PWM channel used to dim the backlight LED (TFT_BL)
 constexpr auto backlight_pwm_channel = 0;
@@ -312,17 +332,43 @@ void handle_backlight_button(bool raw_pressed, backlight_button_state_t &state, 
 
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
-  // Buttons are active low: pressed = LOW
-  const bool top_pressed = digitalRead(GPIO_BUTTON_TOP) == LOW;
-  const bool bottom_pressed = digitalRead(GPIO_BUTTON_BOTTOM) == LOW;
+  static uint32_t last_key;
+  uint32_t key = 0;
+  static bool last_top_pressed = false;
+  static bool last_bottom_pressed = false;
 
-  // Upper button brightens the screen, lower button dims it
-  handle_backlight_button(top_pressed, backlight_top_button, backlight_step);
-  handle_backlight_button(bottom_pressed, backlight_bottom_button, -backlight_step);
+#if GPIO_BUTTON_TOP >= 0
+  const bool top_button_pressed = (digitalRead(GPIO_BUTTON_TOP) == LOW);
 
-  // Report the buttons to LVGL as keypad keys. No group is active, so the keys
-  // are currently unused by the flight display.
-  uint32_t key = top_pressed ? LV_KEY_NEXT : (bottom_pressed ? LV_KEY_ENTER : 0);
+  if (top_button_pressed)
+    key = LV_KEY_NEXT;
+
+  // Generate one application event on the press edge.
+  if (top_button_pressed && !last_top_pressed)
+  {
+    top_button_event = true;
+    log_i("TOP BUTTON pressed");
+  }
+  
+  last_top_pressed = top_button_pressed;
+#endif
+
+#if GPIO_BUTTON_BOTTOM >= 0
+  const bool bottom_button_pressed = (digitalRead(GPIO_BUTTON_BOTTOM) == LOW);
+
+  if (key == 0 && bottom_button_pressed)
+    key = LV_KEY_ENTER;
+
+  // Generate one application event on the press edge.
+  if (bottom_button_pressed && !last_bottom_pressed)
+  {
+    bottom_button_event = true;
+    log_i("BOTTOM BUTTON pressed");
+  }
+
+  last_bottom_pressed = bottom_button_pressed;
+#endif
+
   if (key)
   {
     data->state = LV_INDEV_STATE_PR;
@@ -363,8 +409,12 @@ void setup()
   log_i("Starting " APP_TITLE "...");
 
   // Input buttons
+#if GPIO_BUTTON_TOP >= 0
   pinMode(GPIO_BUTTON_TOP, INPUT_PULLUP);
+#endif
+#if GPIO_BUTTON_BOTTOM >= 0
   pinMode(GPIO_BUTTON_BOTTOM, INPUT_PULLUP);
+#endif
 
   // Start LVGL
   log_i("LVGL version: %d.%d.%d ", lv_version_major(), lv_version_minor(), lv_version_patch());
@@ -429,7 +479,9 @@ void setup()
   iotWebConf.getApTimeoutParameter()->visible = true;
   iotWebConf.setWifiConnectionCallback(update_runtime_config);
   // Set an IO pin (Top button) to reset config when pressed at boot
+#if GPIO_BUTTON_TOP >= 0
   iotWebConf.setConfigPin(GPIO_BUTTON_TOP);
+#endif
 
   iotWebConf.init();
 
@@ -460,6 +512,79 @@ void setup()
   }
   else
     log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+}
+
+void display_clock()
+{
+  if (clock_time_label == nullptr)
+  {
+    lv_obj_clean(lv_scr_act());
+
+    // Day + Date
+    clock_date_label = lv_label_create(lv_scr_act());
+    lv_obj_set_style_text_font(clock_date_label, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(clock_date_label, lv_palette_main(LV_PALETTE_GREY), LV_STATE_DEFAULT);
+    lv_label_set_text(clock_date_label, get_localtime("%A %d/%m/%Y").c_str());
+    lv_obj_align(clock_date_label, LV_ALIGN_CENTER, 0, -42);
+
+    // Time
+    clock_time_label = lv_label_create(lv_scr_act());
+    lv_obj_set_style_text_font(clock_time_label, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(clock_time_label, lv_palette_main(LV_PALETTE_GREY), LV_STATE_DEFAULT);
+    lv_label_set_text(clock_time_label, get_localtime("%H:%M:%S").c_str());
+    lv_obj_align(clock_time_label, LV_ALIGN_CENTER, 0, 0);
+
+    // City / Location
+    clock_location_label = lv_label_create(lv_scr_act());
+    lv_obj_set_style_text_font(clock_location_label, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(clock_location_label, lv_palette_main(LV_PALETTE_GREY), LV_STATE_DEFAULT);
+    lv_label_set_text(clock_location_label, iotWebParamLocation.value());
+    lv_obj_align(clock_location_label, LV_ALIGN_CENTER, 0, 42);
+
+    clock_last_second = -1;
+  }
+
+  const time_t now = time(nullptr);
+  const int current_second = static_cast<int>(now % 60);
+
+  if (current_second != clock_last_second)
+  {
+    clock_last_second = current_second;
+
+    if (time_valid())
+    {
+      lv_label_set_text(clock_date_label, get_localtime("%A %d/%m/%Y").c_str());
+      lv_label_set_text(clock_time_label, get_localtime("%H:%M:%S").c_str());
+      lv_label_set_text(clock_location_label, iotWebParamLocation.value());
+    }
+    else
+    {
+      lv_label_set_text(clock_date_label, "NO DATA --/--/----");
+      lv_label_set_text(clock_time_label, "--:--:--");
+      lv_label_set_text(clock_location_label, "No NTP Time");
+    }
+  }
+}
+
+void enter_flights_mode()
+{
+  display_mode = DISPLAY_MODE_FLIGHTS;
+  clock_date_label = nullptr;
+  clock_time_label = nullptr;
+  clock_location_label = nullptr;
+  clock_last_second = -1;
+  next_update = 0;
+  log_i("Display mode: FLIGHTS");
+}
+
+void enter_clock_mode()
+{
+  display_mode = DISPLAY_MODE_CLOCK;
+  clock_time_label = nullptr;
+  clock_date_label = nullptr;
+  clock_location_label = nullptr;
+  clock_last_second = -1;
+  log_i("Display mode: CLOCK");
 }
 
 void display_flight(std::list<flight_info>::const_iterator it)
@@ -817,7 +942,30 @@ void loop()
   if (network_state != last_network_state)
   {
     last_network_state = network_state;
+
+    if (network_state != iotwebconf::NetworkState::OnLine)
+    {
+      clock_date_label = nullptr;
+      clock_time_label = nullptr;
+      clock_location_label = nullptr;
+      clock_last_second = -1;
+    }
+
     display_network_state(network_state);
+  }
+
+  // TOP BUTTON toggles between flights and clock.
+  if (top_button_event)
+  {
+    top_button_event = false;
+
+    if (network_state == iotwebconf::NetworkState::OnLine)
+    {
+      if (display_mode == DISPLAY_MODE_FLIGHTS)
+        enter_clock_mode();
+      else
+        enter_flights_mode();
+    }
   }
 
   switch (network_state)
@@ -827,7 +975,10 @@ void loop()
     break;
 
   case iotwebconf::NetworkState::OnLine:
-    display_flights();
+    if (display_mode == DISPLAY_MODE_CLOCK)
+      display_clock();
+    else
+      display_flights();
     break;
   }
 
