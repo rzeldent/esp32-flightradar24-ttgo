@@ -35,6 +35,7 @@ Example of layout on LilyGo-T-Display-S3
 - [Getting Started](#getting-started)
 - [Project structure](#project-structure)
 - [Status overview](#status-overview)
+- [Display and buttons](#display-and-buttons)
 - [Configuration](#modifying-the-configuration)
 - [Case / Enclosure](#case--enclosure)
 - [Suggestions](#suggestions)
@@ -44,6 +45,7 @@ Example of layout on LilyGo-T-Display-S3
 
 |             |                                                                      |
 | :---------- | :------------------------------------------------------------------- |
+| Sep 13 2026 | Clock screen (top button) and stepped backlight brightness (bottom button) |
 | Sep 3 2026  | Added backlight dimming controlled with the upper/lower buttons   |
 | Aug 25 2026 | Fixed display issues with updating, new logo, removed scrollbar      |
 | Jan 10 2026 | Optimized data tables                                                |
@@ -75,6 +77,8 @@ The FlightRadar firmware offers the following features:
 - Lookup and display flag for the countries
 - No account required, only WiFi with internet connection!
 - Minimal interaction with FlightRadar24; database and graphics are present in firmware
+- Clock screen with date, time and the configured location (top button)
+- Backlight brightness dimming in 7 steps (bottom button)
 - Configuration using a Web interface
 - HTML status screen
 - Stay in AP mode at reset (Resetting + pressing top button)
@@ -124,6 +128,55 @@ After configuration the device starts updating the flights in the configured are
 When connected to the FlightRadar, the main screen is shown; the overview.
 Here details about the device, network and settings are shown.
 ![Status page](assets/status.png)
+
+## Display and buttons
+
+There are two buttons on the module, the top and the bottom button.
+
+| Button | Action                                             |
+| ------ | -------------------------------------------------- |
+| Top    | Switch from the flight list to the clock screen     |
+| Top    | Switch from the clock screen back to the flights    |
+| Bottom | Select the next backlight brightness step           |
+
+The flight/clock switching is only possible when the device is online.
+During boot the buttons have a special meaning, please refer to the tips in the configuration section below.
+
+### Clock screen
+
+Pressing the top button while flights are displayed switches to the clock screen.
+The clock shows:
+
+- the weekday and the date,
+- the time, updated once per second,
+- the configured location.
+
+The date and time format follows the **Metric units** setting:
+
+| Units    | Date               | Time           |
+| -------- | ------------------ | -------------- |
+| Metric   | `%A %d-%m-%Y`      | `%H:%M:%S` (24-hour) |
+| Imperial | `%A %m/%d/%Y`      | `%I:%M:%S %p` (12-hour) |
+
+The clock requires a valid NTP time from the network.
+As long as no time is known, the date and time are left empty and `No NTP Time` is shown instead.
+
+### Backlight brightness
+
+The backlight LED (TFT_BL) is driven with PWM (5 kHz, 8-bit resolution), so it does not audibly whine.
+Each press of the bottom button selects the next brightness step; after the last step the sequence wraps around to the brightest step:
+
+| Step | Duty cycle |
+| ---- | ---------- |
+| 1    | 100% (startup value) |
+| 2    | 75%  |
+| 3    | 50%  |
+| 4    | 25%  |
+| 5    | 15%  |
+| 6    | 10%  |
+| 7    | 5%   |
+
+The selected brightness is not persisted; after a reboot the display starts at full brightness again.
 
 ## Modifying the configuration
 

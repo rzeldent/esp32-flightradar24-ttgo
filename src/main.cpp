@@ -371,7 +371,7 @@ void setup()
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
 
-  // Drive the backlight with PWM (instead of a fixed GPIO level) so the brightness can be dimmed. The upper button brightens, lower dims.
+  // Drive the backlight with PWM (instead of a fixed GPIO level) so the brightness can be dimmed with the bottom button.
   ledcSetup(backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution);
   ledcAttachPin(TFT_BL, backlight_pwm_channel);
   set_backlight_pwm_duty(1.0f); // Start with full brightness
