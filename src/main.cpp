@@ -22,6 +22,7 @@
 
 #include <moustache.h>
 #include <format_gps.h>
+#include <format_date_time.h>
 #include <format_number.h>
 #include <format_duration.h>
 #include <format_latin.h>
@@ -139,19 +140,9 @@ int clock_last_second = -1;
 // PWM channel used to dim the backlight LED (TFT_BL)
 constexpr auto backlight_pwm_channel = 0;
 
-// Tracks the debounced state of a button that controls the backlight
-struct backlight_button_state_t
-{
-  bool last_raw = true;   // last raw sample (true = released / HIGH)
-  bool pressed = false;   // debounced pressed state
-  bool repeating = false; // auto-repeat already started
-  uint32_t raw_since = 0; // time the raw level last changed
-  uint32_t last_step = 0; // time of the last brightness step
-};
-
-uint8_t backlight_level = backlight_max_level;
-backlight_button_state_t backlight_top_button;
-backlight_button_state_t backlight_bottom_button;
+// PWM Duty cycles steps for the backlight
+float backlight_pwm_duty_steps[] = {1.00f, 0.75f, 0.50f, 0.25f, 0.15f, 0.10f, 0.05f};
+byte backlight_pwm_duty_step = 0; // Start with maximum brightness
 
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
@@ -280,54 +271,11 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
   lv_disp_flush_ready(drv);
 }
 
-void backlight_set(int level)
+void set_backlight_pwm_duty(float level)
 {
-  backlight_level = constrain(level, 0, backlight_max_level);
-  ledcWrite(backlight_pwm_channel, backlight_level);
-  log_d("Backlight brightness: %d/%d", backlight_level, backlight_max_level);
-}
-
-void backlight_change(int delta)
-{
-  backlight_set(static_cast<int>(backlight_level) + delta);
-}
-
-// Debounced button handling that changes the brightness by a single step on
-// each press and keeps stepping (auto-repeat) while the button is held down.
-void handle_backlight_button(bool raw_pressed, backlight_button_state_t &state, int delta)
-{
-  const auto now = millis();
-
-  if (raw_pressed != state.last_raw)
-  {
-    // Raw level changed: (re)start the debounce timer
-    state.last_raw = raw_pressed;
-    state.raw_since = now;
-    return;
-  }
-
-  if (raw_pressed != state.pressed && now - state.raw_since >= backlight_debounce_ms)
-  {
-    // Debounced transition of the button
-    state.pressed = raw_pressed;
-    state.repeating = false;
-    state.last_step = now;
-    if (raw_pressed)
-      backlight_change(delta);
-    return;
-  }
-
-  // Auto-repeat while the button is held down
-  if (raw_pressed && state.pressed)
-  {
-    const auto delay = state.repeating ? backlight_repeat_rate_ms : backlight_repeat_delay_ms;
-    if (now - state.last_step >= delay)
-    {
-      state.repeating = true;
-      state.last_step = now;
-      backlight_change(delta);
-    }
-  }
+  auto pwm = (uint32_t)(level * backlight_max_level);
+  ledcWrite(backlight_pwm_channel, pwm);
+  log_i("Backlight PWM on pin %d (channel %d, %d Hz, %d-bit): %f%% level %d/%d", TFT_BL, backlight_pwm_channel, backlight_pwm_frequency, level, backlight_pwm_resolution, pwm, backlight_max_level);
 }
 
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
@@ -339,8 +287,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 
 #if GPIO_BUTTON_TOP >= 0
   const bool top_button_pressed = (digitalRead(GPIO_BUTTON_TOP) == LOW);
-
-  if (top_button_pressed)
+  if (key == 0 && top_button_pressed)
     key = LV_KEY_NEXT;
 
   // Generate one application event on the press edge.
@@ -349,13 +296,12 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     top_button_event = true;
     log_i("TOP BUTTON pressed");
   }
-  
+
   last_top_pressed = top_button_pressed;
 #endif
 
 #if GPIO_BUTTON_BOTTOM >= 0
   const bool bottom_button_pressed = (digitalRead(GPIO_BUTTON_BOTTOM) == LOW);
-
   if (key == 0 && bottom_button_pressed)
     key = LV_KEY_ENTER;
 
@@ -375,7 +321,9 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     log_d("Button: 0x%02x pressed", key);
   }
   else
+  {
     data->state = LV_INDEV_STATE_REL;
+  }
 
   data->key = key;
 }
@@ -423,13 +371,11 @@ void setup()
   // Rotate 90 degrees to Landscape
   tft.setRotation(1);
 
-  // Drive the backlight with PWM (instead of a fixed GPIO level) so the
-  // brightness can be dimmed. The upper button brightens, lower dims.
+  // Drive the backlight with PWM (instead of a fixed GPIO level) so the brightness can be dimmed. The upper button brightens, lower dims.
   ledcSetup(backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution);
   ledcAttachPin(TFT_BL, backlight_pwm_channel);
-  backlight_set(backlight_level);
-  log_i("Backlight PWM on pin %d (channel %d, %d Hz, %d-bit): level %d/%d", TFT_BL, backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution, backlight_level, backlight_max_level);
-  
+  set_backlight_pwm_duty(1.0f); // Start with full brightness
+
   // Width and height are flipped because is rotated 90 degrees
   const uint16_t screen_width = TFT_HEIGHT;
   const uint16_t screen_height = TFT_WIDTH;
@@ -489,7 +435,6 @@ void setup()
   server.on("/", HTTP_GET, handleRoot);
   server.on("/config", []
             { iotWebConf.handleConfig(); });
-
   // bootstrap
   server.on("/bootstrap.min.css", HTTP_GET, []()
             {
@@ -511,7 +456,9 @@ void setup()
     log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
   }
   else
+  {
     log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+  }
 }
 
 void display_clock()
@@ -529,14 +476,14 @@ void display_clock()
 
     // Time
     clock_time_label = lv_label_create(lv_scr_act());
-    lv_obj_set_style_text_font(clock_time_label, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(clock_time_label, &lv_font_montserrat_38, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(clock_time_label, lv_palette_main(LV_PALETTE_GREY), LV_STATE_DEFAULT);
     lv_label_set_text(clock_time_label, get_localtime("%H:%M:%S").c_str());
     lv_obj_align(clock_time_label, LV_ALIGN_CENTER, 0, 0);
 
     // City / Location
     clock_location_label = lv_label_create(lv_scr_act());
-    lv_obj_set_style_text_font(clock_location_label, &lv_font_montserrat_22, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(clock_location_label, &lv_font_montserrat_14, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(clock_location_label, lv_palette_main(LV_PALETTE_GREY), LV_STATE_DEFAULT);
     lv_label_set_text(clock_location_label, iotWebParamLocation.value());
     lv_obj_align(clock_location_label, LV_ALIGN_CENTER, 0, 42);
@@ -553,14 +500,14 @@ void display_clock()
 
     if (time_valid())
     {
-      lv_label_set_text(clock_date_label, get_localtime("%A %d/%m/%Y").c_str());
-      lv_label_set_text(clock_time_label, get_localtime("%H:%M:%S").c_str());
+      lv_label_set_text(clock_date_label, get_localtime(iotWebParamMetric.value() ? localtime_format_date_metric : localtime_format_date_imperial).c_str());
+      lv_label_set_text(clock_time_label, get_localtime(iotWebParamMetric.value() ? localtime_format_time_metric : localtime_format_time_imperial).c_str());
       lv_label_set_text(clock_location_label, iotWebParamLocation.value());
     }
     else
     {
-      lv_label_set_text(clock_date_label, "NO DATA --/--/----");
-      lv_label_set_text(clock_time_label, "--:--:--");
+      lv_label_set_text(clock_date_label, "");
+      lv_label_set_text(clock_time_label, "");
       lv_label_set_text(clock_location_label, "No NTP Time");
     }
   }
@@ -958,7 +905,6 @@ void loop()
   if (top_button_event)
   {
     top_button_event = false;
-
     if (network_state == iotwebconf::NetworkState::OnLine)
     {
       if (display_mode == DISPLAY_MODE_FLIGHTS)
@@ -966,6 +912,15 @@ void loop()
       else
         enter_flights_mode();
     }
+  }
+
+  // BOTTOM BUTTON changes the PWM brightness of the backlight.
+  if (bottom_button_event)
+  {
+    bottom_button_event = false;
+
+    backlight_pwm_duty_step = (++backlight_pwm_duty_step) % (sizeof(backlight_pwm_duty_steps) / sizeof(backlight_pwm_duty_steps[0]));
+    set_backlight_pwm_duty(backlight_pwm_duty_steps[backlight_pwm_duty_step]);
   }
 
   switch (network_state)
