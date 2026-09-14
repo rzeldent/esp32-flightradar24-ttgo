@@ -169,8 +169,27 @@ enum display_mode
 enum display_mode display_mode = DISPLAY_MODE_FLIGHTS;
 
 // One event per physical press of TOP and BOTTOM buttons
+constexpr uint32_t BUTTON_LONG_PRESS_MS = 800; // Long press: button held for 800 ms
+constexpr uint32_t BUTTON_DOUBLE_CLICK_MS = 350; // Double press: two clicks between 350 ms
+
 volatile bool top_button_event = false;
+volatile bool top_double_click_event = false;
+volatile bool top_long_press_event = false;
+
 volatile bool bottom_button_event = false;
+volatile bool bottom_double_click_event = false;
+volatile bool bottom_long_press_event = false;
+
+struct ButtonState
+{
+  bool pressed = false;
+  bool long_press_sent = false;
+  uint32_t press_start = 0;
+  uint32_t last_click = 0;
+  uint8_t click_count = 0;
+};
+ButtonState top_button_state;
+ButtonState bottom_button_state;
 
 // Screen shown on the display
 enum screen
@@ -399,6 +418,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   uint32_t key = 0;
   static bool last_top_pressed = false;
   static bool last_bottom_pressed = false;
+  const uint32_t now = millis();
 
 #if GPIO_BUTTON_TOP >= 0
   const bool top_button_pressed = (digitalRead(GPIO_BUTTON_TOP) == LOW);
@@ -408,8 +428,56 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   // Generate one application event on the press edge.
   if (top_button_pressed && !last_top_pressed)
   {
+    top_button_state.pressed = true;
+    top_button_state.long_press_sent = false;
+    top_button_state.press_start = now;
+    log_i("TOP BUTTON down");
+  }
+
+  if (top_button_pressed && top_button_state.pressed && !top_button_state.long_press_sent && (now - top_button_state.press_start >= BUTTON_LONG_PRESS_MS))
+  {
+    top_button_state.long_press_sent = true;
+    top_button_state.click_count = 0; // Reset click count on long press
+    top_button_state.last_click = 0; // Reset last click time on long press
+    top_long_press_event = true;
+    log_i("TOP BUTTON long press");
+  }
+
+  if (!top_button_pressed && last_top_pressed)
+  {
+    top_button_state.pressed = false;
+
+    if (!top_button_state.long_press_sent) // If it was not a long press, count a click
+    {
+      if (top_button_state.click_count == 0)
+      {
+        top_button_state.click_count = 1; // First click
+        top_button_state.last_click = now;
+        log_i("TOP BUTTON click 1");
+      }
+      else if ((now - top_button_state.last_click) <= BUTTON_DOUBLE_CLICK_MS)
+      {
+        top_button_state.click_count = 0; // Second click inside the window, reset click count
+        top_button_state.last_click = 0;
+        top_double_click_event = true;
+        log_i("TOP BUTTON double click");
+      }
+      else
+      {
+        top_button_state.click_count = 1; // last click expired, this is the first click of a new sequence
+        top_button_state.last_click = now;
+        log_i("TOP BUTTON click 1 (new sequence)");
+      }
+    }
+  }
+
+  // single click confirmation after double click window has passed
+  if (!top_button_pressed && top_button_state.click_count == 1 && (now - top_button_state.last_click > BUTTON_DOUBLE_CLICK_MS))
+  {
+    top_button_state.click_count = 0;
+    top_button_state.last_click = 0;
     top_button_event = true;
-    log_i("TOP BUTTON pressed");
+    log_i("TOP BUTTON single click");
   }
 
   last_top_pressed = top_button_pressed;
@@ -423,8 +491,56 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   // Generate one application event on the press edge.
   if (bottom_button_pressed && !last_bottom_pressed)
   {
+    bottom_button_state.pressed = true;
+    bottom_button_state.long_press_sent = false;
+    bottom_button_state.press_start = now;
+    log_i("bottom BUTTON down");
+  }
+
+  if (bottom_button_pressed && bottom_button_state.pressed && !bottom_button_state.long_press_sent && (now - bottom_button_state.press_start >= BUTTON_LONG_PRESS_MS))
+  {
+    bottom_button_state.long_press_sent = true;
+    bottom_button_state.click_count = 0; // Reset click count on long press
+    bottom_button_state.last_click = 0; // Reset last click time on long press
+    bottom_long_press_event = true;
+    log_i("bottom BUTTON long press");
+  }
+
+  if (!bottom_button_pressed && last_bottom_pressed)
+  {
+    bottom_button_state.pressed = false;
+
+    if (!bottom_button_state.long_press_sent) // If it was not a long press, count a click
+    {
+      if (bottom_button_state.click_count == 0)
+      {
+        bottom_button_state.click_count = 1; // First click
+        bottom_button_state.last_click = now;
+        log_i("bottom BUTTON click 1");
+      }
+      else if ((now - bottom_button_state.last_click) <= BUTTON_DOUBLE_CLICK_MS)
+      {
+        bottom_button_state.click_count = 0; // Second click inside the window, reset click count
+        bottom_button_state.last_click = 0;
+        bottom_double_click_event = true;
+        log_i("bottom BUTTON double click");
+      }
+      else
+      {
+        bottom_button_state.click_count = 1; // last click expired, this is the first click of a new sequence
+        bottom_button_state.last_click = now;
+        log_i("bottom BUTTON click 1 (new sequence)");
+      }
+    }
+  }
+
+  // single click confirmation after double click window has passed
+  if (!bottom_button_pressed && bottom_button_state.click_count == 1 && (now - bottom_button_state.last_click > BUTTON_DOUBLE_CLICK_MS))
+  {
+    bottom_button_state.click_count = 0;
+    bottom_button_state.last_click = 0;
     bottom_button_event = true;
-    log_i("BOTTOM BUTTON pressed");
+    log_i("bottom BUTTON single click");
   }
 
   last_bottom_pressed = bottom_button_pressed;
