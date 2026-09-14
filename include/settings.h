@@ -28,6 +28,7 @@
 #define DEFAULT_VEHICLES false
 #define DEFAULT_TIMEZONE "Europe/Amsterdam"
 #define DEFAULT_METRIC true
+#define DEFAULT_BRIGHTNESS 75
 // By default take a 10km range
 #define DEFAULT_RANGE_LATITUDE 0.1
 #define DEFAULT_RANGE_LONGITUDE 0.1

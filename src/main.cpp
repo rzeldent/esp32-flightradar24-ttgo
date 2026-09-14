@@ -146,6 +146,12 @@ auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("me
                              .label("Use metric units")
                              .defaultValue(DEFAULT_METRIC)
                              .build();
+auto iotWebParamBrightness = iotwebconf::Builder<iotwebconf::UIntTParameter<byte>>("brightness")
+                                 .label("Brightness control in percent)")
+                                 .min(5)
+                                 .max(100)
+                                 .defaultValue(DEFAULT_BRIGHTNESS)
+                                 .build();
 
 // Variables for flight info
 unsigned long next_update;
@@ -169,7 +175,7 @@ enum display_mode
 enum display_mode display_mode = DISPLAY_MODE_FLIGHTS;
 
 // One event per physical press of TOP and BOTTOM buttons
-constexpr uint32_t BUTTON_LONG_PRESS_MS = 800; // Long press: button held for 800 ms
+constexpr uint32_t BUTTON_LONG_PRESS_MS = 800;   // Long press: button held for 800 ms
 constexpr uint32_t BUTTON_DOUBLE_CLICK_MS = 350; // Double press: two clicks between 350 ms
 
 volatile bool top_button_event = false;
@@ -241,8 +247,8 @@ lv_obj_t *error_message_label = nullptr;
 constexpr auto backlight_pwm_channel = 0;
 
 // PWM Duty cycles steps for the backlight
-float backlight_pwm_duty_steps[] = {1.00f, 0.75f, 0.50f, 0.25f, 0.15f, 0.10f, 0.05f};
-byte backlight_pwm_duty_step = 0; // Start with maximum brightness
+byte backlight_pwm_duty_steps[] = {100, 75, 50, 25, 15, 10, 5};
+constexpr size_t num_backlight_pwm_duty_steps = sizeof(backlight_pwm_duty_steps) / sizeof(backlight_pwm_duty_steps[0]);
 
 void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
 {
@@ -271,10 +277,9 @@ String get_localtime(const char *format)
   return time_buffer;
 }
 
-void update_runtime_config()
+void set_timezone(const char *timezone)
 {
-  log_v("update_runtime_config");
-  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
+  auto tz = lookup_posix_timezone_tz(timezone);
   if (tz != nullptr)
   {
     setenv("TZ", tz, 1);
@@ -282,7 +287,23 @@ void update_runtime_config()
     log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
   }
   else
+  {
     log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+  }
+}
+
+void set_backlight_pwm_duty(byte level)
+{
+  auto pwm = (uint32_t)(level * backlight_max_level / 100.0f);
+  ledcWrite(backlight_pwm_channel, pwm);
+  log_i("Backlight PWM on pin %d (channel %d, %d Hz, %d-bit): %dlevel %d/%d", TFT_BL, backlight_pwm_channel, backlight_pwm_frequency, backlight_pwm_resolution, level, pwm, backlight_max_level);
+}
+
+void update_runtime_config()
+{
+  log_v("update_runtime_config");
+  set_timezone(iotWebParamTimeZone.value());
+  set_backlight_pwm_duty(iotWebParamBrightness.value());
 }
 
 // Name of the configured location: the name of the selected airport, or the configured value
@@ -386,7 +407,8 @@ void handleRoot()
       {"Vehicles", iotWebParamVehicles.value() ? "Yes" : "No"},
       {"Timezone", iotWebParamTimeZone.value()},
       {"TZ", tz},
-      {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
+      {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"},
+      {"Brightness", String(iotWebParamBrightness.value())}};
 
   server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   auto html = moustache_render(text_html_index_html, substitutions);
@@ -403,13 +425,6 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
   tft.pushColors((uint16_t *)&color_p->full, w * h, true);
   tft.endWrite();
   lv_disp_flush_ready(drv);
-}
-
-void set_backlight_pwm_duty(float level)
-{
-  auto pwm = (uint32_t)(level * backlight_max_level);
-  ledcWrite(backlight_pwm_channel, pwm);
-  log_i("Backlight PWM on pin %d (channel %d, %d Hz, %d-bit): %f%% level %d/%d", TFT_BL, backlight_pwm_channel, backlight_pwm_frequency, level, backlight_pwm_resolution, pwm, backlight_max_level);
 }
 
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
@@ -438,7 +453,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   {
     top_button_state.long_press_sent = true;
     top_button_state.click_count = 0; // Reset click count on long press
-    top_button_state.last_click = 0; // Reset last click time on long press
+    top_button_state.last_click = 0;  // Reset last click time on long press
     top_long_press_event = true;
     log_i("TOP BUTTON long press");
   }
@@ -501,7 +516,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
   {
     bottom_button_state.long_press_sent = true;
     bottom_button_state.click_count = 0; // Reset click count on long press
-    bottom_button_state.last_click = 0; // Reset last click time on long press
+    bottom_button_state.last_click = 0;  // Reset last click time on long press
     bottom_long_press_event = true;
     log_i("bottom BUTTON long press");
   }
@@ -608,8 +623,8 @@ void setup()
   set_backlight_pwm_duty(1.0f); // Start with full brightness
 
   // Width and height are flipped because is rotated 90 degrees
-  const uint16_t screen_width = TFT_HEIGHT;
-  const uint16_t screen_height = TFT_WIDTH;
+  constexpr uint16_t screen_width = TFT_HEIGHT;
+  constexpr uint16_t screen_height = TFT_WIDTH;
 
   static lv_disp_draw_buf_t draw_buf;
   static lv_color_t buf[screen_width * 10];
@@ -651,6 +666,7 @@ void setup()
   param_group.addItem(&iotWebParamVehicles);
   param_group.addItem(&iotWebParamTimeZone);
   param_group.addItem(&iotWebParamMetric);
+  param_group.addItem(&iotWebParamBrightness);
   iotWebConf.addParameterGroup(&param_group);
 
   iotWebConf.getApTimeoutParameter()->visible = true;
@@ -662,13 +678,16 @@ void setup()
 
   iotWebConf.init();
 
-  // The configuration is loaded now; the position of the selected airport is applied to the
-  // latitude and longitude when the selection is changed.
+  // The configuration is loaded now; the position of the selected airport is applied to the latitude and longitude when the selection is changed.
   migrate_location();
   iotWebParamLocation.setPosition(&iotWebParamLatitude, &iotWebParamLongitude);
   iotWebParamLocation.rememberSelection();
+  // Apply the values that have a runtime effect when the configuration is saved. The parameters
+  // are already updated from the form when this is called (so they are validated as well).
   iotWebConf.setConfigSavingCallback([](int)
-                                     { iotWebParamLocation.applySelection(); });
+                                     {
+                                       iotWebParamLocation.applySelection();
+                                       update_runtime_config(); });
   // The config dialog needs the script that updates the position of the selected airport
   iotWebConf.setHtmlFormatProvider(&config_page_format_provider);
 
@@ -700,24 +719,12 @@ void setup()
   server.onNotFound([]()
                     { iotWebConf.handleNotFound(); });
 
-  // Set the time servers
   configTime(0, 0, NTP_SERVERS);
-  // Set the timezone
-  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
-  if (tz != nullptr)
-  {
-    setenv("TZ", tz, 1);
-    tzset();
-    log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
-  }
-  else
-  {
-    log_e("Timezone %s not found!", iotWebParamTimeZone.value());
-  }
+  update_runtime_config();
 }
 
 // Only update if different, to avoid unnecessary redraws and flickering
-void lv_label_update_text(lv_obj_t * obj, const char * text)
+void lv_label_update_text(lv_obj_t *obj, const char *text)
 {
   if (strcmp(lv_label_get_text(obj), text) == 0)
     return;
@@ -1253,8 +1260,24 @@ void loop()
   if (bottom_button_event)
   {
     bottom_button_event = false;
-    backlight_pwm_duty_step = (++backlight_pwm_duty_step) % (sizeof(backlight_pwm_duty_steps) / sizeof(backlight_pwm_duty_steps[0]));
-    set_backlight_pwm_duty(backlight_pwm_duty_steps[backlight_pwm_duty_step]);
+    // lookup nearest step in the array of backlight PWM duty cycles and go to the next one
+    auto brightness = iotWebParamBrightness.value();
+    size_t step = 0;
+    for (size_t index = 0; index < num_backlight_pwm_duty_steps; index++)
+    {
+      if (brightness >= backlight_pwm_duty_steps[index])
+      {
+        step = index;
+        break;
+      }
+    }
+
+    log_i("Current brightness: %d%%. Step: %d", brightness, step);
+    // Take next step in the array, wrapping around to the beginning if necessary
+    step = ++step % num_backlight_pwm_duty_steps;
+    iotWebParamBrightness.value() = backlight_pwm_duty_steps[step];
+    log_i("New brightness: %d%%. Step: %d", iotWebParamBrightness.value(), step);
+    set_backlight_pwm_duty(iotWebParamBrightness.value());
   }
 
   switch (network_state)
