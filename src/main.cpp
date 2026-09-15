@@ -15,7 +15,6 @@
 #include <airport.h>
 #include <time.h>
 #include <string>
-#include <string>
 
 #include <ESPmDNS.h>
 #include <IotWebConf.h>
@@ -427,6 +426,56 @@ void tft_espi_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
   lv_disp_flush_ready(drv);
 }
 
+void backlight_set(int level)
+{
+  backlight_level = constrain(level, 0, backlight_max_level);
+  ledcWrite(backlight_pwm_channel, backlight_level);
+  log_d("Backlight brightness: %d/%d", backlight_level, backlight_max_level);
+}
+
+void backlight_change(int delta)
+{
+  backlight_set(static_cast<int>(backlight_level) + delta);
+}
+
+// Debounced button handling that changes the brightness by a single step on
+// each press and keeps stepping (auto-repeat) while the button is held down.
+void handle_backlight_button(bool raw_pressed, backlight_button_state_t &state, int delta)
+{
+  const auto now = millis();
+
+  if (raw_pressed != state.last_raw)
+  {
+    // Raw level changed: (re)start the debounce timer
+    state.last_raw = raw_pressed;
+    state.raw_since = now;
+    return;
+  }
+
+  if (raw_pressed != state.pressed && now - state.raw_since >= backlight_debounce_ms)
+  {
+    // Debounced transition of the button
+    state.pressed = raw_pressed;
+    state.repeating = false;
+    state.last_step = now;
+    if (raw_pressed)
+      backlight_change(delta);
+    return;
+  }
+
+  // Auto-repeat while the button is held down
+  if (raw_pressed && state.pressed)
+  {
+    const auto delay = state.repeating ? backlight_repeat_rate_ms : backlight_repeat_delay_ms;
+    if (now - state.last_step >= delay)
+    {
+      state.repeating = true;
+      state.last_step = now;
+      backlight_change(delta);
+    }
+  }
+}
+
 void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
   static uint32_t last_key;
@@ -571,6 +620,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     data->state = LV_INDEV_STATE_REL;
   }
 
+  data->key = key;
   data->key = key;
 }
 
