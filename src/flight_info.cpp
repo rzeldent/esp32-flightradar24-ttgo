@@ -5,6 +5,31 @@
 #include <esp32-hal-log.h>
 #include <http_status.h>
 
+// ArduinoJson 6.x - PSRAM Allocator
+#ifdef BOARD_HAS_PSRAM
+
+struct SpiRamAllocator
+{
+    void *allocate(size_t size)
+    {
+        return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+    }
+    
+    void deallocate(void *pointer)
+    {
+        heap_caps_free(pointer);
+    }
+    
+    void *reallocate(void *pointer, size_t new_size)
+    {
+        return heap_caps_realloc(pointer, new_size, MALLOC_CAP_SPIRAM);
+    }
+};
+
+using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
+
+#endif
+
 bool get_flights(float latitude, float longitude, float range_latitude, float range_longitude, bool air, bool ground, bool gliders, bool vehicles, std::list<flight_info> &flights, String &error_message)
 {
     const String flight_data_base_url = "http://data-cloud.flightradar24.com/zones/fcgi/feed.js";
@@ -32,11 +57,43 @@ bool get_flights(float latitude, float longitude, float range_latitude, float ra
         return false;
     }
 
+// JSON Document on PSRAM 32KB
+#ifdef BOARD_HAS_PSRAM
+    SpiRamJsonDocument doc_flight_data(32 * 1024);
+
+    if (doc_flight_data.capacity() != 32 * 1024)
+    {
+        client.end();
+        error_message = "NoMemory";
+        log_e("Unable to allocate 32KB JSON document in PSRAM");
+        log_e("PSRAM total=%u, free=%u", ESP.getPsramSize(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        return false;
+    }
+    log_i("JSON document allocated in PSRAM: %u bytes", doc_flight_data.capacity());
+
+    auto response = client.getString();
+    log_i("HTTP response length: %u", response.length());
+
+    if (response.length() > 0)
+    {
+        log_i("HTTP response start: %.80s", response.c_str());
+    }
+    else
+    {
+        log_e("HTTP response is EMPTY");
+    }
+
+    const auto error = deserializeJson(doc_flight_data, response);
+    
+// Previous code used to read the entire response into a String and then deserialize it
+#else
     auto response = client.getString();
     log_d("Body=%s", response.c_str());
     // Parse JSON states object 32k
     DynamicJsonDocument doc_flight_data(32 * 1024);
     const auto error = deserializeJson(doc_flight_data, response);
+#endif
+
     if (error != DeserializationError::Ok)
     {
         client.end();

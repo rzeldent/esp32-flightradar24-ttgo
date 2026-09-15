@@ -35,6 +35,7 @@ Example of layout on LilyGo-T-Display-S3
 - [Getting Started](#getting-started)
 - [Project structure](#project-structure)
 - [Status overview](#status-overview)
+- [Display and buttons](#display-and-buttons)
 - [Configuration](#modifying-the-configuration)
 - [Case / Enclosure](#case--enclosure)
 - [Suggestions](#suggestions)
@@ -44,6 +45,8 @@ Example of layout on LilyGo-T-Display-S3
 
 |             |                                                                      |
 | :---------- | :------------------------------------------------------------------- |
+| Sep 14 2026 | Added the combined flights + clock display mode                     |
+| Sep 13 2026 | Clock screen (top button) and stepped backlight brightness (bottom button) |
 | Sep 3 2026  | Added backlight dimming controlled with the upper/lower buttons   |
 | Aug 25 2026 | Fixed display issues with updating, new logo, removed scrollbar      |
 | Jan 10 2026 | Optimized data tables                                                |
@@ -75,6 +78,9 @@ The FlightRadar firmware offers the following features:
 - Lookup and display flag for the countries
 - No account required, only WiFi with internet connection!
 - Minimal interaction with FlightRadar24; database and graphics are present in firmware
+- Clock screen with date, time and the configured location (top button)
+- Combined flights + clock mode that shows the clock when no flights are in range
+- Backlight brightness dimming in 7 steps (bottom button)
 - Configuration using a Web interface
 - HTML status screen
 - Stay in AP mode at reset (Resetting + pressing top button)
@@ -125,11 +131,84 @@ When connected to the FlightRadar, the main screen is shown; the overview.
 Here details about the device, network and settings are shown.
 ![Status page](assets/status.png)
 
+## Display and buttons
+
+There are two buttons on the module, the top and the bottom button.
+
+| Button | Action                                                                        |
+| ------ | ----------------------------------------------------------------------------- |
+| Top    | Cycle through the display modes: flights → clock → flights + clock → flights |
+| Bottom | Select the next backlight brightness step                                     |
+
+Switching the display mode is only possible when the device is online.
+During boot the buttons have a special meaning, please refer to the tips in the configuration section below.
+
+### Display modes
+
+The top button selects one of the following modes.
+The mode is not stored, so after a reboot the device starts in **Flights**.
+
+| Mode            | Description                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
+| Flights         | Shows the flights in the configured area, one after the other. When the area has no flights, the "No flights in range" screen is shown |
+| Clock           | Shows the date, time and location. Requires a valid NTP time                                                     |
+| Flights + clock | Shows the flights when there are any, and the clock as long as the configured area has no flights                |
+
+In the **Flights + clock** mode the flights are still retrieved in the background, so the display switches back to the flights as soon as an aircraft enters the area.
+When retrieving the flights fails (for example when there is no internet connection), the error message is shown instead of the clock.
+
+#### No flights in range
+
+When there are no flights in the configured area, the information screen shows:
+
+- the `No flights in range` message,
+- the date and time,
+- the configured latitude and longitude,
+- the configured range in km or miles,
+- the configured location and time zone.
+
+### Clock screen
+
+In the **Clock** mode, the clock shows:
+
+- the weekday and the date,
+- the time, updated once per second,
+- the configured location.
+
+The date and time format follows the **Metric units** setting:
+
+| Units    | Date          | Time                    | Date and time                |
+| -------- | ------------- | ----------------------- | ----------------------------- |
+| Metric   | `%A %d-%m-%Y` | `%H:%M:%S` (24-hour)    | `%A %d-%m-%Y %H:%M:%S`        |
+| Imperial | `%A %m/%d/%Y` | `%I:%M:%S %p` (12-hour) | `%A %m/%d/%Y %I:%M:%S %p`     |
+
+The clock screen displays the date and the time separately; the combined date and time format is used on the "No flights in range" screen and on the status page.
+
+The clock requires a valid NTP time from the network.
+As long as no time is known, the date and time are left empty and `No NTP Time` is shown instead.
+
+### Backlight brightness
+
+The backlight LED (TFT_BL) is driven with PWM (5 kHz, 8-bit resolution), so it does not audibly whine.
+Each press of the bottom button selects the next brightness step; after the last step the sequence wraps around to the brightest step:
+
+| Step | Duty cycle |
+| ---- | ---------- |
+| 1    | 100% (startup value) |
+| 2    | 75%  |
+| 3    | 50%  |
+| 4    | 25%  |
+| 5    | 15%  |
+| 6    | 10%  |
+| 7    | 5%   |
+
+The selected brightness is not persisted; after a reboot the display starts at full brightness again.
+
 ## Modifying the configuration
 
 The configuration can be changed using a web browser. Connecting to the flight radar can be done in two ways:
 
-- During startup, connect to the access point `FlightRadar` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
+- During startup, connect to the access point `FlightRadar-xxxxxxxxxxxx` and log in. In case the browser does not open the page immediately, the url is [http://192.168.4.1](http://192.168.4.1).
 - Find the internal IP address of the FlightRadar (from your home router) and enter the url.
 - When the password is lost, a fix is to completely erase the ESP32 using the `pio run -t erase` command.
   This will reset the device including configuration.

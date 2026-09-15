@@ -6,7 +6,7 @@
 
 // List must be sorted because binary search is used
 
-static const airline_t airlines[] = {
+const airline_t airlines[] = {
     {{'A', 'A', 'A'}, {}, "Avicon Aviation Consultants & Agents", "", COUNTRY_PK, airline_logo_AAA},
     {{'A', 'A', 'B'}, {}, "Abelag Aviation NV t/a Luxaviation Belgium", "ABG", COUNTRY_BE, airline_logo_AAB},
     {{'A', 'A', 'C'}, {}, "Army Air Corps", "Armyair", COUNTRY_GB, airline_logo_AAC},
@@ -6003,6 +6003,9 @@ static const airline_t airlines[] = {
     {{'Z', 'Z', 'M'}, {}, "Agence Nationale Des Aerodromes Et de La Meteorologie (ANAM)", "", COUNTRY_CI, airline_logo_ZZM},
     {{'Z', 'Z', 'Z'}, {}, "Aircraft In Flight", "", COUNTRY_ZZ, airline_logo_ZZZ},
 };
+
+// Number of airlines in the table
+const size_t airline_count = sizeof(airlines) / sizeof(airline_t);
 
 const airline_t *lookup_airline(const char *icao_airline)
 {
