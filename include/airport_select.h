@@ -18,9 +18,9 @@
 class AirportSelectParameter : public iotwebconf::TextTParameter<32>
 {
 public:
-    AirportSelectParameter(const char *id, const char *label, const char *defaultValue) : // ConfigItemBridge is a virtual base, so it must be initialized by the most derived class
-                                                                                          iotwebconf::ConfigItemBridge(id),
-                                                                                          iotwebconf::TextTParameter<32>(id, label, defaultValue)
+    AirportSelectParameter(const char *id, const char *label, const char *defaultValue) 
+    : iotwebconf::ConfigItemBridge(id)
+    , iotwebconf::TextTParameter<32>(id, label, defaultValue)
     {
     }
 
