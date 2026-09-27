@@ -5,7 +5,7 @@
 // List must be sorted because binary search is used
 // Data from OurAirports (davidmegginson.github.io/ourairports-data/)
 
-static const airport_t airports[] = {
+const airport_t airports[] = {
     { {'A', 'A', 'A'}, "Anaa Airport", "Anaa", "PF-U-A", COUNTRY_PF, -17352600, -145509995, 10 },
     { {'A', 'A', 'B'}, "Arrabury Airport", "Tanbar", "AU-QLD", COUNTRY_AU, -26696390, 141048718, 334 },
     { {'A', 'A', 'C'}, "El Arish International Airport", "El Arish", "EG-SIN", COUNTRY_EG, 31055324, 33827964, 118 },
@@ -9067,6 +9067,9 @@ static const airport_t airports[] = {
     { {'Z', 'Z', 'U'}, "Mzuzu Airport", "Mzuzu", "MW-MZ", COUNTRY_MW, -11444700, 34011799, 4115 },
     { {'Z', 'Z', 'V'}, "Zanesville Municipal Airport", "Zanesville", "US-OH", COUNTRY_US, 39944400, -81892097, 900 },
 };
+
+// Number of airports in the table
+const size_t airport_count = sizeof(airports) / sizeof(airport_t);
 
 const airport_t *lookup_airport(const char *iata_airport)
 {

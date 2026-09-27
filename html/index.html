@@ -95,12 +95,12 @@
                             <div class="col-8">{{IpV4}}</div>
                         </div>
                         {{#NetworkState.ApMode}}
-                        <div class="mt-4 alert alert-warning" role="alert">
+                        <div class="mt-4 text-center alert alert-warning" role="alert">
                             <p>Not connected to an access point. Consider configuring the access point.</p>
                         </div>
                         {{/NetworkState.ApMode}}
                         {{#NetworkState.OnLine}}
-                        <div class="mt-4 alert alert-success" role="alert">
+                        <div class="mt-4 text-center alert alert-success" role="alert">
                             <p>Connected to the access point</p>
                         </div>
                         {{/NetworkState.OnLine}}
@@ -147,6 +147,10 @@
                         <div class="row">
                             <div class="col-4">Units:</div>
                             <div class="col-8">{{Units}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-4">Brightness:</div>
+                            <div class="col-8">{{Brightness}}</div>
                         </div>
                     </div>
                 </div>

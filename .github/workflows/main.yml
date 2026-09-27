@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [esp32dev, lilygo-t-display-s3]
+        environment: [esp32dev, lilygo-t-display-s3, lilygo-t-display-s2-t8]
         
     steps:
       - uses: actions/checkout@v7

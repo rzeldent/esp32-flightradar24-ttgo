@@ -251,6 +251,9 @@ const country_t countries[] = {
     {{'Z', 'Z'}, "Unknown", country_flag_ZZ},                                      // COUNTRY_ZZ
 };
 
+// Number of countries in the table
+const size_t country_count = sizeof(countries) / sizeof(country_t);
+
 const country_t *get_country(country_code_t country_code)
 {
     return &countries[country_code];

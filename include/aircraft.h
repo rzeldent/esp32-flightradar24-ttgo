@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include <cstdint>
 
 typedef enum
@@ -37,6 +39,9 @@ typedef struct aircraft
     const uint8_t engine_count;
 } aircraft_t;
 
+// All aircraft types, sorted on the aircraft code
+extern const aircraft_t aircrafts[];
+extern const size_t aircraft_count;
 extern const aircraft_t *lookup_aircraft(const char *aircraft_code);
 extern const char *engine_type_to_string(engine_type_t engine_type);
 extern const char *aircraft_type_to_string(aircraft_type_t aircraft_type);

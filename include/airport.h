@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include <country.h>
 
 typedef struct airport
@@ -14,4 +16,7 @@ typedef struct airport
     const int16_t elevation_ft;
 } airport_t;
 
+// All airports, sorted on the IATA code
+extern const airport_t airports[];
+extern const size_t airport_count;
 extern const airport_t *lookup_airport(const char* iata_airport);
