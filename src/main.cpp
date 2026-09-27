@@ -245,6 +245,21 @@ lv_obj_t *error_message_label = nullptr;
 // PWM channel used to dim the backlight LED (TFT_BL)
 constexpr auto backlight_pwm_channel = 0;
 
+// Tracks the debounced state of a button that controls the backlight
+struct backlight_button_state_t
+{
+  bool last_raw = true;   // last raw sample (true = released / HIGH)
+  bool pressed = false;   // debounced pressed state
+  bool repeating = false; // auto-repeat already started
+  uint32_t raw_since = 0; // time the raw level last changed
+  uint32_t last_step = 0; // time of the last brightness step
+};
+
+uint8_t backlight_level = backlight_max_level;
+backlight_button_state_t backlight_top_button;
+backlight_button_state_t backlight_bottom_button;
+
+int clock_last_second = -1;
 // PWM Duty cycles steps for the backlight
 byte backlight_pwm_duty_steps[] = {100, 75, 50, 25, 15, 10, 5};
 constexpr size_t num_backlight_pwm_duty_steps = sizeof(backlight_pwm_duty_steps) / sizeof(backlight_pwm_duty_steps[0]);
@@ -508,7 +523,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     bottom_button_state.pressed = true;
     bottom_button_state.long_press_sent = false;
     bottom_button_state.press_start = now;
-    log_i("bottom BUTTON down");
+    log_i("BOTTOM BUTTON down");
   }
 
   if (bottom_button_pressed && bottom_button_state.pressed && !bottom_button_state.long_press_sent && (now - bottom_button_state.press_start >= BUTTON_LONG_PRESS_MS))
@@ -517,7 +532,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     bottom_button_state.click_count = 0; // Reset click count on long press
     bottom_button_state.last_click = 0;  // Reset last click time on long press
     bottom_long_press_event = true;
-    log_i("bottom BUTTON long press");
+    log_i("BOTTOM BUTTON long press");
   }
 
   if (!bottom_button_pressed && last_bottom_pressed)
@@ -530,20 +545,20 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
       {
         bottom_button_state.click_count = 1; // First click
         bottom_button_state.last_click = now;
-        log_i("bottom BUTTON click 1");
+        log_i("BOTTOM BUTTON click 1");
       }
       else if ((now - bottom_button_state.last_click) <= BUTTON_DOUBLE_CLICK_MS)
       {
         bottom_button_state.click_count = 0; // Second click inside the window, reset click count
         bottom_button_state.last_click = 0;
         bottom_double_click_event = true;
-        log_i("bottom BUTTON double click");
+        log_i("BOTTOM BUTTON double click");
       }
       else
       {
         bottom_button_state.click_count = 1; // last click expired, this is the first click of a new sequence
         bottom_button_state.last_click = now;
-        log_i("bottom BUTTON click 1 (new sequence)");
+        log_i("BOTTOM BUTTON click 1 (new sequence)");
       }
     }
   }
@@ -554,7 +569,7 @@ void button_read(_lv_indev_drv_t *drv, lv_indev_data_t *data)
     bottom_button_state.click_count = 0;
     bottom_button_state.last_click = 0;
     bottom_button_event = true;
-    log_i("bottom BUTTON single click");
+    log_i("BOTTOM BUTTON single click");
   }
 
   last_bottom_pressed = bottom_button_pressed;
